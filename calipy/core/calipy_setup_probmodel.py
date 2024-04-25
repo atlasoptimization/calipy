@@ -51,7 +51,6 @@ class CalipyProbModel(pyro.nn.PyroModule):
     
     def __init__(self, design_params, data_info):
         super().__init__()
-        self.__version__ = '1.0.0'
 
         
         # Create plant components
