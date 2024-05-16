@@ -1,0 +1,12 @@
+3. Setting PYTHONPATH
+Ensure the top-level calipy/ directory is in your PYTHONPATH, or the working directory is set to this top-level directory when you run Python. Here’s how you can do this:
+If you're using a terminal or command prompt:
+You can temporarily set PYTHONPATH by running:
+
+export PYTHONPATH="/path/to/calipy:$PYTHONPATH"  # Unix/Linux/MacOS
+# or
+set PYTHONPATH=C:\path\to\calipy;%PYTHONPATH%  # Windows
+
+Concrete:
+export PYTHONPATH="/home/jemil/Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy:$PYTHONPATH"
+
