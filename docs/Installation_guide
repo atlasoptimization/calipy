@@ -1,12 +1,6 @@
-3. Setting PYTHONPATH
-Ensure the top-level calipy/ directory is in your PYTHONPATH, or the working directory is set to this top-level directory when you run Python. Here’s how you can do this:
-If you're using a terminal or command prompt:
-You can temporarily set PYTHONPATH by running:
+Install the package in editable mode. This allows importing it from everywhere like you can do with torch once you installed it.
+For this, in the root directory include a setup.py file and a README.md file and execute
+(base) jemil@Laplace:~/Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy$ pip install -e .
 
-export PYTHONPATH="/path/to/calipy:$PYTHONPATH"  # Unix/Linux/MacOS
-# or
-set PYTHONPATH=C:\path\to\calipy;%PYTHONPATH%  # Windows
-
-Concrete:
-export PYTHONPATH="/home/jemil/Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy:$PYTHONPATH"
-
+here the folder structure is as follows: folder calipy/ contains folder calipy, folder docs, folder .git.
+folder calipy/calipy contains __init__.py, and folders core, examples, ...

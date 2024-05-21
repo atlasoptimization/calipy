@@ -29,45 +29,42 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
-# import pyro
-
-# import numpy as np
-
-# from calipy_setup_components import  ComponentCollector
-# from calipy_setup_variables import VariableCollector
-# from calipy_setup_constraints import ConstraintCollector
-# from calipy_setup_optimizer import OptimizationCollector
-# from calipy_setup_illustrations import IllustrationCollector
-# from calipy_setup_utils import SupportCollector
-# import calipy_setup_utils as utils
+import pyro
+from calipy.core.utils import CalipyRegistry
 
 
-# # Probmodel class determines attributes and methods for summarizing and accessing
-# # instruments, components, effects, and data of the whole probabilistic model.
 
-# class CalipyProbModel(pyro.nn.PyroModule):
+# Probmodel class determines attributes and methods for summarizing and accessing
+# instruments, components, effects, and data of the whole probabilistic model.
 
-#     # i) Initialization
+class CalipyProbModel():
+
+    # i) Initialization
     
-#     def __init__(self, design_params, data_info):
-#         super().__init__()
+    def __init__(self, model_type = None, model_name = None, info_dict = {}):
+        self.dtype = 'CalipyProbModel'
+        self.type = model_type
+        self.name = model_name
+        self.info_dict = info_dict
+        self.instrument_registry = CalipyRegistry()
+        self.effects_registry = CalipyRegistry()
+        self.quantity_registry = CalipyRegistry()
 
+        self.id = "{}_{}".format(self.type, self.name)
+
+
+# i) EmptyProbModel class: Catchall class for instruments unassociated to any specific 
+# probmodel
+type_EmptyProbModel = 'empty_probmodel'
+name_EmptyProbModel = 'base'
+info_dict_EmptyProbModel = {}
+
+class EmptyProbModel(CalipyProbModel):
         
-#         # Create plant components
-#         self.support = SupportCollector(self)
-#         data_info = sf.CompletedDataInfo(self, data_info,design_params)
-#         self.design_params = design_params
-#         self.data_info = data_info
-#         self.components = PlantComponentCollector(self)
-#         self.variables = VariableCollector(self)
-#         self.constraints = ConstraintCollector(self)
-#         self.dynamics = DynamicsCollector(self)
-#         self.optimizer = OptimizationCollector(self)
-#         self.control = ControlCollector(self )
-#         self.illustrations = IllustrationCollector(self )
-#         self.iterator = IterationCollector(self)
-#         self.dict_all_tags = dict()
-#         info_string = setup_info_string(self,context = "calipy_probabilistic_model")
-#         self.info = 'Collector object containing all info pertaining to the calipy_probmodel' + info_string
+    def __init__(self, model_name):
+        super().__init__(model_type = type_EmptyProbModel, 
+                         model_name = model_name, 
+                         info_dict = info_dict_EmptyProbModel)
         
-    
+
+empty_probmodel = EmptyProbModel(name_EmptyProbModel)

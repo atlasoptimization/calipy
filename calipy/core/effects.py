@@ -30,7 +30,10 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 from abc import ABC, abstractmethod
+from calipy.core.instruments import empty_instrument
 
+
+# ii) Definitions
 
 
 class CalipyEffect(ABC):
@@ -48,7 +51,7 @@ class CalipyEffect(ABC):
     
     _effect_counters = {}
     
-    def __init__(self, instrument_instance, name, info):
+    def __init__(self, name, info, instrument_instance = empty_instrument):
         
         # Basic infos
         self.name = name
@@ -103,8 +106,31 @@ class CalipyEffect(ABC):
         # Call the guide to sample from variational distribution
         guide = self.get_effect_guide()
         return guide(input_vars, data)
+    
+    # def __repr__(self):
+    #     return f"{self.__class__.__name__}(name={self.name})"
 
 
+# iv) EmptyEffect class: Catchall class for quantities unassociated to any specific 
+# effect
+name_EmptyEffect= 'empty_effect'
+info_dict_EmptyEffect = {}
+
+class EmptyEffect(CalipyEffect):
+        
+    def __init__(self):
+        super().__init__(name_EmptyEffect, info_dict_EmptyEffect)
+        
+        
+    def create_effect_model(self):
+        pass
+    
+    def create_effect_guide(self):
+        pass    
+    
+empty_effect = EmptyEffect()   
+
+    
 
 """
     CalipyQuantity class ----------------------------------------------------
@@ -125,7 +151,7 @@ class CalipyQuantity(ABC):
     
     _quantity_counters = {}
     
-    def __init__(self, effect_instance, name, info):
+    def __init__(self, name, info, effect_instance = empty_effect):
 
         # Basic infos
         self.name = name

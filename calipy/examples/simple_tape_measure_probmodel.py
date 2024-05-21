@@ -35,10 +35,8 @@ import pyro
 import matplotlib.pyplot as plt
 
 # calipy
-# import calipy
-from calipy_setup_instruments import CalipyInstrument
-from calipy_setup_effects import CalipyEffect, CalipyQuantity, OffsetDeterministic
-from calipy_setup_probmodel import CalipyProbModel
+import calipy
+
 
 
 # ii) Definitions
@@ -80,6 +78,34 @@ data = data_distribution.sample([n_meas]).T
     3. Build the instrument model
 """
 
+# i) Instantiate probabilistic model
+
+probmodel_TapeMeasure = calipy.core.probmodel.CalipyProbModel('probmodel_TapeMeasure', {})
+
+
+# i) Create TapeMeasure class
+
+type_TapeMeasure = 'tape_measure'
+info_dict_TapeMeasure = {}
+
+class TapeMeasure(calipy.core.instruments.CalipyInstrument):
+        
+    def __init__(self, instrument_name, **kwargs):
+        self.type = type_TapeMeasure
+        self.info_dict = info_dict_TapeMeasure
+                
+        super().__init__(instrument_type = type_TapeMeasure, 
+                         instrument_name = instrument_name,
+                         info_dict = info_dict_TapeMeasure, 
+                         **kwargs)
+        
+        
+    def forward(self):
+        pass
+
+
+# Invoke tape_measure
+tape_measure = TapeMeasure('1')
 
 
 

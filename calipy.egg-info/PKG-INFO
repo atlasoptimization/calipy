@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: calipy
+Version: 0.1.0
+Summary: A description of your package.
+Home-page: http://github.com/yourusername/calipy
+Author: Your Name
+Author-email: your.email@example.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+
+# Calipy Project
+This is the Calipy project that contains modules and packages for XYZ purposes.
+

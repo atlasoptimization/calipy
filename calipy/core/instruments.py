@@ -26,40 +26,73 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 from abc import ABC, abstractmethod
+from calipy.core.utils import CalipyRegistry
+from calipy.core.probmodel import empty_probmodel
 
 
 class CalipyInstrument(ABC):
     """
-    The CalipyProbModel class provides a comprehensive representation of the interactions
-    between instruments and data. It contains several subobjects representing the
-    physical instrument, random and systematic effects originating from instrument
-    or environment, unknown parameters and variables, constraints, and the objective
-    function. All of these subobjects form a probabilistic model that can be sampled
-    and conditioned on measured data. For more information, see the separate
+    The CalipyInstrument class provides a comprehensive representation of the 
+    instruments and the effects occuring during measurement with the instrument.
+    It contains several objects of type CalipyEffect (themselves containing objects
+    of type CalipyQuantity) whose effect.apply_effect() methods are chained together
+    in the forward methods to simulate the data generation process of the instrument.
+    This is used for simulation and inference. For more information, see the separate
     documentation entries the CalipyProbModel class, for the subobjects, or the tutorial.   
     """
-    
-    _instrument_counters = {}
-    
-    def __init__(self, name, info_dict):
-        self.name = name
+        
+    def __init__(self, instrument_type = None, instrument_name = None, info_dict = {}, **kwargs):
+        if instrument_name is None:
+            raise ValueError(f"{self.__class__.__name__} requires a 'instrument_name' argument")
+
+        # basic data integration
+        self.dtype = 'CalipyInstrument'
+        self.type = instrument_type
+        self.name = instrument_name
         self.info_dict = info_dict
         
-        # Upon instantiation either create or increment _instrument_counters dict
-        if name not in CalipyInstrument._instrument_counters:
-            CalipyInstrument._instrument_counters[name] = 0
-        else:
-            CalipyInstrument._instrument_counters[name] += 1
-
-        # Create a unique identifier based on the name and the current count
-        self.id = "{}_{}".format(name, CalipyInstrument._instrument_counters[name])        
+        # assign to superior instance
+        self.superior_instance = kwargs.get('superior_instance', empty_probmodel)
+        self.superior_instance_dtype = self.superior_instance.dtype
+        self.superior_instance_type = self.superior_instance.type
+        self.superior_instance_name = self.superior_instance.name
+        self.superior_instance_id = self.superior_instance.id
+        self.id = "{}_{}_{}".format(self.super_instance_id, self.type, self.name)
+        print("Initialized type: {} name: {} in superior instance type: {} name: {}"
+              .format(self.type, self.name, 
+                      self.superior_instance_type, self.superior_instance.name))
         
+        # register data to probmodel
+        # CalipyRegistry.register(self.id, self)
+        
+        # if self.name in CalipyInstrument._registry:
+        #     print(f"Warning: An instrument with the name '{self.name}' already exists.")
+
     @abstractmethod
     def forward(self, input_data):
-        # Subclasses must implement this method to create the specific instrument model.
         pass
+    
+
+
+"""
+    Instrument classes
+"""
+
+
+# i) EmptyInstrument class: Catchall class for effects unassociated to any specific 
+# instrument
+type_EmptyInstrument = 'empty_instrument'
+name_EmptyInstrument = 'base'
+info_dict_EmptyInstrument = {}
+
+class EmptyInstrument(CalipyInstrument):
         
+    def __init__(self, instrument_name):
+        super().__init__(instrument_type = type_EmptyInstrument, 
+                         instrument_name = instrument_name, 
+                         info_dict = info_dict_EmptyInstrument)
+        
+    def forward(self):
+        pass
 
-
-
-
+empty_instrument = EmptyInstrument(name_EmptyInstrument)
