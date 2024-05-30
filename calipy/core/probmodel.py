@@ -25,33 +25,44 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 """
-    CalipyProbModel class ----------------------------------------------------
+    CalipyDAG construction classes ----------------------------------------------
 """
 
 
 import pyro
 from calipy.core.utils import CalipyRegistry
+from calipy.core.dag import CalipyNode, CalipyEdge, CalipyDAG
+from abc import ABC, abstractmethod
 
+
+
+
+
+"""
+    CalipyProbModel class ----------------------------------------------------
+"""
 
 
 # Probmodel class determines attributes and methods for summarizing and accessing
-# instruments, components, effects, and data of the whole probabilistic model.
+# data, instruments, effects, and quantities of the whole probabilistic model.
 
 class CalipyProbModel():
 
     # i) Initialization
     
     def __init__(self, model_type = None, model_name = None, info_dict = {}):
-        self.dtype = 'CalipyProbModel'
+        self.dtype = self.__class__.__name__
         self.type = model_type
         self.name = model_name
         self.info_dict = info_dict
-        self.instrument_registry = CalipyRegistry()
-        self.effects_registry = CalipyRegistry()
-        self.quantity_registry = CalipyRegistry()
+        self.model_dag = CalipyDAG('Model_DAG')
+        self.guide_dag = CalipyDAG('Guide_DAG')
+    
+
 
         self.id = "{}_{}".format(self.type, self.name)
-
+    def __repr__(self):
+        return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 
 # i) EmptyProbModel class: Catchall class for instruments unassociated to any specific 
 # probmodel
@@ -68,3 +79,18 @@ class EmptyProbModel(CalipyProbModel):
         
 
 empty_probmodel = EmptyProbModel(name_EmptyProbModel)
+
+
+
+
+
+
+dag = CalipyDAG('daggie')
+node1 = CalipyNode(node_type="Type1", node_name="Node1")
+node2 = CalipyNode(node_type="Type2", node_name="Node2")
+dag.add_node(node1)
+dag.add_node(node2)
+dag.add_edge("Node1", "Node2")
+dag.display()
+
+
