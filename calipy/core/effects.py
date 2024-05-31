@@ -29,14 +29,14 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 # i) Imports
 
 import pyro
+from calipy.core.base import CalipyNode
 from abc import ABC, abstractmethod
-from calipy.core.instruments import empty_instrument
 
 
 # ii) Definitions
 
 
-class CalipyEffect(ABC):
+class CalipyEffect(CalipyNode):
     """
     The CalipyEffect class provides a comprehensive representation of a specific 
     effect. It is named, explained, and referenced in the effect description. The
@@ -51,12 +51,12 @@ class CalipyEffect(ABC):
     
     _effect_counters = {}
     
-    def __init__(self, name, info, instrument_instance = empty_instrument):
+    def __init__(self, type = None, name = None, info = None):
         
         # Basic infos
-        self.name = name
-        self.info = info
-        self.super_instrument_id = instrument_instance.id
+        super().__init__(node_type = type, node_name = name, info_dict = info)
+        
+        
         self._effect_model = None
         self._effect_guide = None
         
@@ -67,68 +67,50 @@ class CalipyEffect(ABC):
             CalipyEffect._effect_counters[name] += 1
 
         # Create a unique identifier based on the name and the current count
-        self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
+        # self.id = "{}_{}".format(self.name, CalipyEffect._effect_counters[name])
     
 
-    # Abstract methods for model and guide that subclasses need to provide
-    @abstractmethod
-    def create_effect_model(self):
-        # Subclasses must implement this method to create the specific effect model.
-        pass
     
-    @abstractmethod
-    def create_effect_guide(self):
-        # Subclasses must implement this method to create the specific effect guide.
-        pass
+    # # Abstract methods for model and guide that subclasses need to provide
+    # @abstractmethod
+    # def create_effect_model(self):
+    #     # Subclasses must implement this method to create the specific effect model.
+    #     pass
+    
+    # @abstractmethod
+    # def create_effect_guide(self):
+    #     # Subclasses must implement this method to create the specific effect guide.
+    #     pass
     
 
-    # Fetch functions by lazy initialization from subclass definitions
-    def get_effect_model(self):
-        # Lazy initialization for the effect model.
-        if self._effect_model is None:
-            self._effect_model = self.create_effect_model()
-        return self._effect_model
+    # # Fetch functions by lazy initialization from subclass definitions
+    # def get_effect_model(self):
+    #     # Lazy initialization for the effect model.
+    #     if self._effect_model is None:
+    #         self._effect_model = self.create_effect_model()
+    #     return self._effect_model
 
-    def get_effect_guide(self):
-        # Lazy initialization for the effect guide.
-        if self._effect_guide is None:
-            self._effect_guide = self.create_effect_guide()
-        return self._effect_guide
+    # def get_effect_guide(self):
+    #     # Lazy initialization for the effect guide.
+    #     if self._effect_guide is None:
+    #         self._effect_guide = self.create_effect_guide()
+    #     return self._effect_guide
     
     
-    # Apply effect and call guide    
-    def apply_effect(self, input_vars, data):
-        # Apply the effect to the data. This method uses the effect model.
-        model = self.get_effect_model()
-        return model(input_vars, data)
+    # # Apply effect and call guide    
+    # def apply_effect(self, input_vars, data):
+    #     # Apply the effect to the data. This method uses the effect model.
+    #     model = self.get_effect_model()
+    #     return model(input_vars, data)
     
-    def call_guide(self, input_vars, data):
-        # Call the guide to sample from variational distribution
-        guide = self.get_effect_guide()
-        return guide(input_vars, data)
+    # def call_guide(self, input_vars, data):
+    #     # Call the guide to sample from variational distribution
+    #     guide = self.get_effect_guide()
+    #     return guide(input_vars, data)
     
     # def __repr__(self):
     #     return f"{self.__class__.__name__}(name={self.name})"
 
-
-# iv) EmptyEffect class: Catchall class for quantities unassociated to any specific 
-# effect
-name_EmptyEffect= 'empty_effect'
-info_dict_EmptyEffect = {}
-
-class EmptyEffect(CalipyEffect):
-        
-    def __init__(self):
-        super().__init__(name_EmptyEffect, info_dict_EmptyEffect)
-        
-        
-    def create_effect_model(self):
-        pass
-    
-    def create_effect_guide(self):
-        pass    
-    
-empty_effect = EmptyEffect()   
 
     
 
@@ -138,7 +120,7 @@ empty_effect = EmptyEffect()
 
 
 
-class CalipyQuantity(ABC):
+class CalipyQuantity(CalipyNode):
     """
     The CalipyQuantity class provides a comprehensive representation of a specific 
     quantity used in the construction of a CalipyEffect object. This could be a
@@ -151,12 +133,10 @@ class CalipyQuantity(ABC):
     
     _quantity_counters = {}
     
-    def __init__(self, name, info, effect_instance = empty_effect):
-
+    def __init__(self, type = None, name = None, info = None):
+        
         # Basic infos
-        self.name = name
-        self.info = info
-        self.super_effect_id = effect_instance.id
+        super().__init__(node_type = type, node_name = name, info_dict = info)
         
         # Upon instantiation either create or increment _quantity_counters dict
         if name not in CalipyQuantity._quantity_counters:
@@ -165,7 +145,7 @@ class CalipyQuantity(ABC):
             CalipyQuantity._quantity_counters[name] += 1
 
         # Create a unique identifier based on the name and the current count
-        self.id = "{}_{}_{}".format(self.super_effect_id, self.name, CalipyQuantity._quantity_counters[name])
+        # self.id = "{}_{}_{}".format(self.super_effect_id, self.name, CalipyQuantity._quantity_counters[name])
         
 
     def __repr__(self):
@@ -234,29 +214,29 @@ OffsetDeterministic_info =  'Class of errors that transform the input by adding 
 # # Effect details
 # OffsetDeterministic_details = {}
 
-class OffsetDeterministic(CalipyEffect):
-    def __init__(self, offset_initialization):
-        super().__init__(OffsetDeterministic_name, OffsetDeterministic_info)
-        self.offset_initialization = offset_initialization
+# class OffsetDeterministic(CalipyEffect):
+#     def __init__(self, offset_initialization):
+#         super().__init__(OffsetDeterministic_name, OffsetDeterministic_info)
+#         self.offset_initialization = offset_initialization
         
 
-    def create_effect_model(self):
-        # Creates a simple deterministic model applying an offset.
+#     def create_effect_model(self):
+#         # Creates a simple deterministic model applying an offset.
 
-        offset = pyro.param(self.id, self.offset_initialization)
+#         offset = pyro.param(self.id, self.offset_initialization)
         
-        def apply_offset(data):
-            data + offset
+#         def apply_offset(data):
+#             data + offset
         
-        return apply_offset 
+#         return apply_offset 
     
-    def create_effect_guide(self):
-        # Creates an empty guide
-        pass
+#     def create_effect_guide(self):
+#         # Creates an empty guide
+#         pass
 
 
-    def __repr__(self):
-        return "{}".format(self.id)
+#     def __repr__(self):
+#         return "{}".format(self.id)
 
 
 

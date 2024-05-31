@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This module provides the CalipyDAG, CalipyNode, and CalipyEdge base classes that
-enable construction of the durected acyclic graph used for model and guide
-representation
+This module provides the CalipyProbModel base class that is useful for representing,
+modifying, analyzing, and optimizing instrument models based on observed data.
+Furthermore, this module defines the CalipyDAG, CalipyNode, and CalipyEdge base
+classes that enable construction of the durected acyclic graph used for model 
+and guide representation.
 
 The classes are
+    CalipyProbModel: Short for Calipy Probabilistic Model. Base class providing
+    functionality for integrating instruments, effects, and data into one 
+    CalipyProbModel object. Allows simulation, inference, and illustration of 
+    deep instrument models.
+    
     CalipyDAG: Class representing the directed acyclic graph underlying the model
     or the guide. Contains nodes and edges together with methods of manipulating
     them and converting them to executable and inferrable models and guides.
@@ -19,7 +26,15 @@ The classes are
     CalipyEdge: Class representing the edges in the DAG. This class contains as
     attributes source and target nodes and a dictionary edge_dict that summarizes
     the data flow along the edges. 
-
+  
+The CalipyProbModel class provides a comprehensive representation of the interactions
+between instruments and data. It contains several subobjects representing the
+physical instrument, random and systematic effects originating from instrument
+or environment, unknown parameters and variables, constraints, and the objective
+function. All of these subobjects form a probabilistic model that can be sampled
+and conditioned on measured data. For more information, see the separate
+documentation entries the CalipyProbModel class, for the subobjects, or the tutorial.        
+        
 
 The script is meant solely for educational and illustrative purposes. Written by
 Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
@@ -32,7 +47,8 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 import pyro
-from calipy.core.utils import CalipyRegistry
+import copy
+from calipy.core.utils import CalipyRegistry, format_mro
 from abc import ABC, abstractmethod
 
 
@@ -76,7 +92,7 @@ class CalipyDAG():
         pass
     
     def __repr__(self):
-        return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
+        return "{}(name: {})".format(self.dtype, self.name)
     
 
 
@@ -90,14 +106,24 @@ class CalipyNode(ABC):
     flow and the dependencies between the nodes. 
     """
     
-        
+    _node_counters = 0   
+    
+    
     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
-        
+                
         # Basic infos
+        # self.dtype_chain = [classname for classname in self.__class__.__mro__]
+        self.dtype_chain = format_mro(self.__class__)
         self.dtype = self.__class__.__name__
         self.type = node_type
         self.name = node_name
         self.info = info_dict
+        
+        # Upon instantiation increment _node_counters dict
+        CalipyNode._node_counters += 1
+        
+        self.node_nr = copy.copy(CalipyNode._node_counters)
+        # self.id = "{}_{}_{}_{}".format(self.dtype_chain, self.type, self.name, self.node_number)
         
         self.probmodel = kwargs.get('probmodel', empty_probmodel)
         self.model_or_guide = kwargs.get('model_or_guide', 'model')
@@ -112,6 +138,14 @@ class CalipyNode(ABC):
 
         # Create a unique identifier based on type, name, and dag position
         # self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
+        
+    @abstractmethod
+    def forward(self, input_vars, observations = None):
+        pass
+    
+    def render(self, input_vars = None):
+        graphical_model = pyro.render_model(model = self.forward, model_args= input_vars, render_distributions=True, render_params=True)
+        return graphical_model
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
@@ -159,6 +193,7 @@ class CalipyEdge(dict):
 
 
 
+
 """
     CalipyProbModel class ----------------------------------------------------
 """
@@ -182,6 +217,26 @@ class CalipyProbModel():
 
 
         self.id = "{}_{}".format(self.type, self.name)
+    
+        
+    def train(self, model_fn, guide_fn, data, optim_opts,):
+        self.optim_opts = optim_opts
+        self.optimizer = optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
+        self.loss = optim_opts.get('loss', pyro.infer.Trace_ELBO())
+        self.n_steps = optim_opts.get('n_steps', 1000)
+        self.svi = pyro.infer.SVI(model_fn, guide_fn, self.optimizer, self.loss)
+        
+        self.loss_sequence = []
+        for step in range(self.n_steps):
+            loss = self.svi.step(observations = data)
+            if step % 100 == 0:
+                print('epoch: {} ; loss : {}'.format(step, loss))
+            else:
+                pass
+            self.loss_sequence.append(loss)
+            
+        return self.loss_sequence
+    
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 
@@ -201,17 +256,5 @@ class EmptyProbModel(CalipyProbModel):
 
 empty_probmodel = EmptyProbModel(name_EmptyProbModel)
 
-
-
-
-
-
-dag = CalipyDAG('daggie')
-node1 = CalipyNode(node_type="Type1", node_name="Node1")
-node2 = CalipyNode(node_type="Type2", node_name="Node2")
-dag.add_node(node1)
-dag.add_node(node2)
-dag.add_edge("Node1", "Node2")
-dag.display()
 
 

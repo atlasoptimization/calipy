@@ -7,5 +7,5 @@ from . import effects
 from . import illustrator
 from . import instruments
 from . import optimizer
-from . import probmodel
+from . import base
 from . import utils

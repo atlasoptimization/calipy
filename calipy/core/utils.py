@@ -45,3 +45,32 @@ class CalipyRegistry:
     def list_items(self):
         for key, value in self.registry.items():
             print(f"{key}: {value}")
+            
+            
+
+"""
+    Support functions
+"""
+
+def multi_unsqueeze(input_tensor, dims):
+    for dim in sorted(dims):
+        output_tensor = input_tensor.unsqueeze(dim)
+    return output_tensor
+
+
+
+def format_mro(cls):
+    # Get the MRO tuple and extract class names
+    mro_names = [cls.__name__ for cls in cls.__mro__ if cls.__name__ not in ('object', 'ABC')]
+    # Reverse the list to start from 'object' and move up to the most derived class
+    mro_names.reverse()
+    # Join the class names with underscores
+    formatted_mro = '_'.join(mro_names)
+    return formatted_mro
+
+# def format_mro(self):
+#     # Retrieve the MRO, filter out 'object' and 'ABC', and get class names
+#     mro_names = [cls.__name__ for cls in self.__mro__ if cls.__name__ not in ('object', 'ABC')]
+#     mro_names.reverse()  # Reverse to start from the least specific to the most specific
+#     # Join class names into a single string
+#     return '_'.join(mro_names)
