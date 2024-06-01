@@ -53,8 +53,9 @@ class CalipyRegistry:
 """
 
 def multi_unsqueeze(input_tensor, dims):
+    output_tensor = input_tensor
     for dim in sorted(dims):
-        output_tensor = input_tensor.unsqueeze(dim)
+        output_tensor = output_tensor.unsqueeze(dim)
     return output_tensor
 
 

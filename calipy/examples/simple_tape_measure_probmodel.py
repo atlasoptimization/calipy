@@ -142,7 +142,7 @@ noise_dict = {'name' : noise_name, 'type': noise_type, 'info': noise_info}
 
 # i) Instantiate probabilistic model
 
-probmodel_TapeMeasure = CalipyProbModel('probmodel_TapeMeasure', 'example', {})
+# probmodel_TapeMeasure = CalipyProbModel('probmodel_TapeMeasure', 'example', {})
 
 
 # i) Create TapeMeasure class
@@ -186,20 +186,48 @@ def guide_fn(observations = None):
     5. Build probmodel & perform inference
 """
 
-# Set up probmodel
-tape_measure_probmodel = CalipyProbModel(model_name = 'Tape measure', info_dict = {})
+# # Set up probmodel
+# tape_measure_probmodel = CalipyProbModel(name = 'Tape measure')
 
-# Integrate tape_measure
-tape_measure_probmodel
+# # set up optimization
+# adam = pyro.optim.NAdam({"lr": 0.01})
+# elbo = pyro.infer.Trace_ELBO()
+# n_steps = 500
+
+# optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
+
+# # run and log optimization
+# optim_results = tape_measure_probmodel.train(model_fn, guide_fn, data, optim_opts)
+
 
 # set up optimization
 adam = pyro.optim.NAdam({"lr": 0.01})
 elbo = pyro.infer.Trace_ELBO()
+n_steps = 500
 
-optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': 500}
+optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
+class TapeMeasureProbModel(CalipyProbModel):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        self.tape_measure = tape_measure
+        # self.output_data = data
+        # self.input_data = None
+        
+    def model(self, input_vars = None, observations = None):
+        output = tape_measure.forward(observations = observations)
+        return output
+    def guide(self, input_vars = None, observations = None):
+        output = guide_fn(observations = observations)
+        return output
+    
+tape_measure_probmodel = TapeMeasureProbModel(name = 'concrete_probmodel')
+    
 # run and log optimization
-optim_results = tape_measure_probmodel.train(model_fn, guide_fn, data, optim_opts)
+input_data = None
+output_data = data
+optim_results = tape_measure_probmodel.train(input_data, output_data, optim_opts)
 
 
     
@@ -209,7 +237,7 @@ optim_results = tape_measure_probmodel.train(model_fn, guide_fn, data, optim_opt
     6. Analyse results and illustrate
 """
 
-
+plt.plot(optim_results)
 
 
 

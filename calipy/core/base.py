@@ -123,18 +123,18 @@ class CalipyNode(ABC):
         CalipyNode._node_counters += 1
         
         self.node_nr = copy.copy(CalipyNode._node_counters)
-        # self.id = "{}_{}_{}_{}".format(self.dtype_chain, self.type, self.name, self.node_number)
+        self.id = "{}_{}_{}_{}".format(self.dtype_chain, self.type, self.name, self.node_nr)
         
-        self.probmodel = kwargs.get('probmodel', empty_probmodel)
+        # self.probmodel = kwargs.get('probmodel', empty_probmodel)
         self.model_or_guide = kwargs.get('model_or_guide', 'model')
         
-        if self.model_or_guide == 'model':
-            self.probmodel.model_dag.node_registry.register(self.name, self)
-        elif self.model_or_guide == 'guide':
-            self.probmodel.guide_dag.node_registry.register(self.name, self)
-        else :
-            raise ValueError("KW Argument model_or_guide for class {} requires "
-                             "values in ['model', 'guide'].".format(self.dtype))
+        # if self.model_or_guide == 'model':
+        #     self.probmodel.model_dag.node_registry.register(self.name, self)
+        # elif self.model_or_guide == 'guide':
+        #     self.probmodel.guide_dag.node_registry.register(self.name, self)
+        # else :
+        #     raise ValueError("KW Argument model_or_guide for class {} requires "
+        #                      "values in ['model', 'guide'].".format(self.dtype))
 
         # Create a unique identifier based on type, name, and dag position
         # self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
@@ -144,7 +144,7 @@ class CalipyNode(ABC):
         pass
     
     def render(self, input_vars = None):
-        graphical_model = pyro.render_model(model = self.forward, model_args= input_vars, render_distributions=True, render_params=True)
+        graphical_model = pyro.render_model(model = self.forward, model_args= (input_vars,), render_distributions=True, render_params=True)
         return graphical_model
     
     def __repr__(self):
@@ -156,13 +156,11 @@ class CalipyNode(ABC):
 
 class CalipyEdge(dict):
     """
-    The CalipyEdge class provides a comprehensive representation of a specific 
-    entity like data, instrument, effect, or quantity in terms of a node in a
-    graph that describes dependence and relationships among the entities. It 
-    provides attributes like depends_on and contributes_to that list ancestor and
-    descendent nodes detailing the data flow between nodes. It contains setter
-    and getter methods to investigate and manipulate the DAG that underlies the
-    embedding procedure into pyro.
+    The CalipyEdge class provides a comprehensive representation of relationas
+    between entities like data, instrument, effect, or quantity. They help forming
+    a graph that describes dependence and relationships among the entities. In
+    particular it records the dimensionality of the flow of information between
+    the nodes that form the DAG that underlies the embedding procedure into pyro.
     """
     
         
@@ -174,16 +172,16 @@ class CalipyEdge(dict):
         self.name = node_name
         self.info = info_dict
         
-        self.probmodel = kwargs.get('probmodel', empty_probmodel)
+        # self.probmodel = kwargs.get('probmodel', empty_probmodel)
         self.model_or_guide = kwargs.get('model_or_guide', 'model')
         
-        if self.model_or_guide == 'model':
-            self.probmodel.model_dag.node_registry.register(self.name, self)
-        elif self.model_or_guide == 'guide':
-            self.probmodel.guide_dag.node_registry.register(self.name, self)
-        else :
-            raise ValueError("KW Argument model_or_guide for class {} requires "
-                             "values in ['model', 'guide'].".format(self.dtype))
+        # if self.model_or_guide == 'model':
+        #     self.probmodel.model_dag.node_registry.register(self.name, self)
+        # elif self.model_or_guide == 'guide':
+        #     self.probmodel.guide_dag.node_registry.register(self.name, self)
+        # else :
+        #     raise ValueError("KW Argument model_or_guide for class {} requires "
+        #                      "values in ['model', 'guide'].".format(self.dtype))
 
         # Create a unique identifier based on type, name, and dag position
         # self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
@@ -202,33 +200,42 @@ class CalipyEdge(dict):
 # Probmodel class determines attributes and methods for summarizing and accessing
 # data, instruments, effects, and quantities of the whole probabilistic model.
 
-class CalipyProbModel():
+class CalipyProbModel(CalipyNode):
 
     # i) Initialization
+    def __init__(self, type = None, name = None, info = None):
+        
+        # Basic infos
+        super().__init__(node_type = type, node_name = name, info_dict = info)
+        self.input_data = None
+        self.output_data = None
+        # self.model_dag = CalipyDAG('Model_DAG')
+        # self.guide_dag = CalipyDAG('Guide_DAG')
     
-    def __init__(self, model_type = None, model_name = None, info_dict = {}):
-        self.dtype = self.__class__.__name__
-        self.type = model_type
-        self.name = model_name
-        self.info_dict = info_dict
-        self.model_dag = CalipyDAG('Model_DAG')
-        self.guide_dag = CalipyDAG('Guide_DAG')
+    def forward(self):
+        pass
+
+        # self.id = "{}_{}".format(self.type, self.name)
     
-
-
-        self.id = "{}_{}".format(self.type, self.name)
+    @abstractmethod
+    def model(self, input_data, output_data):
+        pass
+    
+    @abstractmethod
+    def guide(self, input_data, output_data):
+        pass
     
         
-    def train(self, model_fn, guide_fn, data, optim_opts,):
+    def train(self, input_data, output_data, optim_opts):
         self.optim_opts = optim_opts
         self.optimizer = optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
         self.loss = optim_opts.get('loss', pyro.infer.Trace_ELBO())
         self.n_steps = optim_opts.get('n_steps', 1000)
-        self.svi = pyro.infer.SVI(model_fn, guide_fn, self.optimizer, self.loss)
+        self.svi = pyro.infer.SVI(self.model, self.guide, self.optimizer, self.loss)
         
         self.loss_sequence = []
         for step in range(self.n_steps):
-            loss = self.svi.step(observations = data)
+            loss = self.svi.step(input_vars = input_data, observations = output_data)
             if step % 100 == 0:
                 print('epoch: {} ; loss : {}'.format(step, loss))
             else:
@@ -242,19 +249,25 @@ class CalipyProbModel():
 
 # i) EmptyProbModel class: Catchall class for instruments unassociated to any specific 
 # probmodel
-type_EmptyProbModel = 'empty_probmodel'
-name_EmptyProbModel = 'base'
-info_dict_EmptyProbModel = {}
+# type_EmptyProbModel = 'empty_probmodel'
+# name_EmptyProbModel = 'base'
+# info_dict_EmptyProbModel = {}
 
-class EmptyProbModel(CalipyProbModel):
+# class EmptyProbModel(CalipyProbModel):
         
-    def __init__(self, model_name):
-        super().__init__(model_type = type_EmptyProbModel, 
-                         model_name = model_name, 
-                         info_dict = info_dict_EmptyProbModel)
+#     def __init__(self, model_name):
+#         super().__init__(model_type = type_EmptyProbModel, 
+#                          model_name = model_name, 
+#                          info_dict = info_dict_EmptyProbModel)
         
 
-empty_probmodel = EmptyProbModel(name_EmptyProbModel)
+# empty_probmodel = EmptyProbModel(name_EmptyProbModel)
 
+# ep_type = 'empty_probmodel'
+# ep_name = 'base'
+# ep_info = {'description': 'Demonstrator for CalipyProbModel class'}
+# ep_dict = {'name': ep_name, 'type': ep_type, 'info' : ep_info}        
+
+# empty_probmodel = CalipyProbModel(**ep_dict)
 
 
