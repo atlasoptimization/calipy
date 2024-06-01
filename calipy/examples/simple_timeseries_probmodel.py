@@ -47,7 +47,7 @@ from calipy.core.utils import multi_unsqueeze
 # ii) Definitions
 
 n_ts = 5
-n_time = 10
+n_time = 30
 time = torch.linspace(0,1,n_time)
 
 n_coeff = 3 # second order polynomial drift
@@ -179,7 +179,7 @@ ts_dict = {'name': ts_name, 'type': ts_type, 'info' : ts_info}
 
 class TotalstationDrift(CalipyEffect):
         
-    def __init__(self, trend_shape_dict, noise_shape_dict, noise_plate_dict, **kwargs):
+    def __init__(self, var_shape_dict, trend_shape_dict, noise_shape_dict, noise_plate_dict, **kwargs):
         super().__init__(**kwargs)
         
         self.variance_model = Variance(var_shape_dict, **var_dict)
@@ -194,7 +194,7 @@ class TotalstationDrift(CalipyEffect):
 
 
 # Invoke tape_measure
-totalstation_drift = TotalstationDrift(trend_shape_dict, noise_shape_dict, noise_plate_dict, **ts_dict)
+totalstation_drift = TotalstationDrift(var_shape_dict, trend_shape_dict, noise_shape_dict, noise_plate_dict, **ts_dict)
 model_fn = totalstation_drift.forward
 input_vars_concrete = time.repeat([5,1])
 
