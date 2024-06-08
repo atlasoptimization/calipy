@@ -49,35 +49,7 @@ class CalipyInstrument(CalipyNode):
         
         
         
-    # def __init__(self, instrument_type = None, instrument_name = None, info_dict = {}, **kwargs):
-    #     if instrument_name is None:
-    #         raise ValueError(f"{self.__class__.__name__} requires a 'instrument_name' argument")
 
-    #     # basic data integration
-    #     self.dtype = self.__class__.__name__
-    #     self.type = instrument_type
-    #     self.name = instrument_name
-    #     self.info_dict = info_dict
-        
-        # assign to superior instance
-        # self.superior_instance = kwargs.get('superior_instance', empty_probmodel)
-        # self.superior_instance_dtype = self.superior_instance.dtype
-        # self.superior_instance_type = self.superior_instance.type
-        # self.superior_instance_name = self.superior_instance.name
-        # self.superior_instance_id = self.superior_instance.id
-        # self.id = "{}_{}".format(self.type, self.name)
-        # print("Initialized type: {} name: {}"
-        #       .format(self.type, self.name))
-        
-        # register data to probmodel
-        # CalipyRegistry.register(self.id, self)
-        
-        # if self.name in CalipyInstrument._registry:
-        #     print(f"Warning: An instrument with the name '{self.name}' already exists.")
-
-    # @abstractmethod
-    # def forward(self, input_data):
-    #     pass
     
 
 

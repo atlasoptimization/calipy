@@ -49,8 +49,6 @@ class CalipyEffect(CalipyNode):
     """
     
     
-    _effect_counters = {}
-    
     def __init__(self, type = None, name = None, info = None):
         
         # Basic infos
@@ -60,14 +58,6 @@ class CalipyEffect(CalipyNode):
         self._effect_model = None
         self._effect_guide = None
         
-        # Upon instantiation either create or increment _effect_counters dict
-        if name not in CalipyEffect._effect_counters:
-            CalipyEffect._effect_counters[name] = 0
-        else:
-            CalipyEffect._effect_counters[name] += 1
-
-        # Create a unique identifier based on the name and the current count
-        # self.id = "{}_{}".format(self.name, CalipyEffect._effect_counters[name])
     
 
     
@@ -138,14 +128,7 @@ class CalipyQuantity(CalipyNode):
         # Basic infos
         super().__init__(node_type = type, node_name = name, info_dict = info)
         
-        # Upon instantiation either create or increment _quantity_counters dict
-        if name not in CalipyQuantity._quantity_counters:
-            CalipyQuantity._quantity_counters[name] = 0
-        else:
-            CalipyQuantity._quantity_counters[name] += 1
 
-        # Create a unique identifier based on the name and the current count
-        # self.id = "{}_{}_{}".format(self.super_effect_id, self.name, CalipyQuantity._quantity_counters[name])
         
 
     def __repr__(self):

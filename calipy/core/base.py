@@ -93,12 +93,71 @@ class CalipyDAG():
     
     def __repr__(self):
         return "{}(name: {})".format(self.dtype, self.name)
+  
     
+# NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
+# configurations for a CalipyNode object. Provides functionality for dictionary-
+# like access and automated construction.
+
+class NodeStructure(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.description = {}
+        self.shape_example = {}
+
+    def set_shape(self, shape_name, shape_value, shape_description):
+        self[shape_name] = shape_value
+        self.description[shape_name] = shape_description
+        self.shape_example[shape_name] = shape_value
+
+    def set_plate_lists(self, plate_name, plate_size, plate_dim, plate_description):
+        self[plate_name] = {'size': plate_size, 'dim': plate_dim}
+        self.description[plate_name] = plate_description
+
+    # @classmethod
+    # def check_structure(cls, node_class, instance):
+    #     """ Checks if the instance has all the keys and correct structure as the class template """
+    #     missing_keys = [key for key in node_class.example_node_structure.keys() if key not in instance]
+    #     if missing_keys:
+    #         return False, missing_keys
+    #     return True, []
+
+    # @classmethod
+    # def create_from_example(cls, **updates):
+    #     """ Create a new NodeStructure based on the example but with updated values """
+    #     new_structure = cls(cls.example_node_structure)
+    #     new_structure.update(updates)
+    #     return new_structure
+    
+
+    # def __getitem__(self, key):
+    #     if key not in self:
+    #         self[key] = None  # Automatically add the key with None value if not present
+    #     return super().__getitem__(key)
+
+    # def __setitem__(self, key, value):
+    #     if isinstance(value, tuple) and len(value) == 2:
+    #         # Expect value to be a tuple (actual_value, description)
+    #         actual_value, description = value
+    #         super().__setitem__(key, actual_value)
+    #         self.description[key] = description
+    #     else:
+    #         super().__setitem__(key, value)
+
+    # def add_description(self, key, description):
+    #     self.description[key] = description
+
+    # def __str__(self):
+    #     structure_description = super().__str__()
+    #     meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
+    #     return f"Structure: {structure_description}\nMetadata: {meta_description}"
+
 
 
 # Node class is basis for data, instruments, effects, and quantities of calipy.
 # Method and attributes are used mostly for abstract operations like DAG construction
 # and execution
+
 
 class CalipyNode(ABC):
     """
@@ -106,7 +165,7 @@ class CalipyNode(ABC):
     flow and the dependencies between the nodes. 
     """
     
-    _node_counters = 0   
+    _instance_count = {}  # Class-level dictionary to keep count of instances per subclass
     
     
     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
@@ -119,14 +178,19 @@ class CalipyNode(ABC):
         self.name = node_name
         self.info = info_dict
         
-        # Upon instantiation increment _node_counters dict
-        CalipyNode._node_counters += 1
         
-        self.node_nr = copy.copy(CalipyNode._node_counters)
-        self.id = "{}_{}_{}_{}".format(self.dtype_chain, self.type, self.name, self.node_nr)
+        # Build id
         
-        # self.probmodel = kwargs.get('probmodel', empty_probmodel)
-        self.model_or_guide = kwargs.get('model_or_guide', 'model')
+        # Using self.__class__ to get the class of the current instance
+        for cls in reversed(self.__class__.__mro__[:-2]):
+            if cls in CalipyNode._instance_count:
+                CalipyNode._instance_count[cls] += 1
+            else:
+                CalipyNode._instance_count[cls] = 1
+        self.id = self._generate_id()
+        
+
+        # self.model_or_guide = kwargs.get('model_or_guide', 'model')
         
         # if self.model_or_guide == 'model':
         #     self.probmodel.model_dag.node_registry.register(self.name, self)
@@ -136,9 +200,16 @@ class CalipyNode(ABC):
         #     raise ValueError("KW Argument model_or_guide for class {} requires "
         #                      "values in ['model', 'guide'].".format(self.dtype))
 
-        # Create a unique identifier based on type, name, and dag position
-        # self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
+
         
+    def _generate_id(self):
+        # Generate the ID including all relevant class counts in the MRO
+        id_parts = []
+        for cls in reversed(self.__class__.__mro__[:-2]):
+            count = CalipyNode._instance_count.get(cls, 0)
+            id_parts.append(f"{cls.__name__}_{count}")
+        return '__'.join(id_parts)
+    
     @abstractmethod
     def forward(self, input_vars, observations = None):
         pass
@@ -146,6 +217,24 @@ class CalipyNode(ABC):
     def render(self, input_vars = None):
         graphical_model = pyro.render_model(model = self.forward, model_args= (input_vars,), render_distributions=True, render_params=True)
         return graphical_model
+    
+    @classmethod
+    def check_node_structure(cls, node_structure):
+        """ Checks if the node_structure instance has all the keys and correct structure as the class template """
+        if hasattr(cls, 'example_node_structure'):
+            missing_keys = [key for key in cls.example_node_structure.keys() if key not in node_structure]
+            if missing_keys:
+                return False, missing_keys
+            return True, []
+        else:
+            raise NotImplementedError("This class does not define an example_node_structure.")
+
+    @classmethod
+    def build_node_structure(cls, basic_node_structure, **updates):
+        """ Create a new NodeStructure based on basic_node_structure but with updated values """
+        new_structure = NodeStructure(basic_node_structure)
+        new_structure.update(updates)
+        return new_structure
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
