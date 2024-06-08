@@ -100,7 +100,7 @@ class CalipyDAG():
 # configurations for a CalipyNode object. Provides functionality for dictionary-
 # like access and automated construction.
 
-class NodeStructure(dict):
+class NodeStructure():
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.description = {}
@@ -108,12 +108,13 @@ class NodeStructure(dict):
         self.plates = {}
         self.plate_stacks = {}
 
-    def set_shape(self, shape_name, shape_value, shape_description):
+    def set_shape(self, shape_name, shape_value, shape_description = None):
         self.shapes[shape_name] = shape_value
-        self.description[shape_name] = shape_description
+        if shape_description is not None:
+            self.description[shape_name] = shape_description
         # self.shape_example[shape_name] = shape_value
 
-    def set_plate_stack(self, stack_name, plate_data_list, stack_description):
+    def set_plate_stack(self, stack_name, plate_data_list, stack_description = None):
         """
         Set stack of plate configurations from a list of tuples and a name.
         Each tuple should contain (plate_name, plate_size, plate_dim, plate_description).
@@ -127,12 +128,25 @@ class NodeStructure(dict):
         #     self.plates[plate_name] = {'name': plate_name, 'size': plate_size, 'dim': plate_dim}
         #     self.description[plate_name] = plate_description
         
-        self.description[stack_name] = stack_description
+        if stack_description is not None:
+            self.description[stack_name] = stack_description
+            
         self.plate_stacks[stack_name] = []
         for plate_name, plate_size, plate_dim, plate_description in plate_data_list:
             self.plates[plate_name] = pyro.plate(plate_name, size = plate_size, dim = plate_dim)
             self.plate_stacks[stack_name].append(self.plates[plate_name])
             self.description[plate_name] = plate_description
+            
+    def update(self, shape_updates, plate_stack_updates):
+        new_node_structure = copy.deepcopy(self)
+        for shape_name, shape_value in  shape_updates.items():
+            new_node_structure.set_shape(shape_name, shape_value)
+        for stack_name, plate_data_list in plate_stack_updates.items():
+            new_node_structure.set_plate_stack(stack_name, plate_data_list)
+            
+        return new_node_structure
+        
+            
             
     def print_shapes_and_plates(self):
         print('\nShapes :')
@@ -151,6 +165,7 @@ class NodeStructure(dict):
         structure_description = super().__str__()
         meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
         return f"Structure: {structure_description}\nMetadata: {meta_description}"
+
 
 
 
@@ -238,10 +253,10 @@ class CalipyNode(ABC):
             raise NotImplementedError("This class does not define an example_node_structure.")
 
     @classmethod
-    def build_node_structure(cls, basic_node_structure, **updates):
+    def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
         """ Create a new NodeStructure based on basic_node_structure but with updated values """
-        new_structure = NodeStructure(basic_node_structure)
-        new_structure.update(updates)
+        new_structure = copy.deepcopy(basic_node_structure)
+        new_structure.update(shape_updates, plate_stack_updates)
         return new_structure
     
     def __repr__(self):

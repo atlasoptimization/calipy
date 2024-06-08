@@ -114,7 +114,7 @@ class DeterministicOffset(CalipyQuantity):
 # ns = DeterministicOffset.example_node_structure
 # det = DeterministicOffset(ns)
 # DeterministicOffset.check_node_structure(ns)
-# updates = {'batch_shape': (20,)}
+# shape_updates = {'batch_shape' : (33,)}
 # DeterministicOffset.build_node_structure(ns, **updates)
 # det.render()
 # det.render_com_graph()
@@ -146,7 +146,12 @@ class NoiseAddition(CalipyEffect):
                 stack.enter_context(plate)
             obs = pyro.sample('obs', self.noise_dist, obs = observations)
         return obs
-    
+
+# ns = NoiseAddition.example_node_structure
+# noise = NoiseAddition(ns)
+# shape_updates = {'batch_shape' : (33,)}
+# plate_stack_updates = {'2d_noise_stack' : [('batch_plate_1', 33, -1, 'new shape now')]}
+# new_ns = ns.update(shape_updates, plate_stack_updates)
 
 
 # offset_shape_dict = {'batch_shape' : (n_tape,),
