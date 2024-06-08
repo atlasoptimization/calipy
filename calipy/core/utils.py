@@ -12,6 +12,9 @@ The script is meant solely for educational and illustrative purposes. Written by
 Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
+import networkx as nx
+import matplotlib.pyplot as plt
+
 
 """
     CalipyRegistry class
@@ -69,9 +72,40 @@ def format_mro(cls):
     formatted_mro = '_'.join(mro_names)
     return formatted_mro
 
-# def format_mro(self):
-#     # Retrieve the MRO, filter out 'object' and 'ABC', and get class names
-#     mro_names = [cls.__name__ for cls in self.__mro__ if cls.__name__ not in ('object', 'ABC')]
-#     mro_names.reverse()  # Reverse to start from the least specific to the most specific
-#     # Join class names into a single string
-#     return '_'.join(mro_names)
+
+
+def illustrate_trace(trace):
+    
+    # Create a directed graph
+    G = nx.DiGraph()
+    
+    # Add nodes and edges based on the trace
+    for node_name, node_info in trace.nodes.items():
+        if node_info["type"] == "sample":
+            G.add_node(node_name, **node_info)
+            if node_info["is_observed"] == False:
+                parent_name = node_info["fn"].base_dist.loc if hasattr(node_info["fn"], 'base_dist') else node_info["fn"].loc
+                if isinstance(parent_name, str) and parent_name in trace.nodes:
+                    G.add_edge(parent_name, node_name)
+    
+    # Draw the network graph
+    pos = nx.spring_layout(G)  # positions for all nodes
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=4000, edge_color='k', linewidths=1, font_size=15)
+    
+    # Draw node labels
+    labels = {node: node for node in G.nodes()}
+    nx.draw_networkx_labels(G, pos, labels, font_size=16)
+    
+    plt.title("Pyro Model Trace Graph")
+    plt.show()
+    
+    
+
+
+
+
+
+
+
+
+

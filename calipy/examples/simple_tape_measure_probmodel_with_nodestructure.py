@@ -92,18 +92,18 @@ class DeterministicOffset(CalipyQuantity):
     example_node_structure = NodeStructure()
     example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
     example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
-    example_node_structure.set_plate_lists('data_plate', 100, -1, 'Data batching plate')
+    # example_node_structure.set_plate_lists('data_plate', 100, -1, 'Data batching plate')
 
     
     def __init__(self, node_structure, **kwargs):  
         super().__init__(**kwargs)
         self.node_structure = node_structure
-        self.batch_shape = self.node_structure['batch_shape']
-        self.event_shape = self.node_structure['event_shape']
+        self.batch_shape = self.node_structure.shapes['batch_shape']
+        self.event_shape = self.node_structure.shapes['event_shape']
         self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
                                                 dims = [0 for dim in self.batch_shape])
         
-    def forward(self):
+    def forward(self, input_vars = None, observations = None):
         self.offset = pyro.param('offset', init_tensor = multi_unsqueeze(torch.zeros(self.batch_shape), 
                                             dims = [len(self.batch_shape) for dim in self.event_shape]))
         output = self.extension_tensor * self.offset
@@ -116,25 +116,36 @@ class DeterministicOffset(CalipyQuantity):
 # DeterministicOffset.check_node_structure(ns)
 # updates = {'batch_shape': (20,)}
 # DeterministicOffset.build_node_structure(ns, **updates)
+# det.render()
+# det.render_com_graph()
+
+
+# ii) Addition of noise
+
+class NoiseAddition(CalipyEffect):
     
-
-
-# # ii) Addition of noise
-
-# class WhiteNoise(CalipyEffect):
-#     def __init__(self, noise_shape_dict, noise_plate_dict, **kwargs):
-#         super().__init__(**kwargs)
-#         self.batch_shape = noise_shape_dict['batch_shape']
-#         self.event_shape = noise_shape_dict['event_shape']
-#         self.plate_dict = noise_plate_dict
-#     def forward(self, mean, observations = None):
-#         self.noise_dist = pyro.distributions.Normal(loc = mean, scale = sigma_true)
-#         # Add all plates to the context stack
-#         with contextlib.ExitStack() as stack:
-#             for plate in self.plate_dict.values():
-#                 stack.enter_context(plate)
-#             obs = pyro.sample('obs', self.noise_dist, obs = observations)
-#         return obs
+    # Initialize the class-level NodeStructure
+    example_node_structure = NodeStructure()
+    example_node_structure.set_shape('batch_shape', (10, 5), 'Batch shape description')
+    example_node_structure.set_shape('event_shape', (0, ), 'Event shape description')
+    example_node_structure.set_plate_stack('2d_noise_stack', [('batch_plate_1', 10, -2, 'plate denoting independence in row dim'),
+                                                              ('batch_plate_2', 5, -1, 'plate denoting independence in col dim')],
+                                           'Plate stack for noise in 2 independent dims')
+    
+    def __init__(self, node_structure, **kwargs):
+        super().__init__(**kwargs)
+        self.batch_shape = node_structure.shapes['batch_shape']
+        self.event_shape = node_structure.shapes['event_shape']
+        self.plate_stack = node_structure.plate_stacks['2d_noise_stack']
+    def forward(self, mean, standard_deviation, observations = (None,)):
+        self.noise_dist = pyro.distributions.Normal(loc = mean, scale = standard_deviation)
+        # Add all plates to the context stack
+        
+        with contextlib.ExitStack() as stack:
+            for plate in self.plate_dict.values():
+                stack.enter_context(plate)
+            obs = pyro.sample('obs', self.noise_dist, obs = observations)
+        return obs
     
 
 

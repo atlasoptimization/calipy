@@ -48,6 +48,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 import copy
+import torchviz
 from calipy.core.utils import CalipyRegistry, format_mro
 from abc import ABC, abstractmethod
 
@@ -103,54 +104,53 @@ class NodeStructure(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.description = {}
-        self.shape_example = {}
+        self.shapes = {}
+        self.plates = {}
+        self.plate_stacks = {}
 
     def set_shape(self, shape_name, shape_value, shape_description):
-        self[shape_name] = shape_value
+        self.shapes[shape_name] = shape_value
         self.description[shape_name] = shape_description
-        self.shape_example[shape_name] = shape_value
+        # self.shape_example[shape_name] = shape_value
 
-    def set_plate_lists(self, plate_name, plate_size, plate_dim, plate_description):
-        self[plate_name] = {'size': plate_size, 'dim': plate_dim}
-        self.description[plate_name] = plate_description
-
-    # @classmethod
-    # def check_structure(cls, node_class, instance):
-    #     """ Checks if the instance has all the keys and correct structure as the class template """
-    #     missing_keys = [key for key in node_class.example_node_structure.keys() if key not in instance]
-    #     if missing_keys:
-    #         return False, missing_keys
-    #     return True, []
-
-    # @classmethod
-    # def create_from_example(cls, **updates):
-    #     """ Create a new NodeStructure based on the example but with updated values """
-    #     new_structure = cls(cls.example_node_structure)
-    #     new_structure.update(updates)
-    #     return new_structure
+    def set_plate_stack(self, stack_name, plate_data_list, stack_description):
+        """
+        Set stack of plate configurations from a list of tuples and a name.
+        Each tuple should contain (plate_name, plate_size, plate_dim, plate_description).
+        
+        :param stack_name: String, represents the name of the stack of plates.
+        :param plate_data_list: List of tuples, each representing plate data.
+        """
+        # self.plate_stacks[stack_name] = []
+        # for plate_name, plate_size, plate_dim, plate_description in plate_data_list:
+        #     self.plate_stacks[stack_name].append({'name': plate_name, 'size': plate_size, 'dim': plate_dim})
+        #     self.plates[plate_name] = {'name': plate_name, 'size': plate_size, 'dim': plate_dim}
+        #     self.description[plate_name] = plate_description
+        
+        self.description[stack_name] = stack_description
+        self.plate_stacks[stack_name] = []
+        for plate_name, plate_size, plate_dim, plate_description in plate_data_list:
+            self.plates[plate_name] = pyro.plate(plate_name, size = plate_size, dim = plate_dim)
+            self.plate_stacks[stack_name].append(self.plates[plate_name])
+            self.description[plate_name] = plate_description
+            
+    def print_shapes_and_plates(self):
+        print('\nShapes :')
+        for shape_name, shape in self.shapes.items():
+            print(shape_name, '| ', shape, ' |', self.description[shape_name])
+            
+        print('\nPlates :')
+        for plate_name, plate in self.plates.items():
+            print(plate_name, '| size = {} , dim = {} |'.format(plate.size, plate.dim), self.description[plate_name])
+        
+        print('\nPlate_stacks :')
+        for stack_name, stack in self.plate_stacks.items():
+            print(stack_name, '| ', [plate.name for plate in stack], ' |', self.description[stack_name])
     
-
-    # def __getitem__(self, key):
-    #     if key not in self:
-    #         self[key] = None  # Automatically add the key with None value if not present
-    #     return super().__getitem__(key)
-
-    # def __setitem__(self, key, value):
-    #     if isinstance(value, tuple) and len(value) == 2:
-    #         # Expect value to be a tuple (actual_value, description)
-    #         actual_value, description = value
-    #         super().__setitem__(key, actual_value)
-    #         self.description[key] = description
-    #     else:
-    #         super().__setitem__(key, value)
-
-    # def add_description(self, key, description):
-    #     self.description[key] = description
-
-    # def __str__(self):
-    #     structure_description = super().__str__()
-    #     meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
-    #     return f"Structure: {structure_description}\nMetadata: {meta_description}"
+    def __str__(self):
+        structure_description = super().__str__()
+        meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
+        return f"Structure: {structure_description}\nMetadata: {meta_description}"
 
 
 
@@ -211,21 +211,29 @@ class CalipyNode(ABC):
         return '__'.join(id_parts)
     
     @abstractmethod
-    def forward(self, input_vars, observations = None):
+    def forward(self, input_vars = None, observations = None):
         pass
     
     def render(self, input_vars = None):
         graphical_model = pyro.render_model(model = self.forward, model_args= (input_vars,), render_distributions=True, render_params=True)
         return graphical_model
     
+    def render_comp_graph(self, input_vars = None):
+        output = self.forward(input_vars)
+        comp_graph = torchviz.make_dot(output)
+        return comp_graph
+    
     @classmethod
     def check_node_structure(cls, node_structure):
         """ Checks if the node_structure instance has all the keys and correct structure as the class template """
         if hasattr(cls, 'example_node_structure'):
-            missing_keys = [key for key in cls.example_node_structure.keys() if key not in node_structure]
+            missing_shape_keys = [key for key in cls.example_node_structure.shapes.keys() if key not in node_structure.shapes]
+            missing_plate_keys = [key for key in cls.example_node_structure.plates.keys() if key not in node_structure.plates]
+            missing_stack_keys = [key for key in cls.example_node_structure.plate_stacks.keys() if key not in node_structure.plate_stacks]
+            missing_keys = missing_shape_keys + missing_plate_keys + missing_stack_keys
             if missing_keys:
-                return False, missing_keys
-            return True, []
+                return False, 'keys missing: {}'.format(missing_keys)
+            return True, 'all keys from example_node_structure present in node_structure'
         else:
             raise NotImplementedError("This class does not define an example_node_structure.")
 
@@ -261,19 +269,7 @@ class CalipyEdge(dict):
         self.name = node_name
         self.info = info_dict
         
-        # self.probmodel = kwargs.get('probmodel', empty_probmodel)
-        self.model_or_guide = kwargs.get('model_or_guide', 'model')
-        
-        # if self.model_or_guide == 'model':
-        #     self.probmodel.model_dag.node_registry.register(self.name, self)
-        # elif self.model_or_guide == 'guide':
-        #     self.probmodel.guide_dag.node_registry.register(self.name, self)
-        # else :
-        #     raise ValueError("KW Argument model_or_guide for class {} requires "
-        #                      "values in ['model', 'guide'].".format(self.dtype))
 
-        # Create a unique identifier based on type, name, and dag position
-        # self.id = "{}_{}_{}".format(self.super_instrument_id, self.name, CalipyEffect._effect_counters[name])
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
