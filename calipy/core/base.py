@@ -49,7 +49,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import copy
 import torchviz
-from calipy.core.utils import CalipyRegistry, format_mro
+from calipy.core.utils import format_mro
 from abc import ABC, abstractmethod
 
 
@@ -57,43 +57,43 @@ from abc import ABC, abstractmethod
 # DAG class provides a data structure for a dag (directed acyclic graph) that 
 # encodes all dependencies and neighborhood relations of the CalipyNode objects.
 
-class CalipyDAG():
-    """
-    The CalipyDAG class provides a comprehensive representation of the relations
-    between entities like data, instruments, effects, or quantities. This is done
-    in terms of a directed acyclic graph. The class provides methods for constructing,
-    illustrating, and manipulating the dag as well as for translating it to pyro.
-    """
+# class CalipyDAG():
+#     """
+#     The CalipyDAG class provides a comprehensive representation of the relations
+#     between entities like data, instruments, effects, or quantities. This is done
+#     in terms of a directed acyclic graph. The class provides methods for constructing,
+#     illustrating, and manipulating the dag as well as for translating it to pyro.
+#     """
           
-    def __init__(self, name):
-        self.dtype = self.__class__.__name__
-        self.name = name
-        self.nodes = {}
-        self.edges = []
-        self.node_registry = CalipyRegistry()
+#     def __init__(self, name):
+#         self.dtype = self.__class__.__name__
+#         self.name = name
+#         self.nodes = {}
+#         self.edges = []
+#         self.node_registry = CalipyRegistry()
 
-    def add_node(self, node):
-        if node.name in self.nodes:
-            raise ValueError(f"Node {node.name} already exists.")
-        self.nodes[node.name] = node
+#     def add_node(self, node):
+#         if node.name in self.nodes:
+#             raise ValueError(f"Node {node.name} already exists.")
+#         self.nodes[node.name] = node
 
-    def add_edge(self, from_node, to_node):
-        if from_node not in self.nodes or to_node not in self.nodes:
-            raise ValueError("Both nodes must exist in the DAG before adding an edge.")
-        self.edges.append((from_node, to_node))
+#     def add_edge(self, from_node, to_node):
+#         if from_node not in self.nodes or to_node not in self.nodes:
+#             raise ValueError("Both nodes must exist in the DAG before adding an edge.")
+#         self.edges.append((from_node, to_node))
     
-    def display(self):
-        for node in self.nodes.values():
-            print(node)
-        for edge in self.edges:
-            print(f"{edge[0]} -> {edge[1]}")
+#     def display(self):
+#         for node in self.nodes.values():
+#             print(node)
+#         for edge in self.edges:
+#             print(f"{edge[0]} -> {edge[1]}")
     
-    def execute(self):
-        # Implement execution logic based on node dependencies
-        pass
+#     def execute(self):
+#         # Implement execution logic based on node dependencies
+#         pass
     
-    def __repr__(self):
-        return "{}(name: {})".format(self.dtype, self.name)
+#     def __repr__(self):
+#         return "{}(name: {})".format(self.dtype, self.name)
   
     
 # NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
@@ -110,7 +110,7 @@ class NodeStructure():
 
     def set_shape(self, shape_name, shape_value, shape_description = None):
         self.shapes[shape_name] = shape_value
-        if shape_description is not None:
+        if shape_description is not None or shape_name not in self.description.keys():
             self.description[shape_name] = shape_description
         # self.shape_example[shape_name] = shape_value
 
@@ -128,7 +128,7 @@ class NodeStructure():
         #     self.plates[plate_name] = {'name': plate_name, 'size': plate_size, 'dim': plate_dim}
         #     self.description[plate_name] = plate_description
         
-        if stack_description is not None:
+        if stack_description is not None or stack_name not in self.description.keys():
             self.description[stack_name] = stack_description
             
         self.plate_stacks[stack_name] = []
@@ -160,6 +160,21 @@ class NodeStructure():
         print('\nPlate_stacks :')
         for stack_name, stack in self.plate_stacks.items():
             print(stack_name, '| ', [plate.name for plate in stack], ' |', self.description[stack_name])
+    
+    def generate_template(self):
+        lines = ["node_structure = NodeStructure()"]
+        for shape_name, shape in self.shapes.items():
+            line = "node_structure.set_shape('{}', {}, 'Shape description')".format(shape_name, shape)
+            lines.append(line)
+        for stack_name, stack in self.plate_stacks.items():
+            line = "node_structure.set_plate_stack('{}', [".format(stack_name)
+            for plate in stack:
+                line += "({}, {}, {}, 'Plate description'),".format(plate.name, plate.size, plate.dim)
+            line = line[:-1]
+            line += ('], Plate stack description)')
+            lines.append(line)
+        return "\n".join(lines)
+    
     
     def __str__(self):
         structure_description = super().__str__()
@@ -255,9 +270,8 @@ class CalipyNode(ABC):
     @classmethod
     def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
         """ Create a new NodeStructure based on basic_node_structure but with updated values """
-        new_structure = copy.deepcopy(basic_node_structure)
-        new_structure.update(shape_updates, plate_stack_updates)
-        return new_structure
+        new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
+        return new_node_structure
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
@@ -266,28 +280,28 @@ class CalipyNode(ABC):
 # Edge class is basis for representation of dependencies between Node objects and
 # is used mostly for abstract operations related to DAG construction.
 
-class CalipyEdge(dict):
-    """
-    The CalipyEdge class provides a comprehensive representation of relationas
-    between entities like data, instrument, effect, or quantity. They help forming
-    a graph that describes dependence and relationships among the entities. In
-    particular it records the dimensionality of the flow of information between
-    the nodes that form the DAG that underlies the embedding procedure into pyro.
-    """
+# class CalipyEdge(dict):
+#     """
+#     The CalipyEdge class provides a comprehensive representation of relationas
+#     between entities like data, instrument, effect, or quantity. They help forming
+#     a graph that describes dependence and relationships among the entities. In
+#     particular it records the dimensionality of the flow of information between
+#     the nodes that form the DAG that underlies the embedding procedure into pyro.
+#     """
     
         
-    def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
+#     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
         
-        # Basic infos
-        self.dtype = self.__class__.__name__
-        self.type = node_type
-        self.name = node_name
-        self.info = info_dict
+#         # Basic infos
+#         self.dtype = self.__class__.__name__
+#         self.type = node_type
+#         self.name = node_name
+#         self.info = info_dict
         
 
     
-    def __repr__(self):
-        return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
+#     def __repr__(self):
+#         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 
 
 

@@ -26,7 +26,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 from abc import ABC, abstractmethod
-from calipy.core.utils import CalipyRegistry
+# from calipy.core.utils import CalipyRegistry
 from calipy.core.base import CalipyNode
 
 
