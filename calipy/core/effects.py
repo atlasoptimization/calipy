@@ -33,6 +33,7 @@ import torch
 from calipy.core.base import CalipyNode
 from calipy.core.utils import multi_unsqueeze, context_plate_stack
 from calipy.core.base import NodeStructure
+from pyro.distributions import constraints
 from abc import ABC, abstractmethod
 
 
@@ -61,49 +62,6 @@ class CalipyEffect(CalipyNode):
         self._effect_model = None
         self._effect_guide = None
         
-    
-
-    
-    # # Abstract methods for model and guide that subclasses need to provide
-    # @abstractmethod
-    # def create_effect_model(self):
-    #     # Subclasses must implement this method to create the specific effect model.
-    #     pass
-    
-    # @abstractmethod
-    # def create_effect_guide(self):
-    #     # Subclasses must implement this method to create the specific effect guide.
-    #     pass
-    
-
-    # # Fetch functions by lazy initialization from subclass definitions
-    # def get_effect_model(self):
-    #     # Lazy initialization for the effect model.
-    #     if self._effect_model is None:
-    #         self._effect_model = self.create_effect_model()
-    #     return self._effect_model
-
-    # def get_effect_guide(self):
-    #     # Lazy initialization for the effect guide.
-    #     if self._effect_guide is None:
-    #         self._effect_guide = self.create_effect_guide()
-    #     return self._effect_guide
-    
-    
-    # # Apply effect and call guide    
-    # def apply_effect(self, input_vars, data):
-    #     # Apply the effect to the data. This method uses the effect model.
-    #     model = self.get_effect_model()
-    #     return model(input_vars, data)
-    
-    # def call_guide(self, input_vars, data):
-    #     # Call the guide to sample from variational distribution
-    #     guide = self.get_effect_guide()
-    #     return guide(input_vars, data)
-    
-    # def __repr__(self):
-    #     return f"{self.__class__.__name__}(name={self.name})"
-
 
     
 
@@ -124,18 +82,13 @@ class CalipyQuantity(CalipyNode):
     that reflects this, quantities are local and cannot be shared between effects.
     """
     
-    _quantity_counters = {}
-    
     def __init__(self, type = None, name = None, info = None):
         
         # Basic infos
         super().__init__(node_type = type, node_name = name, info_dict = info)
         
 
-        
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name})"
+    
 
 
 
@@ -165,41 +118,37 @@ class KnownParam(CalipyQuantity):
 # different mean values that have been sampled 20 times each. 
 
 class UnknownParam(CalipyQuantity):
-    """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
-    forward() method emulates uncorrelated noise being added to an input. 
+    """ UnknownParam is a subclass of CalipyQuantity that produces an object whose
+    forward() method produces a parameter that is subject to inference.
 
     :param node_structure: Instance of NodeStructure that determines the internal
         structure (shapes, plate_stacks, plates, aux_data) completely.
     :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
+    :return: Instance of the UnknownParam class built on the basis of node_structure
+    :rtype: UnknownParam (subclass of CalipyQuantity subclass of CalipyNode)
     
     Example usage: Run line by line to investigate Class
         
     .. code-block:: python
     
-        # Investigate 2D noise ------------------------------------------------
+        # Investigate 2D bias tensor -------------------------------------------
         #
         # i) Imports and definitions
         import calipy
-        from calipy.core.effects import NoiseAddition
-        node_structure = NoiseAddition.example_node_structure
-        noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
+        from calipy.core.effects import UnknownParam
+        node_structure = UnknownParam.example_node_structure
+        bias_object = UnknownParam(node_structure, name = 'tutorial')
         #
-        # ii) Sample noise
-        mean = torch.zeros([10,5])
-        std = torch.ones([10,5])
-        noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
+        # ii) Produce bias value
+        bias = bias_object.forward()
         #
         # iii) Investigate object
-        noisy_meas_object.dtype_chain
-        noisy_meas_object.id
-        noisy_meas_object.noise_dist
-        noisy_meas_object.node_structure.description
-        noisy_meas_object.plate_stack
-        render_1 = noisy_meas_object.render((mean, std))
+        bias_object.dtype_chain
+        bias_object.id
+        bias_object.node_structure.description
+        render_1 = bias_object.render()
         render_1
-        render_2 = noisy_meas_object.render_comp_graph((mean, std))
+        render_2 = bias_object.render_comp_graph()
         render_2
     """
     
@@ -210,7 +159,7 @@ class UnknownParam(CalipyQuantity):
     example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
 
     # Class initialization consists in passing args and building shapes
-    def __init__(self, node_structure, **kwargs):  
+    def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
         super().__init__(**kwargs)
         self.node_structure = node_structure
         self.batch_shape = self.node_structure.shapes['batch_shape']
@@ -220,34 +169,42 @@ class UnknownParam(CalipyQuantity):
     
     # Forward pass is initializing and passing parameter
     def forward(self, input_vars = None, observations = None):
-        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = multi_unsqueeze(torch.zeros(self.batch_shape), 
+        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
                                             dims = [len(self.batch_shape) for dim in self.event_shape]))
         self.extended_param = self.extension_tensor * self.param
         return self.extended_param
 
 
+# ii) - a) Subclass of UnknownParam for variances (featuring positivity constraint)
+
+class UnknownVar(UnknownParam):
+    def __init__(self, node_structure, **kwargs):  
+        super().__init__(node_structure, constraint = constraints.positive, **kwargs)
+
+
+
 # iii) Random variable
 
-class RandomVar(CalipyQuantity):
+# class RandomVar(CalipyQuantity):
     
-    # Initialize the class-level NodeStructure
-    example_node_structure = NodeStructure()
-    example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
-    example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
+#     # Initialize the class-level NodeStructure
+#     example_node_structure = NodeStructure()
+#     example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
+#     example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
 
     
-    def __init__(self, node_structure, distribution, distribution_args, **kwargs):  
-        super().__init__(**kwargs)
-        self.node_structure = node_structure
-        self.distribution = distribution
+#     def __init__(self, node_structure, distribution, distribution_args, **kwargs):  
+#         super().__init__(**kwargs)
+#         self.node_structure = node_structure
+#         self.distribution = distribution
         
-        self.batch_shape = self.node_structure.shapes['batch_shape']
-        self.event_shape = self.node_structure.shapes['event_shape']
+#         self.batch_shape = self.node_structure.shapes['batch_shape']
+#         self.event_shape = self.node_structure.shapes['event_shape']
         
-    def forward(self, input_vars = None, observations = None):
-        self.distribution_args = distribution_args
+#     def forward(self, input_vars = None, observations = None):
+#         self.distribution_args = distribution_args
         
-        return output
+#         return output
 
 
 # iv) Gaussian process
@@ -360,44 +317,6 @@ class NoiseAddition(CalipyEffect):
 # series of 20 measurements for each of which the offset remains constant, the
 # corresponding OffsetDeterministic object would be a 5 x 20 tensor containing 5
 # different constants repeated 20 times per row.
-
-# Name and Info
-OffsetDeterministic_name = 'OffsetDeterministic'
-OffsetDeterministic_info =  'Class of errors that transform the input by adding deterministic '\
-    'but unknown offsets. Offsets can be different for different dimensions.'
-    
-# # Effect model
-# OffsetDeterministic_model = 
-
-# # Effect guide
-# OffsetDeterministic_guide =
-
-# # Effect details
-# OffsetDeterministic_details = {}
-
-# class OffsetDeterministic(CalipyEffect):
-#     def __init__(self, offset_initialization):
-#         super().__init__(OffsetDeterministic_name, OffsetDeterministic_info)
-#         self.offset_initialization = offset_initialization
-        
-
-#     def create_effect_model(self):
-#         # Creates a simple deterministic model applying an offset.
-
-#         offset = pyro.param(self.id, self.offset_initialization)
-        
-#         def apply_offset(data):
-#             data + offset
-        
-#         return apply_offset 
-    
-#     def create_effect_guide(self):
-#         # Creates an empty guide
-#         pass
-
-
-#     def __repr__(self):
-#         return "{}".format(self.id)
 
 
 

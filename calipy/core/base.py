@@ -122,11 +122,6 @@ class NodeStructure():
         :param stack_name: String, represents the name of the stack of plates.
         :param plate_data_list: List of tuples, each representing plate data.
         """
-        # self.plate_stacks[stack_name] = []
-        # for plate_name, plate_size, plate_dim, plate_description in plate_data_list:
-        #     self.plate_stacks[stack_name].append({'name': plate_name, 'size': plate_size, 'dim': plate_dim})
-        #     self.plates[plate_name] = {'name': plate_name, 'size': plate_size, 'dim': plate_dim}
-        #     self.description[plate_name] = plate_description
         
         if stack_description is not None or stack_name not in self.description.keys():
             self.description[stack_name] = stack_description
@@ -208,9 +203,7 @@ class CalipyNode(ABC):
         self.name = node_name
         self.info = info_dict
         
-        
         # Build id
-        
         # Using self.__class__ to get the class of the current instance
         for cls in reversed(self.__class__.__mro__[:-2]):
             if cls in CalipyNode._instance_count:
@@ -220,18 +213,6 @@ class CalipyNode(ABC):
         self.id = self._generate_id()
         self.id_short = self._generate_id_short()
         
-
-        # self.model_or_guide = kwargs.get('model_or_guide', 'model')
-        
-        # if self.model_or_guide == 'model':
-        #     self.probmodel.model_dag.node_registry.register(self.name, self)
-        # elif self.model_or_guide == 'guide':
-        #     self.probmodel.guide_dag.node_registry.register(self.name, self)
-        # else :
-        #     raise ValueError("KW Argument model_or_guide for class {} requires "
-        #                      "values in ['model', 'guide'].".format(self.dtype))
-
-
         
     def _generate_id(self):
         # Generate the ID including all relevant class counts in the MRO
@@ -240,6 +221,7 @@ class CalipyNode(ABC):
             count = CalipyNode._instance_count.get(cls, 0)
             id_parts.append(f"{cls.__name__}_{count}")
         return '__'.join(id_parts)
+    
     
     def _generate_id_short(self):
         # Generate the short ID including only node counts 
@@ -251,18 +233,22 @@ class CalipyNode(ABC):
                 
         return '__'.join(id_short_parts)
     
+    
     @abstractmethod
     def forward(self, input_vars = None, observations = None):
         pass
+    
     
     def render(self, input_vars = None):
         graphical_model = pyro.render_model(model = self.forward, model_args= (input_vars,), render_distributions=True, render_params=True)
         return graphical_model
     
+    
     def render_comp_graph(self, input_vars = None):
         output = self.forward(input_vars)
         comp_graph = torchviz.make_dot(output)
         return comp_graph
+    
     
     @classmethod
     def check_node_structure(cls, node_structure):
@@ -278,11 +264,13 @@ class CalipyNode(ABC):
         else:
             raise NotImplementedError("This class does not define an example_node_structure.")
 
+
     @classmethod
     def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
         """ Create a new NodeStructure based on basic_node_structure but with updated values """
         new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
         return new_node_structure
+    
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
@@ -372,27 +360,5 @@ class CalipyProbModel(CalipyNode):
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 
-# i) EmptyProbModel class: Catchall class for instruments unassociated to any specific 
-# probmodel
-# type_EmptyProbModel = 'empty_probmodel'
-# name_EmptyProbModel = 'base'
-# info_dict_EmptyProbModel = {}
-
-# class EmptyProbModel(CalipyProbModel):
-        
-#     def __init__(self, model_name):
-#         super().__init__(model_type = type_EmptyProbModel, 
-#                          model_name = model_name, 
-#                          info_dict = info_dict_EmptyProbModel)
-        
-
-# empty_probmodel = EmptyProbModel(name_EmptyProbModel)
-
-# ep_type = 'empty_probmodel'
-# ep_name = 'base'
-# ep_info = {'description': 'Demonstrator for CalipyProbModel class'}
-# ep_dict = {'name': ep_name, 'type': ep_type, 'info' : ep_info}        
-
-# empty_probmodel = CalipyProbModel(**ep_dict)
 
 

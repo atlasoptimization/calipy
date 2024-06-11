@@ -56,22 +56,3 @@ class CalipyInstrument(CalipyNode):
 """
     Instrument classes
 """
-
-
-# # i) EmptyInstrument class: Catchall class for effects unassociated to any specific 
-# # instrument
-# type_EmptyInstrument = 'empty_instrument'
-# name_EmptyInstrument = 'base'
-# info_dict_EmptyInstrument = {}
-
-# class EmptyInstrument(CalipyInstrument):
-        
-#     def __init__(self, instrument_name):
-#         super().__init__(instrument_type = type_EmptyInstrument, 
-#                          instrument_name = instrument_name, 
-#                          info_dict = info_dict_EmptyInstrument)
-        
-#     def forward(self):
-#         pass
-
-# empty_instrument = EmptyInstrument(name_EmptyInstrument)
