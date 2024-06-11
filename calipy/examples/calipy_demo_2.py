@@ -111,12 +111,13 @@ sigma_object = UnknownParam(sigma_ns, name = 'sigma')
 # case, everything is independent since we prescribe i.i.d. noise.
 # Here we modify the output of NoiseAddition.example_node_structure.generate_template()
 noise_1_ns = NodeStructure()
-noise_1_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_1, -1, 'independent noise tape 1')], 'Plate stack description')
+noise_1_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_1, -1, 'independent noise 1')], 'Stack containing noise')
 noise_1_object = NoiseAddition(noise_1_ns)
         
 noise_2_ns = NodeStructure()
-noise_2_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_2, -1, 'independent noise tape 2')], 'Plate stack description')
+noise_2_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_2, -1, 'independent noise 2')], 'Stack containing noise')
 noise_2_object = NoiseAddition(noise_2_ns) 
+
 
 
 """
@@ -124,17 +125,20 @@ noise_2_object = NoiseAddition(noise_2_ns)
 """
 
 
+# i) Define the probmodel class 
 
 class DemoProbModel(CalipyProbModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+    
+        # Integrate the nodes        
         self.mu_1_object = mu_1_object
         self.mu_2_object = mu_2_object
         self.sigma_object = sigma_object
         self.noise_1_object = noise_1_object 
         self.noise_2_object = noise_2_object
         
+    # Define model by forward passing
     def model(self, input_vars = None, observations = (None, None)):
         mu_1 = self.mu_1_object.forward()
         mu_2 = self.mu_2_object.forward()
@@ -142,11 +146,11 @@ class DemoProbModel(CalipyProbModel):
         
         output_1 = self.noise_1_object.forward((mu_1, sigma), observations = observations[0])
         output_2 = self.noise_2_object.forward((mu_2, sigma), observations = observations[1])
-        
         output = (output_1, output_2)
         
         return output
     
+    # Define the guide (trivial since no posteriors)    
     def guide(self, input_vars = None, observations = (None, None)):
         pass
     
