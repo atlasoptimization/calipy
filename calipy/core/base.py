@@ -169,11 +169,11 @@ class NodeStructure():
         for stack_name, stack in self.plate_stacks.items():
             line = "node_structure.set_plate_stack('{}', [".format(stack_name)
             for plate in stack:
-                line += "({}, {}, {}, 'Plate description'),".format(plate.name, plate.size, plate.dim)
+                line += "('{}', {}, {}, 'Plate description'),".format(plate.name, plate.size, plate.dim)
             line = line[:-1]
-            line += ('], Plate stack description)')
+            line += ("], 'Plate stack description')")
             lines.append(line)
-        return "\n".join(lines)
+        return print("\n".join(lines))
     
     
     def __str__(self):
@@ -218,6 +218,7 @@ class CalipyNode(ABC):
             else:
                 CalipyNode._instance_count[cls] = 1
         self.id = self._generate_id()
+        self.id_short = self._generate_id_short()
         
 
         # self.model_or_guide = kwargs.get('model_or_guide', 'model')
@@ -239,6 +240,16 @@ class CalipyNode(ABC):
             count = CalipyNode._instance_count.get(cls, 0)
             id_parts.append(f"{cls.__name__}_{count}")
         return '__'.join(id_parts)
+    
+    def _generate_id_short(self):
+        # Generate the short ID including only node counts 
+        id_short_parts = []
+        for cls in reversed(self.__class__.__mro__[:-2]):
+            if cls.__name__ == 'CalipyNode':
+                count = CalipyNode._instance_count.get(cls, 0)
+                id_short_parts.append(f"Node_{count}")               
+                
+        return '__'.join(id_short_parts)
     
     @abstractmethod
     def forward(self, input_vars = None, observations = None):

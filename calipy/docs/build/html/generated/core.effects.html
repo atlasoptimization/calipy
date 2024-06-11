@@ -1,0 +1,161 @@
+
+
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>core.effects &#8212; calipy 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="core.utils" href="core.utils.html" />
+    <link rel="prev" title="core.base" href="core.base.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="core.utils.html" title="core.utils"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="core.base.html" title="core.base"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" accesskey="U">API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.effects</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-core.effects">
+<span id="core-effects"></span><h1>core.effects<a class="headerlink" href="#module-core.effects" title="Permalink to this headline">¶</a></h1>
+<p>This module provides the CalipyEffect base class that is used for specifying
+random and deterministic phenomena affecting measurements and provides a list
+of basic effects as well as the functionality needed to integrate them into
+the CalipyProbModel class for simulation and inference.</p>
+<dl class="simple">
+<dt>The classes are</dt><dd><dl class="simple">
+<dt>CalipyEffect: Base class from which all concrete effects inherit. Blueprint</dt><dd><p>for effects that involve known parameters, unknown parameters, and random
+variables. Provides effect in form of differentiable forward map.</p>
+</dd>
+<dt>CalipyQuantity: Base class from which all concrete quantities inherit. Blueprint</dt><dd><p>for quantities, i.e. known parameters, unknown parameters, and random
+variables that are the building blocks for CalipyEffect objects.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<p class="rubric">Classes</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyEffect</span></code>([type, name, info])</p></td>
+<td><p>The CalipyEffect class provides a comprehensive representation of a specific  effect.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyQuantity</span></code>([type, name, info])</p></td>
+<td><p>The CalipyQuantity class provides a comprehensive representation of a specific  quantity used in the construction of a CalipyEffect object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">KnownParam</span></code>([type, name, info])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NoiseAddition</span></code>(node_structure, **kwargs)</p></td>
+<td><p>NoiseAddition is a subclass of CalipyEffect that produces an object whose forward() method emulates uncorrelated noise being added to an input.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomVar</span></code>(node_structure, distribution, …)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">UnknownParam</span></code>(node_structure, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="core.base.html"
+                        title="previous chapter">core.base</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="core.utils.html"
+                        title="next chapter">core.utils</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/core.effects.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="core.utils.html" title="core.utils"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="core.base.html" title="core.base"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.effects</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2024, Dr. Jemil Avers Butt, Atlas optimization GmbH.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    </div>
+  </body>
+</html>

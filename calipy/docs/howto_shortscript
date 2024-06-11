@@ -1,0 +1,9 @@
+cd into folder, then execute
+
+cd Desktop/Programming/Python/Atlas_Optimization/Powerplant_optimization/hh2e_compilation/docs
+make html
+
+documentation is under
+cd Desktop/Programming/Python/Atlas_Optimization/Powerplant_optimization/hh2e_compilation/docs/build/html/index.html
+
+when some functions / classes not clickable: include their name in "usage", then in command line: make clean, make html
