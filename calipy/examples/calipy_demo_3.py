@@ -40,8 +40,8 @@ from calipy.core.effects import UnknownParam, UnknownVar, NoiseAddition
 
 # ii) Definitions
 
-n_meas = 20
-n_prod = 5
+n_meas = 100
+n_prod = 30
 
 
 
@@ -86,7 +86,7 @@ data = data_distribution.sample([n_meas]).T
 # mu_prod setup
 mu_prod_ns = NodeStructure()
 mu_prod_ns.set_shape('batch_shape', (), 'Independent values')
-mu_prod_ns.set_shape('event_shape', (n_prod, n_meas), 'Repeated values')
+mu_prod_ns.set_shape('event_shape', (), 'Repeated values')
 mu_prod_object = UnknownParam(mu_prod_ns, name = 'mu')
 
 
@@ -95,7 +95,7 @@ mu_prod_object = UnknownParam(mu_prod_ns, name = 'mu')
 # sigma_el setup
 sigma_prod_ns = NodeStructure()
 sigma_prod_ns.set_shape('batch_shape', (), 'Independent values')
-sigma_prod_ns.set_shape('event_shape', (n_prod, n_meas), 'Repeated values')
+sigma_prod_ns.set_shape('event_shape', (n_prod,), 'Repeated values')
 sigma_prod_object = UnknownVar(sigma_prod_ns, name = 'sigma')
 
 
@@ -103,12 +103,14 @@ sigma_prod_object = UnknownVar(sigma_prod_ns, name = 'sigma')
 
 # Production randomness
 prod_noise_ns = NodeStructure()
-prod_noise_ns.set_plate_stack('noise_stack', [('prod_plate', n_prod, -2, 'independent noise 1')], 'Stack containing production randomness')
+prod_noise_ns.set_plate_stack('noise_stack', [('prod_plate', n_prod, -1, 'independent noise 1')], 'Stack containing production randomness')
 prod_noise_object = NoiseAddition(prod_noise_ns)
 
 # Measurement randomness
 meas_noise_ns = NodeStructure()
-meas_noise_ns.set_plate_stack('noise_stack', [('meas_plate', n_meas, -1, 'independent noise 1')], 'Stack containing measurement randomness')
+meas_noise_ns.set_plate_stack('noise_stack', [('meas_plate_1', n_prod, -2, 'plate denoting independence in row dim'),
+                                              ('meas_plate_2', n_meas, -1, 'plate denoting independence in col dim')], 
+                              'Stack containing measurement randomness')
 meas_noise_object = NoiseAddition(meas_noise_ns)
         
 
@@ -132,21 +134,34 @@ class DemoProbModel(CalipyProbModel):
         
     # Define model by forward passing
     def model(self, input_vars = None, observations = None):
+        # parameter initialization
         mu_prod = self.mu_prod_object.forward()       
         sigma_prod = self.sigma_prod_object.forward()
         
+        # sample lengths of shape [n_prod] via prod_lengths ~ N(mu_prod, sigma_prod)
         prod_lengths = self.prod_noise_object.forward(input_vars = (mu_prod, sigma_prod))
-        output = self.meas_noise_object.forward((prod_lengths, sigma_meas_true), observations = observations)     
+        
+        # sample length measurements of shape [n_prod, n_meas] by adding noise
+        # to copies of prod_lengths via meas ~ N(prod_lengths_extended, sigma_meas)
+        extension_tensor = torch.ones([n_prod, n_meas])
+        prod_lengths_extended = prod_lengths.unsqueeze(1) * extension_tensor
+        output = self.meas_noise_object.forward((prod_lengths_extended, sigma_meas_true), observations = observations)     
         
         return output
     
-    # Define guide (trivial since no posteriors)
+    # Define guide (we ignore the latents here for now)
     def guide(self, input_vars = None, observations = None):
         pass
     
+    # # Define guide (we use an autoguide to model the latents)
+    # def guide(self, input_vars = None, observations = None):
+    #     guide_obj = pyro.infer.autoguide.AutoNormal(self.model)
+    #     guide_return = guide_obj(input_vars = None, observations = None)
+    #     output = tuple(guide_return.values())
+    #     return output
+        
 demo_probmodel = DemoProbModel()
     
-
 
 
 """

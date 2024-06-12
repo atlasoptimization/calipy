@@ -21,8 +21,8 @@ core.effects
       CalipyQuantity
       KnownParam
       NoiseAddition
-      RandomVar
       UnknownParam
+      UnknownVar
    
    
 

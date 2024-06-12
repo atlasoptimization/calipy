@@ -91,7 +91,7 @@ distribution for the random variables.</p>
 forward() method emulates uncorrelated noise being added to an input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>node_structure</strong> – Instance of NodeStructure that determines the internal
+<dd class="field-odd"><p><strong>node_structure</strong> (<em>NodeStructure</em>) – Instance of NodeStructure that determines the internal
 structure (shapes, plate_stacks, plates, aux_data) completely.</p>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -108,12 +108,23 @@ structure (shapes, plate_stacks, plates, aux_data) completely.</p>
 <span class="kn">import</span> <span class="nn">calipy</span>
 <span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">NoiseAddition</span>
 <span class="n">node_structure</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="o">.</span><span class="n">example_node_structure</span>
-<span class="n">noisy_meas_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">node_structure</span><span class="p">)</span>
+<span class="n">noisy_meas_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
 <span class="c1"># ii) Sample noise</span>
-
+<span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+<span class="n">noisy_meas</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
 <span class="c1">#</span>
 <span class="c1"># iii) Investigate object</span>
+<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">id</span>
+<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">noise_dist</span>
+<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">node_structure</span><span class="o">.</span><span class="n">description</span>
+<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">plate_stack</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">render</span><span class="p">((</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+<span class="n">render_1</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">((</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+<span class="n">render_2</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -194,7 +205,7 @@ structure (shapes, plate_stacks, plates, aux_data) completely.</p>
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2024, Dr. Jemil Avers Butt, Atlas optimization GmbH.
+        &#169; Copyright 2024, Dr. Jemil Avers Butt.
       Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
   </body>

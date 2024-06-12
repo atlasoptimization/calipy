@@ -357,6 +357,21 @@ class CalipyProbModel(CalipyNode):
             
         return self.loss_sequence
     
+    def render(self, input_vars = None):
+        graphical_model = pyro.render_model(model = self.model, model_args= (input_vars,), render_distributions=True, render_params=True)
+        graphical_guide = pyro.render_model(model = self.guide, model_args= (input_vars,), render_distributions=True, render_params=True)
+        return graphical_model, graphical_guide
+    
+    
+    def render_comp_graph(self, input_vars = None):
+        # Model pass
+        model_output = self.model(input_vars)
+        comp_graph_model = torchviz.make_dot(model_output)
+        # Guide pass
+        guide_output = self.guide(input_vars)
+        comp_graph_guide = torchviz.make_dot(guide_output)
+        return comp_graph_model, comp_graph_guide
+    
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 

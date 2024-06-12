@@ -164,13 +164,16 @@ class UnknownParam(CalipyQuantity):
         self.node_structure = node_structure
         self.batch_shape = self.node_structure.shapes['batch_shape']
         self.event_shape = self.node_structure.shapes['event_shape']
+        
+        self.constraint = constraint
         self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
                                                 dims = [0 for dim in self.batch_shape])
+        self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
+                                            dims = [len(self.batch_shape) for dim in self.event_shape])
     
     # Forward pass is initializing and passing parameter
     def forward(self, input_vars = None, observations = None):
-        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
-                                            dims = [len(self.batch_shape) for dim in self.event_shape]))
+        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor, constraint = self.constraint)
         self.extended_param = self.extension_tensor * self.param
         return self.extended_param
 
@@ -178,6 +181,7 @@ class UnknownParam(CalipyQuantity):
 # ii) - a) Subclass of UnknownParam for variances (featuring positivity constraint)
 
 class UnknownVar(UnknownParam):
+    __doc__ = UnknownParam.__doc__ # Inherit docstrings from superclass
     def __init__(self, node_structure, **kwargs):  
         super().__init__(node_structure, constraint = constraints.positive, **kwargs)
 
@@ -284,14 +288,13 @@ class NoiseAddition(CalipyEffect):
     def __init__(self, node_structure, **kwargs):
         super().__init__(**kwargs)
         self.node_structure = node_structure
-        # self.batch_shape = node_structure.shapes['batch_shape']
-        # self.event_shape = node_structure.shapes['event_shape']
         self.plate_stack = self.node_structure.plate_stacks['noise_stack']
+        
     def forward(self, input_vars, observations = None):
         """
         Create noisy samples using input_vars = (mean, standard_deviation) with
-        shapes as indicated in the node_structures plate_stack 'noise_stack' used
-        for noisy_meas_object = NoiseAddition(node_structure).
+        shapes as indicated in the node_structures batch_shape, event_shape, and
+        plate_stack 'noise_stack' used for noisy_meas_object = NoiseAddition(node_structure).
         
         :param input vars: 2-tuple (mean, standard_deviation) of tensors with 
             equal (or at least broadcastable) shapes. 
@@ -299,7 +302,7 @@ class NoiseAddition(CalipyEffect):
         :return: Tensor representing simulation of a noisy measurement of the mean.
         :rtype: torch.Tensor
         """
-        # self.noise_dist = pyro.distributions.Normal(loc = input_vars.mean, scale = input_vars.standard_deviation)
+        
         self.noise_dist = pyro.distributions.Normal(loc = input_vars[0], scale = input_vars[1])
         
         # Sample within independence context
