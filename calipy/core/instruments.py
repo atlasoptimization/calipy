@@ -56,3 +56,27 @@ class CalipyInstrument(CalipyNode):
 """
     Instrument classes
 """
+
+
+
+
+# List of Effects
+#
+# Levelling_instrument
+# Totatl station
+# Measurement tape
+# GNSS
+# TLS
+# TRI
+# Prism
+# Standard enginnering stuff - like orthogonalverfahren with doppelpentaprism
+# Lotstaebe
+# GNSS RTK with rods
+
+
+# List of ProbModels
+#
+#Levelling calibration
+# TS + prism
+# Levelling
+# TS axis correction

@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 # calipy
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParam, UnknownVar, NoiseAddition
+from calipy.core.effects import UnknownParameter, UnknownVariance, NoiseAddition
 
 
 # ii) Definitions
@@ -87,7 +87,7 @@ data = data_distribution.sample([n_meas]).T
 mu_prod_ns = NodeStructure()
 mu_prod_ns.set_shape('batch_shape', (), 'Independent values')
 mu_prod_ns.set_shape('event_shape', (), 'Repeated values')
-mu_prod_object = UnknownParam(mu_prod_ns, name = 'mu')
+mu_prod_object = UnknownParameter(mu_prod_ns, name = 'mu')
 
 
 # i) Set up dimensions for std parameter sigma
@@ -96,7 +96,7 @@ mu_prod_object = UnknownParam(mu_prod_ns, name = 'mu')
 sigma_prod_ns = NodeStructure()
 sigma_prod_ns.set_shape('batch_shape', (), 'Independent values')
 sigma_prod_ns.set_shape('event_shape', (n_prod,), 'Repeated values')
-sigma_prod_object = UnknownVar(sigma_prod_ns, name = 'sigma')
+sigma_prod_object = UnknownVariance(sigma_prod_ns, name = 'sigma')
 
 
 # iii) Set up the dimensions for production randomness and noise

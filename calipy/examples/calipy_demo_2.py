@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 # calipy
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParam, UnknownVar, NoiseAddition
+from calipy.core.effects import UnknownParameter, UnknownVariance, NoiseAddition
 
 
 # ii) Definitions
@@ -88,13 +88,13 @@ data = (data_1, data_2)
 mu_1_ns = NodeStructure()
 mu_1_ns.set_shape('batch_shape', (), 'Independent values')
 mu_1_ns.set_shape('event_shape', (n_meas_1,), 'Repeated values')
-mu_1_object = UnknownParam(mu_1_ns, name = 'mu_1')
+mu_1_object = UnknownParameter(mu_1_ns, name = 'mu_1')
 
 # mu_2 setup
 mu_2_ns = NodeStructure()
 mu_2_ns.set_shape('batch_shape', (), 'Independent values')
 mu_2_ns.set_shape('event_shape', (n_meas_2,), 'Repeated values')
-mu_2_object = UnknownParam(mu_2_ns, name = 'mu_2')
+mu_2_object = UnknownParameter(mu_2_ns, name = 'mu_2')
 
 
 # ii) Set up dimensions for sigma
@@ -102,7 +102,7 @@ mu_2_object = UnknownParam(mu_2_ns, name = 'mu_2')
 sigma_ns = NodeStructure()
 sigma_ns.set_shape('batch_shape', (), 'Independent values')
 sigma_ns.set_shape('event_shape', (), 'Repeated values')
-sigma_object = UnknownParam(sigma_ns, name = 'sigma')
+sigma_object = UnknownVariance(sigma_ns, name = 'sigma')
 
 
 # iii) Set up the dimensions for noise addition

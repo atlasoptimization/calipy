@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 # calipy
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParam, NoiseAddition
+from calipy.core.effects import UnknownParameter, NoiseAddition
 
 
 # ii) Definitions
@@ -83,7 +83,7 @@ data = data_distribution.sample([n_meas])
 mu_ns = NodeStructure()
 mu_ns.set_shape('batch_shape', (), 'Independent values')
 mu_ns.set_shape('event_shape', (n_meas,), 'Repeated values')
-mu_object = UnknownParam(mu_ns, name = 'mu')
+mu_object = UnknownParameter(mu_ns, name = 'mu')
 
 
 # iii) Set up the dimensions for noise addition
