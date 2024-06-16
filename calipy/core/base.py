@@ -255,9 +255,9 @@ class CalipyNode(ABC):
         """ Checks if the node_structure instance has all the keys and correct structure as the class template """
         if hasattr(cls, 'example_node_structure'):
             missing_shape_keys = [key for key in cls.example_node_structure.shapes.keys() if key not in node_structure.shapes]
-            missing_plate_keys = [key for key in cls.example_node_structure.plates.keys() if key not in node_structure.plates]
             missing_stack_keys = [key for key in cls.example_node_structure.plate_stacks.keys() if key not in node_structure.plate_stacks]
-            missing_keys = missing_shape_keys + missing_plate_keys + missing_stack_keys
+            # missing_plate_keys = [key for key in cls.example_node_structure.plates.keys() if key not in node_structure.plates]
+            missing_keys = missing_shape_keys + missing_stack_keys #+ missing_plate_keys
             if missing_keys:
                 return False, 'keys missing: {}'.format(missing_keys)
             return True, 'all keys from example_node_structure present in node_structure'

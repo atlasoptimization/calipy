@@ -415,6 +415,27 @@ noise_object.render_comp_graph(input_vars)
 
 # iv) The NodeStructure class
 
+mu_ns = mu_object.node_structure
+noise_ns = noise_object.node_structure
+
+# We can print the details of these node_structures
+mu_ns.print_shapes_and_plates()
+mu_ns.description
+
+noise_ns.print_shapes_and_plates()
+noise_ns.description
+
+# We can check if these node_structures are actually valid for the classes
+calipy.core.effects.UnknownParameter.check_node_structure(mu_ns)
+calipy.core.effects.NoiseAddition.check_node_structure(noise_ns)
+
+# ... and in case they aren't, we can either look at some valid example node_structure
+# or print out the template for generating one
+
+example_ns_param = calipy.core.effects.UnknownParameter.example_node_structure
+example_ns_param
+example_ns_param.generate_template()
+
 
 
 
