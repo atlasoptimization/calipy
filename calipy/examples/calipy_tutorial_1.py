@@ -295,37 +295,43 @@ print("Best guess for the mean parameter using pyro's svi = {}. Coincides with a
 
 # iv) Special calipy constructs
 
-# Since pyro = pytorch + probability, pyro modelbuilding is centered around 
-# tensors. What we did above in pytorch with declaring some data as samples
-# of a probabilistic model and then performing gradient descent to estimate
-# some parameters - under the hood pyro does basically the same thing. It 
-# provides convenient representations of sampling, observation, inference.
-# The above problem could be solved in pyro using
-#   1. pyro.distributions(...) for declaring a specific distribution
-#   2. pyro.sample(... obs = True) for declaring a sample observed and 
-#       preparing for inference 
-#   3. pyro.plate(...) context manager for declaring independence of samples
-#   4. pyro.infer.SVI(...) for setting up the optimization problem
-# Finally, a training loop would be executed by calling the SVI's step() 
-# functionality. The code for all of this is more complicated than in 
-# pytorch due to the use of special constructs like pyro.sample() and pyro.plate()
-# and we will only see the full picture in terms of model building and inference
-# in tutorial_4. The reader may at this point ask why to use pyro at all but
-# they may rest assured that all these extra provisions of clearly defining
-#   - probability distributions
-#   - sample_statements
-#   - observation statements
+# Since calipy  = pyro for instrument models, calipy modelbuilding is centered 
+# around stochastic effects that can be chained together to produce interpretible
+# instrument models that optimally explain observed data. What we did above in 
+# pyro by defining a model and a guide function and then calling an optimization 
+# loop, we can also do in calipy. In calipy we would import a class representing
+# unknown parameters and a class representing noise and then chain them together
+# using their respective .forward() methods. An example of this was shown in 
+# paragraph 2, where we showcased a model-fitting example.
+# Under the hood calipy does basically the same thing as pyro but the syntax is
+# easier and there is a prebuilt library of instruments, effects, and quantities.
+# It provides convenient methods for declaring unknown parameters, random variables,
+# adding noise, nonlinear transformations, sampling, observation, inference.
+#
+# The code in calipy for this simple problem is more complicated than in pyro
+# due to the use of special constructs like the NodeStructure object that determines
+# batch_shape, event_shape, and independence structures for all important objects
+# in calipy. In the end, all the objects that should contribute to the stochastic 
+# model to be optimized are called via their .forward() function and this chain
+# of effects is integrated into a CalipyProbModel object; that is an object that
+# comes with extra functionality for performing statistical inference. The reader
+# may at this point ask why to use calipy at all but they may rest assured that
+# all these extra provisions of clearly defining
+#   - input and output shapes
 #   - conditional independence structures
-#   - probabilistically motivated loss 
-# become essential and convenient in case the models get more complicated.
-# When multiple probability distributions, latent random variables, and neural 
-# networks are coupled with the complicated control flow of a nontrivial python
-# program, writing a pytorch inference scheme to keep track of that is very hard
-# while the declarations pyro forces you to do enable automatic bookkeeping.
-# In short, pyro has additional declarative overhead but the coding effort 
-# scales very well to complicated probabilistic models.
-
-
+#   - data flow via .forward()
+#   - prebuilt quantities, effects, instruments
+# become essential and convenient in case the instrument models get more complicated.
+#
+# When multiple instruments, stochastic effects, unknown parametrs, latent random
+# variables, nonlinear transformations, and neural networks are coupled with the
+# complicated control flow of a nontrivial python program, writing a handtailored 
+# pyro program is feasible but complicated. Furthermore, such a pyro script is less
+# modular and lends itself less towards being shared; it is our explicit goal
+# to have effects and instruments added in the form of classes to a shared modular
+# library that anyone can use with minimum overhead. In short, calipy has additional
+# declarative overhead but the coding effort  scales very well to complicated 
+# instrument models.
 
 
 
@@ -344,61 +350,75 @@ print("Best guess for the mean parameter using pyro's svi = {}. Coincides with a
 
 # i) Summary
 
-# We have looked into numpy arrays and pytorch tensors and figured out that
-# pyro benefits from being built on top of pytorch due to being able to perform
-# gradient computations w.r.t. probability distributions. Everything in pyro
-# is built around tensors and sampling statements acting on probability 
-# distributions. pyro's syntax is clean and efficient and suitable for the 
+# We have looked into numpy arrays, pytorch tensors, and pyro distributions and
+# figured out that calipy benefits from being built on top of pyro due to being
+# able to perform stochastic variational inference to fir complicated stochastic
+# models. Everything in calipy is built around prebuilt classes that represent
+# different quantities, effects, instruments that might feature in instrument
+# models we might want to build to explain some data. Everything revolves around
+# using tensors an pyro's / pytorch's autograd framework to optimize probability
+# distributions. calipy's syntax is clean and interpretable and the modular nature
+# of the stochastic effects being containered in classes lends itself well to the
 # construction of complex models.
 
-# pyro offers everything necessary to perform simulation and inference for a
-# broad range of stochastic models. This includes functionality for handling
+# calipy offers everything necessary to perform simulation and inference for a
+# broad range of instrument models. This includes functionality for handling
 # distributions, sampling, diagnostics, and inference. The functionalities are
 # bundled into different submodules as outlines below.
 #
-# pyro.distributions: Submodule is foundational for modeling in pyro. It provides
-#   probability distributions that are building blocks for defining models. 
-#   Enables users to define priors, likelihoods, and posterior distributions.
+# calipy.core.base: Submodule is foundational for providing the base classes used
+#   in calipy. It provides (among others) the CalipyNode and NodeStructure classes.
+#   Most other classes are subclassing the base classes; they allow stochastic
+#   effects to be written in such a way that they are tracked by gradient tape.
 #
-# pyro.primitives: Submodule contains core primitives like sample() and param(). 
-#   These are essential for defining models. sample() is used to introduce random
-#   variables representing observed data and latent variables. param is used to 
-#   define trainable parameters .
+# calipy.core.effects: Submodule contains the CalipyEffects and CalipyQuantity
+#   classes. These are essential for defining models. CalipyQuantity objects
+#   are representative of atomic objects like parameters and probability distributions
+#   while CalipyEffect objects use pytorch functions and pyro sample statements
+#   to mimick some stochastic effect.
 #
-# pyro.poutine: pyro's execution model is implemented in the poutine submodule. 
-#   This functionality allows for control and tracking of the relationships 
-#   inside the model. Provides a collection of effect handlers for execution 
-#   tracing, conditioning, and implementing custom inference strategies.
+# calipy.core.instruments: Submodule contains the CalipyInstrument class and a
+#   collection of basic concrete instrument classes like the generic  TotalStation
+#   class or the LevellingInstrument class.
 #
-# pyro.infer: Inference is central to probabilistic programming. Submodule contains
-#   inference algorithms to approximate posterior distributions based on observed data.
-#   Provides Stochastic Variational Inference (SVI), Markov Chain Monte Carlo (MCMC).
+# calipy.core.utils: Submodule contains utility functions that allow formatted
+#   printing of infos, manipulation of NodeStructure's, and a set of conversion
+#   functions translating between calipy code and pyro's optimization formulations.
 #
-# There are also other submodules like pyro.contrib and pyro.optim but interacting
+# calipy.library: Submodule that contains a set of concrete classes of quantities,
+#   effects, instruments that go beyond the basic functionality and which have
+#   been contributed by the community for public use.
+#
+# calipy.examples: Submodule containing examples and tutorials. These give some 
+#   insight not only into how the prebuilt classes can be used but also into the
+#   design of new classes representing new quantites, effects, or instruments.
+#
+# There are also other submodules like calipy.tests and calipy.docs but interacting
 # with them will not be important during this tutorial.
     
 
 # ii) Outlook
 
 # Apart from the motivating initial example, we have only looked at fundamental
-# concepts like distributions and sampling in pyro. We still have not fully 
-# investigated the impact of the pyro syntax on model building and inference
+# concepts like CalipyNode's and NodeStructure's in calipy. We still have not fully 
+# investigated the impact of the calipy syntax on model building and inference
 # is a black box to us for now. In the next two tutorials we will build more
 # complex models and learn how to diagnose models to ensure their meaning aligns
 # with our intent. Afterwards, we will delve deeper into inference and inject
 # complexity into our models. In the end we will have introduced posterior 
-# densities over hidden variables and have trained probability distributions 
-# whose parameters are outputs of a neural network.
+# densities over hidden variables and have trained deep instrument models whose
+# parameters are outputs of a neural network.
 
-# The next tutorial, however will stay modest. We will build stochastic models
+# The next tutorial, however will stay modest. We will build instrument models
 # very similar to the ones in this tutorial but we will understand them better.
-# This will mean looking at the internal representation that pyro builds of a
-# model - the so called execution trace. This will represent everything pyro
-# knows about the relationships between random variables and parameters and can
-# be a bit hard to parse. Nonetheless it is important to understand. Otherwise
-# it is hard to ensure that the models do what we want them to do and that the
-# training data is used responsibly without unintended and undocumented assumptions
-# of e.g. independence or normality.
+# This will mean looking at the internal representation that calipy builds of a
+# model - the node_structure representing shapes and independence contexts as 
+# well as the forward() pass of any CalipyNode object. This will represent most
+# of what calipy knows about the relationships between random variables and parameters
+# and can be a bit hard to parse. Nonetheless it is important to understand. 
+# Otherwise it is hard to ensure that the models do what we want them to do and 
+# that the training data is used responsibly without unintended and undocumented
+# assumptions of e.g. independence or normality.
     
 
 
