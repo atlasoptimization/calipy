@@ -340,6 +340,81 @@ print("Best guess for the mean parameter using pyro's svi = {}. Coincides with a
 """
 
 
+# i) The UnknwonParameter class
+#
+# The UnknwnParameter class is a simple class for representing parameters that
+# are to be estimated during inference. The parameters can be tensors of arbitrary
+# shapes representing scalars, vectors, or matrices for example. In paragraph two,
+# we constructed mu_object, an instance of the UnknownParameter class that represents
+# a single scalar mean parameter (but copied n_data times).
+
+# The bject itself has a name, inherits from some base classes and gets a unique
+# id upon instantiation.
+mu_object
+mu_object.name
+mu_object.dtype_chain
+mu_object.id
+
+# The shapes are encoded in the node_structure of the object. We have a batch_shape
+# of () encoding the existence of only one independent scalar and an event_shape of
+# (100,) encoding the extension of this scalar to a 100 dim vector.
+
+mu_object.batch_shape
+mu_object.event_shape
+
+# The forward pass produces a vector of the shape described above. This pass
+# instantiates all the active ingredients in the stochastic model and allows for
+# tracking via gradient tape. We can also show a graphical representation of the
+# forward pass in terms of a graphical model.
+
+mu_object.forward()
+mu_object.render()
+mu_object.render_comp_graph()
+
+
+# ii)  The NoiseAddition class
+#
+# The NoiseAddition class is also a very simple class. However, it represents not
+# a quantity but rather the effect of adding noise to a mean. This requires to
+# additionally specify the idependence structure of the noise by passing the
+# plate_stack argument during construction.
+
+noise_object
+noise_object.name
+noise_object.dtype_chain
+noise_object.id
+
+# The plate stack is arder to interpret, it is not simply a tuple of numbers but
+# adeclaration of specific dimensions of the noise distribution as independent.
+
+noise_object.noise_dist
+noise_object.plate_stack
+
+# Compared to the forward() pass of the mu_object, the forward() pass of the 
+# noise_object takes as input the mean and the noise variance. Both are allowed
+# to be UnknownParameters and subject of later inference.
+
+input_vars = (mu_object.forward(), torch.tensor(1.0))
+noise_object.forward(input_vars)
+noise_object.render(input_vars)
+noise_object.render_comp_graph(input_vars)
+
+
+# iii) The CalipyNode class
+#
+# Both of the previously seen classes are examples of the foundational CalipyNode
+# class. This class is itself an ABC (abstract base class) with abstract method 
+# forward() that needs to be specified for each subclass at instantiation time.
+# It provides the basic functionality that we have used in the previous two classes
+# without ever explicitly defining it, e.g. the render() or render_comp_graph()
+# method and universal properties like the id and the instance counters.
+#
+# Most users will not interact with this class directly and therefore we will not
+# pursue investigation of this class further.
+
+
+# iv) The NodeStructure class
+
 
 
 
