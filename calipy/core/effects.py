@@ -314,7 +314,7 @@ class NoiseAddition(CalipyEffect):
         
         # Sample within independence context
         with context_plate_stack(self.plate_stack):
-            output = pyro.sample('{}_obs_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
+            output = pyro.sample('{}__obs_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
         return output
     
     
@@ -430,6 +430,7 @@ class PolynomialTrend(CalipyEffect):
 # primarily deterministic:
 # DeterministicOffset
 # DeterministicScale
+# LinearTransform
 # PolynomialTrend
 # FunctionalTrend
 # Convolution

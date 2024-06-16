@@ -12,6 +12,8 @@ The script is meant solely for educational and illustrative purposes. Written by
 Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
+import pyro
+import fnmatch
 import contextlib
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -73,6 +75,10 @@ def format_mro(cls):
     formatted_mro = '__'.join(mro_names)
     return formatted_mro
 
+def get_params(name):
+    pattern = "*__param_{}".format(name)
+    matched_params = {name: value for name, value in pyro.get_param_store().items() if fnmatch.fnmatch(name, pattern)}
+    return matched_params
 
 
 @contextlib.contextmanager
