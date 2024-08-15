@@ -142,7 +142,7 @@ n_steps = 1000
 optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
 
-# ii) 
+# ii) Train the model
 
 input_data = None
 output_data = data

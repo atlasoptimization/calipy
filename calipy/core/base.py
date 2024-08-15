@@ -49,7 +49,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import copy
 import torchviz
-from calipy.core.utils import format_mro
+from calipy.core.utils import format_mro, dim_assignment
 from abc import ABC, abstractmethod
 
 
@@ -96,11 +96,64 @@ from abc import ABC, abstractmethod
 #         return "{}(name: {})".format(self.dtype, self.name)
   
     
-# NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
-# configurations for a CalipyNode object. Provides functionality for dictionary-
-# like access and automated construction.
+
 
 class NodeStructure():
+    """ NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
+    configurations for a CalipyNode object. Provides functionality for attribute-
+    like access and automated construction. Each object of NodeStructure class has
+    attributes description, shapes, plates, plate_stacks.
+    Methods include set_shape, set_plate_stack, update, print_shapes_and_plates,
+    and generate_template which can be used to either set the properties of a
+    newly instantiated object node_structure = NodeStructure() or to modify an
+    existing object by updating it. NodeStructure objects are central for instantiating
+    CalipyNode objects.
+    
+    :param args: optional arguments (can be None)
+    :type args: list
+    :param kwargs: dictionary containing keyword arguments (can be None)
+    :type kwargs: dict
+    :return: Empty Instance of the NodeStructure class to be populated by info
+        via the set_shape and set_plate_stack methods.
+    :rtype: NodeStructure
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate NodeStructure -------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.base import NodeStructure
+        from calipy.core.effects import NoiseAddition
+        #
+        # ii) Set up node_structure
+        node_structure = NodeStructure()
+        node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
+        node_structure.set_shape('event_shape', (5, ), 'Event shape description')
+        node_structure.set_plate_stack('noise_stack', [('batch_plate', 10, -1, 
+                    'plate denoting independent data points')], 'Plate stack for noise ')
+        #
+        # iii) Investigate NodeStructure objects
+        node_structure.description
+        node_structure.print_shapes_and_plates()
+        node_structure.generate_template()
+        #
+        # iv) Inherit from prebuilt example_node_structure
+        new_node_structure = NoiseAddition.example_node_structure
+        new_node_structure.print_shapes_and_plates()
+        shape_updates = {'new_shape' : (11,)}
+        plate_stack_updates = {'noise_stack': [('batch_plate_1', 22, -2, 
+                    'plate denoting independent realizations')]}
+        new_node_structure = new_node_structure.update(shape_updates, plate_stack_updates)
+        # 
+        # v) Build and check via class methods
+        empty_node_structure = NodeStructure()
+        NoiseAddition.check_node_structure(empty_node_structure)
+        NoiseAddition.check_node_structure(new_node_structure)
+    
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.description = {}
@@ -141,7 +194,6 @@ class NodeStructure():
             
         return new_node_structure
         
-            
             
     def print_shapes_and_plates(self):
         print('\nShapes :')

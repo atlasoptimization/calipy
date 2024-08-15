@@ -17,6 +17,8 @@ import fnmatch
 import contextlib
 import networkx as nx
 import matplotlib.pyplot as plt
+import re
+from functorch.dim import dims
 
 
 """
@@ -128,8 +130,89 @@ def context_plate_stack(plate_stack):
 #     plt.show()
     
     
+# Functions for dimension declaration per list
+
+# restricted exec function
+def restricted_exec(exec_string, allowed_locals):
+    # Allow only simple assignment of `dims` using a regular expression
+    if not re.match(r'^\w+\s*=\s*dims\(sizes=\[\d+(,\s*\d+)*\]\)$', exec_string) \
+        and not re.match(r'^\w+\s*=\s*dims\(\)$', exec_string):
+        raise ValueError("Invalid exec command")
+    
+    # Execute the command in a very limited scope
+    allowed_globals = {"dims": dims}
+    exec(exec_string, allowed_globals, allowed_locals)
+
+# Safe eval function
+def safe_eval(expr, allowed_globals=None, allowed_locals=None):
+    if allowed_globals is None:
+        allowed_globals = {}
+    if allowed_locals is None:
+        allowed_locals = {}
+    return eval(expr, {"__builtins__": None, **allowed_globals}, allowed_locals)
+
+def dim_assignment(dim_names, dim_shapes = None):
+    """ dim_assignment dynamically assigns dimension objects to names and returns them as a tuple.
+
+    This function creates `Dim` objects using the specified shapes in `dim_shapes` and assigns them to the
+    names provided in `dim_names`. The function validates that the dimension shapes are positive integers
+    and that the dimension names are valid Python identifiers. It then executes these assignments in a 
+    restricted environment to ensure safety and returns a tuple of the created `Dim` objects.
+
+    :param dim_names: A list of strings representing the variable names to assign to each dimension. 
+        These names must be valid Python identifiers.
+    :type dim_names: list of str
+    :param dim_shapes: A list of positive integers representing the sizes of each dimension; 
+        can be None to indicate unbound dimensions.
+    :type dim_shapes: list of int
+    :return: A tuple containing the `Dim` objects assigned to the names in `dim_names`.
+    :rtype: tuple of Dim
+
+    Example usage:
+
+    .. code-block:: python
+
+        from torchdim import dims
+
+        dim_names = ['batch_dim_1', 'batch_dim_2']
+        dim_shapes = [10, 5]
+        dim_tuple = dim_assignment(dim_names, dim_shapes)
+
+        # Access the dimensions
+        print(dim_tuple)  # Outputs: (batch_dim_0, batch_dim_11)
+        print(dim_tuple[0].size)  # Outputs: 10
+        print(dim_tuple[1].size)  # Outputs: 5
+        """
+        
+    # Validate inputs    
+    if not all(isinstance(name, str) and name.isidentifier() for name in dim_names):
+        raise ValueError("All dimension names must be valid Python identifiers.")
+    if dim_shapes is not None:
+        if not all(isinstance(shape, int) and shape > 0 for shape in dim_shapes):
+            raise ValueError("All dimension shapes must be positive integers.")
+    
+    # Create a local environment to hold the assigned dimensions
+    dims_locals = {}
+    for k in range(len(dim_names)):
+        if dim_shapes is not None:
+            exec_string = f"{dim_names[k]} = dims(sizes=[{dim_shapes[k]}])"
+        else:
+            exec_string = f"{dim_names[k]} = dims()"
+        restricted_exec(exec_string, dims_locals)
+    
+    # Create a tuple of dimensions
+    eval_string = f"({', '.join(dim_names)})"
+    dim_tuple = safe_eval(eval_string, allowed_locals=dims_locals)
+    
+    return dim_tuple
 
 
+# Generate trivial dimensions
+def generate_trivial_dims(ndim):
+    dim_names = ["trivial_dim_{}".format(k) for k in range(ndim)]
+    trivial_dims = dim_assignment(dim_names, dim_shapes = [1 for name in dim_names])
+    return trivial_dims
+    
 
 
 

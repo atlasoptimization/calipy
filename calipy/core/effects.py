@@ -139,9 +139,9 @@ class UnknownParameter(CalipyQuantity):
         #
         # i) Imports and definitions
         import calipy
-        from calipy.core.effects import UnknownParam
-        node_structure = UnknownParam.example_node_structure
-        bias_object = UnknownParam(node_structure, name = 'tutorial')
+        from calipy.core.effects import UnknownParameter
+        node_structure = UnknownParameter.example_node_structure
+        bias_object = UnknownParameter(node_structure, name = 'tutorial')
         #
         # ii) Produce bias value
         bias = bias_object.forward()
@@ -314,7 +314,7 @@ class NoiseAddition(CalipyEffect):
         
         # Sample within independence context
         with context_plate_stack(self.plate_stack):
-            output = pyro.sample('{}__obs_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
+            output = pyro.sample('{}__noise_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
         return output
     
     
@@ -414,6 +414,104 @@ class PolynomialTrend(CalipyEffect):
     
     
 
+ 
+# iii) Cyclical trend
+
+# Define a class of effects that consist in a (potentially multidimensional) 
+# cyclical trend that can be evaluated on some input_vars to produce trend values.
+# Invocation of the class produces objects that contain the monomial trend 
+# functions encoded in a design matrix and corresponding coefficients as parameters.
+# The node_structure passed upon instantiation determines the shape of the trend.
+# E.g a batch_shape of (3,) and event_shape of (100,) produces 3 different trends
+# each with a length of 100 interpretable as 3 trends generating 3 timeseries.
+# Producing the actual trend values requires input_vars to be passed to the forward
+# call via e.g. forward(input_vars = (t,)) (where (t,) here is a tuple containing
+# copies of a 1D tensor time but might also be (x,y) or any other tuple of identically 
+# shaped tensors).
+
+class CyclicalTrend(CalipyEffect):
+    """ CyclicalTrend is a subclass of CalipyEffect that produces an object whose
+    forward() method computes cyclical trends based on input_vars.
+
+    :param node_structure: Instance of NodeStructure that determines the internal
+        structure (shapes, plate_stacks, plates, aux_data) completely.
+    :type node_structure: NodeStructure
+    :param freq_shape: Instance of Tuple that contains the number of the frequencies
+        for different dimensions n_dim.
+    :type degrees: Tuple of Int
+    :return: Instance of the CyclicalTrend class built on the basis of node_structure
+    :rtype: CyclicalTrend (subclass of CalipyEffect subclass of CalipyNode)
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate 1D trend ------------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.effects import PolynomialTrend
+        node_structure = PolynomialTrend.example_node_structure
+        trend_object = PolynomialTrend(node_structure, name = 'tutorial')
+        #
+        # ii) Compute trend
+        time = torch.linspace(0,1,100)
+        trend = trend_object.forward(input_vars = (time,))
+        #
+        # iii) Investigate object
+        trend_object.dtype_chain
+        trend_object.id
+        trend_object.noise_dist
+        trend_object.node_structure.description
+        trend_object.plate_stack
+        render_1 = trend_object.render((time,))
+        render_1
+        render_2 = trend_object.render_comp_graph((time,))
+        render_2
+    """
+    
+    # Initialize the class-level NodeStructure
+    example_node_structure = NodeStructure()
+    example_node_structure.set_shape('batch_shape', (3, ), 'Batch shape description')
+    example_node_structure.set_shape('event_shape', (100,), 'Event shape description')
+
+    # Class initialization consists in passing args and building shapes
+    def __init__(self, node_structure, degrees = (2,), **kwargs):  
+        super().__init__(**kwargs)
+        self.node_structure = node_structure
+        self.batch_shape = self.node_structure.shapes['batch_shape']
+        self.event_shape = self.node_structure.shapes['event_shape']
+        
+        self.n_vars =len(self.batch_shape)
+        self.n_coeffs = tuple([degree + 1 for degree in degrees])
+        # self.n_coeffs_total = math.comb(self.n_vars + self.)
+        self.init_tensor = torch.ones(self.batch_shape + (self.n_coeffs,))
+        
+    # Forward pass produces trend values
+    def forward(self, input_vars, observations = None):
+        """
+        Create samples of the polynomial trend function using as input vars the
+        tensors var_1, var_2, ... that encode the value of some explanatory variable
+        for each point of interest; input_vars = (var_1, var_2, ..). The shape
+        of the resultant samples is as indicated in the node_structures' batch_shape,
+        event_shape.
+        
+        :param input vars: Tuple (var_1, var_2, ...) of identically shaped tensors with 
+            equal (or at least broadcastable) shapes. 
+        :type input_vars: Tuple of instances of torch.Tensor
+        :return: Tensor representing polynomial trend evaluated at the values of input_var.
+        :rtype: torch.Tensor
+        """
+        
+        self.coeffs = pyro.param('{}__coeffs_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor)
+        self.A_mat = torch.cat([input_vars.unsqueeze(-1)**k for k in range(self.n_coeffs)], dim = -1)
+
+        output = torch.einsum('bjk, bk -> bj' , self.A_mat, self.coeffs )
+        return output
+    
+
+
+
 # i) OffsetDeterministic class 
 # Define a class of errors that transform the input by adding deterministic 
 # offsets. This means that invocation of the class produces objects that are 
@@ -439,6 +537,14 @@ class PolynomialTrend(CalipyEffect):
 # ANN
 # AxisDeviation
 # Misalignment
+# Hysteresis
+#
+# primarily physical:
+#
+# lens abberation
+# reflection
+# 
+# 
 #
 # primarily stochastic:
 # NoiseAddition
@@ -461,14 +567,67 @@ class PolynomialTrend(CalipyEffect):
 # WienerProcess
 # CovarianceFunction
 # TrainableBounds
+# TrainableInequality
+# TrainableEquality
 # ProbabilityDistribution
 
 
 
 
+# Some more ideas:
+#
+# primarily deterministic:
+# AffineTransformation
+# NonlinearTransformation
+# WaveletTransform
+# KalmanFilter
+# Interpolation
+# SplineFitting
+# GeometricDistortion
+# AdaptiveSmoothing
+# GainControl
+# TimeSeriesDecomposition
+# FourierTransform
+# LaplacianTransformation
+# Decimation
+# Resampling
+#
+# primarily physical:
+# TemperatureDrift
+# MagneticInterference
+# VibrationResponse
+# HumidityInfluence
+# CorrosionAndWear
+# RadiationEffects
+# AtmosphericRefraction
+# ThermalExpansion
+# WindLoading
+# HydrodynamicEffects
+#
+# primarily stochastic:
+# ColoredNoise
+# FlickerNoise
+# MultiplicativeNoise
+# StateDependentNoise
+# ShotNoise
+# CompoundPoissonNoise
+# AdditiveOutliers
+# RandomWalk
+# JumpDiffusion
+# HawkesProcess
 
-
-
+# List of Quantities
+#
+# UnknownDrift
+# UncertainInitialCondition
+# AnisotropicNoise
+# PeriodicFunction
+# TimeVaryingParameter
+# SpatiallyVaryingParameter
+# RandomField
+# StochasticDifferentialEquation
+# MarkovChain
+# LogNormalDistribution
 
 
 
