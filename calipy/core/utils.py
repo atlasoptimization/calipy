@@ -214,7 +214,156 @@ def generate_trivial_dims(ndim):
     return trivial_dims
     
 
+class DimTuple(tuple):
+    """ DimTuple is a custom subclass of Python's `tuple` designed to manage and manipulate tuples of 
+    dimension objects, such as those from `functorch`. This class provides enhanced functionality 
+    specific to dimensions, allowing users to bind sizes, filter bound or unbound dimensions, 
+    and perform other operations tailored to the handling of dimension objects.
 
+    This class offers methods to bind dimension sizes selectively, retrieve sizes, and check 
+    whether dimensions are bound or unbound. Additionally, DimTuple supports tuple-like operations 
+    such as concatenation and repetition, while ensuring that the results remain within the DimTuple 
+    structure.
+
+    :param input_tuple: A tuple of dimension objects to be managed by DimTuple.
+    :type input_tuple: tuple of Dim
+    
+    :return: An instance of DimTuple containing the dimension objects.
+    :rtype: DimTuple
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Create dimensions
+        bd_1, bd_2 = dims(2)
+        ed_1 = dims(1)
+
+        # Initialize DimTuples
+        batch_dims = DimTuple((bd_1, bd_2))
+        event_dims = DimTuple((ed_1,))
+
+        # Bind sizes to some dimensions
+        batch_dims.bind([10, None])
+
+        # Combine DimTuples
+        full_dims = batch_dims + event_dims
+
+        # Accessing the sizes
+        print(full_dims.get_sizes())  # Outputs: [10, None, None]
+
+        # Check if all dimensions are bound
+        print(full_dims.is_bound())  # Outputs: False
+
+        # Filter bound dimensions & show dict
+        print(full_dims.filter_bound())  # Outputs: DimTuple((bd_1,))
+        full_dims.to_dict()
+    """
+    def __new__(cls, input_tuple):
+        # __new__ is used for immutable types like tuple
+        return super(DimTuple, cls).__new__(cls, input_tuple)
+
+    def get_sizes(self):
+        """ Returns a list of sizes for each dimension in the DimTuple.
+        If a dimension is unbound, None is returned in its place.
+        :return: List of sizes corresponding to each dimension in the DimTuple.
+        :rtype: list
+        """
+        sizes = []
+        for d in self:
+            try:
+                sizes.append(d.size)  # Attempt to get the size
+            except ValueError:
+                sizes.append(None)  # Append None if the dimension is unbound
+        return sizes
+    
+    def is_bound(self):
+        """ Checks if all dimensions in the DimTuple are bound.
+        :return: True if all dimensions are bound, False otherwise.
+        :rtype: bool
+        """
+        # Returns True if all dimensions are bound, False otherwise
+        return all(d.is_bound for d in self)
+
+    def filter_bound(self):
+        """ Returns a new DimTuple containing only the bound dimensions.
+        :return: A DimTuple with only the bound dimensions.
+        :rtype: DimTuple
+        """
+        # Returns a DimTuple containing only the bound dimensions
+        return DimTuple(tuple(d for d in self if d.is_bound))
+    
+    def is_unbound(self):
+        """ Checks if all dimensions in the DimTuple are unbound.
+        :return: True if all dimensions are unbound, False otherwise.
+        :rtype: bool
+        """
+        # Returns True if all dimensions are unbound, False otherwise
+        return all(not d.is_bound for d in self)
+
+    def filter_unbound(self):
+        """ Returns a new DimTuple containing only the unbound dimensions.
+        :return: A DimTuple with only the unbound dimensions.
+        :rtype: DimTuple
+        """
+        # Returns a DimTuple containing only the unbound dimensions
+        return DimTuple(tuple(d for d in self if not d.is_bound))
+
+    def bind(self, sizes):
+        """ Binds sizes to the dimensions in the DimTuple. Dimensions corresponding
+        to a None value in the sizes list remain unbound. Raises a ValueError if the
+        length of sizes does not match the number of dimensions.
+
+        :param sizes: A list of sizes to bind to the dimensions. Use None to leave a dimension unbound.
+        :type sizes: list
+        :return: A new DimTuple with the specified sizes bound.
+        :rtype: DimTuple
+        :raises ValueError: If the number of sizes does not match the number of dimensions.
+        """
+        # Binds the sizes to the dimensions, returns a new DimTuple with bound dimensions
+        if len(sizes) != len(self):
+            raise ValueError("Sizes must match the number of dimensions, use None for unbound dims")
+        [setattr(d, 'size', size) for d, size in zip(self, sizes) if size is not None]
+        return
+    
+    def reverse(self):
+        """ Returns a new DimTuple with dimensions in reverse order.
+        :return: A DimTuple with the dimensions reversed.
+        :rtype: DimTuple
+        """
+        return DimTuple(reversed(self))
+    
+    def to_dict(self):
+        """ Converts the DimTuple into a dictionary with dimension names as keys and sizes as values.
+        If a dimension is unbound, the value in the dictionary is None.
+        
+        :return: A dictionary with dimension names as keys and sizes as values.
+        :rtype: dict
+        """
+        # Returns a dictionary with dimension names as keys and sizes as values
+        return {d.__repr__(): d.size if d.is_bound else None 
+            for i, d in enumerate(self)}
+
+    def __repr__(self):
+        return f"DimTuple({super().__repr__()})"
+    
+    def __add__(self, other):
+        """ Overloads the + operator to return a new DimTuple when adding two DimTuple objects.
+        
+        :param other: The DimTuple to add.
+        :type other: DimTuple
+        :return: A new DimTuple with the dimensions from both added tuples.
+        :rtype: DimTuple
+        :raises NotImplemented: If other is not a DimTuple.
+        """
+        # Overriding the + operator to return a DimTuple when adding two DimTuple objects
+        if isinstance(other, DimTuple):
+            return DimTuple(super().__add__(other))
+        return NotImplemented
+
+    def __mul__(self, n):
+        # Allows repeating the DimTuple n times
+        return DimTuple(super().__mul__(n))
 
 
 

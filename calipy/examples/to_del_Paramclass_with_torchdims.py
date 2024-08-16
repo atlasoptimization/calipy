@@ -2,7 +2,7 @@ import pyro
 import torch
 import math
 from calipy.core.base import CalipyNode
-from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, generate_trivial_dims
+from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, generate_trivial_dims, DimTuple
 from calipy.core.base import NodeStructure
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
@@ -95,7 +95,7 @@ class UnknownParameter(CalipyQuantity):
         self.extended_param = self.extension_tensor * self.param
         return self.extended_param
     
-    
+
     
 batch_dims = dim_assignment(dim_names = ['batch_dim_1', 'batch_dim_2'], dim_shapes = [10,5])
 event_dims = dim_assignment(dim_names = ['event_dim_1', 'event_dim_2'], dim_shapes = [2,3])
@@ -110,9 +110,11 @@ unknown_param = UnknownParameter(node_structure_up)
     
     
     
-    
-    
-    
+bd_1, bd_2 = dims(2)
+ed_1 = dims(1)
+batch_dims = DimTuple((bd_1,bd_2))
+event_dims = DimTuple((ed_1,))    
+full_dims = batch_dims + event_dims
     
     
     
