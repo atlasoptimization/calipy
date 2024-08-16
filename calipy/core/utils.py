@@ -151,60 +151,141 @@ def safe_eval(expr, allowed_globals=None, allowed_locals=None):
         allowed_locals = {}
     return eval(expr, {"__builtins__": None, **allowed_globals}, allowed_locals)
 
-def dim_assignment(dim_names, dim_shapes = None):
-    """ dim_assignment dynamically assigns dimension objects to names and returns them as a tuple.
+# def dim_assignment(dim_names, dim_shapes = None):
+#     """ dim_assignment dynamically assigns dimension objects to names and returns them as a DimTuple.
+
+#     This function creates `Dim` objects using the specified shapes in `dim_shapes` and assigns them to the
+#     names provided in `dim_names`. The function validates that the dimension shapes are positive integers
+#     and that the dimension names are valid Python identifiers. It then executes these assignments in a 
+#     restricted environment to ensure safety and returns a tuple of the created `Dim` objects.
+
+#     :param dim_names: A list of strings representing the variable names to assign to each dimension. 
+#         These names must be valid Python identifiers.
+#     :type dim_names: list of str
+#     :param dim_shapes: A list of positive integers representing the sizes of each dimension; 
+#         can be None to indicate unbound dimensions.
+#     :type dim_shapes: list of int
+#     :return: A tuple containing the `Dim` objects assigned to the names in `dim_names`.
+#     :rtype: DimTuple
+
+#     Example usage:
+
+#     .. code-block:: python
+
+#         from torchdim import dims
+
+#         dim_names = ['batch_dim_1', 'batch_dim_2']
+#         dim_shapes = [10, 5]
+#         dim_tuple = dim_assignment(dim_names, dim_shapes)
+
+#         # Access the dimensions
+#         print(dim_tuple)  # Outputs: (batch_dim_0, batch_dim_11)
+#         print(dim_tuple[0].size)  # Outputs: 10
+#         print(dim_tuple[1].size)  # Outputs: 5
+#         """
+        
+#     # Validate inputs    
+#     if not all(isinstance(name, str) and name.isidentifier() for name in dim_names):
+#         raise ValueError("All dimension names must be valid Python identifiers.")
+#     if dim_shapes is not None:
+#         if not all(isinstance(shape, int) and shape > 0 for shape in dim_shapes):
+#             raise ValueError("All dimension shapes must be positive integers.")
+    
+#     # Create a local environment to hold the assigned dimensions
+#     dims_locals = {}
+#     for k in range(len(dim_names)):
+#         if dim_shapes is not None:
+#             exec_string = f"{dim_names[k]} = dims(sizes=[{dim_shapes[k]}])"
+#         else:
+#             exec_string = f"{dim_names[k]} = dims()"
+#         restricted_exec(exec_string, dims_locals)
+    
+#     # Create a tuple of dimensions
+#     if len(dim_names) == 1:
+#         eval_string = f"({dim_names[0]},)"  # Ensure single element tuple with a trailing comma
+#     else:
+#         eval_string = f"({', '.join(dim_names)})"
+#     dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals))
+    
+#     return dim_tuple
+
+
+def dim_assignment(dim_names, dim_shapes=None):
+    """
+    dim_assignment dynamically assigns dimension objects to names and returns them as a DimTuple.
 
     This function creates `Dim` objects using the specified shapes in `dim_shapes` and assigns them to the
     names provided in `dim_names`. The function validates that the dimension shapes are positive integers
-    and that the dimension names are valid Python identifiers. It then executes these assignments in a 
-    restricted environment to ensure safety and returns a tuple of the created `Dim` objects.
+    or None (for unbound dimensions) and that the dimension names are valid Python identifiers. If only
+    one name is provided with multiple shapes, the name is extended by indices (e.g., 'batch' -> 'batch_1',
+    'batch_2', etc.). The function then executes these assignments in a restricted environment to ensure
+    safety and returns a DimTuple of the created `Dim` objects.
 
     :param dim_names: A list of strings representing the variable names to assign to each dimension. 
-        These names must be valid Python identifiers.
+        These names must be valid Python identifiers. If only one name is provided and multiple shapes,
+        the name will be broadcast with indices (e.g., ['batch'] -> ['batch_1', 'batch_2', ...]).
     :type dim_names: list of str
-    :param dim_shapes: A list of positive integers representing the sizes of each dimension; 
-        can be None to indicate unbound dimensions.
-    :type dim_shapes: list of int
-    :return: A tuple containing the `Dim` objects assigned to the names in `dim_names`.
-    :rtype: tuple of Dim
+    :param dim_shapes: A list of positive integers or None representing the sizes of each dimension; 
+        None indicates an unbound dimension.
+    :type dim_shapes: list of int or None
+    :return: A DimTuple containing the `Dim` objects assigned to the names in `dim_names`.
+    :rtype: DimTuple
 
     Example usage:
 
     .. code-block:: python
-
-        from torchdim import dims
 
         dim_names = ['batch_dim_1', 'batch_dim_2']
         dim_shapes = [10, 5]
         dim_tuple = dim_assignment(dim_names, dim_shapes)
 
         # Access the dimensions
-        print(dim_tuple)  # Outputs: (batch_dim_0, batch_dim_11)
+        print(dim_tuple)  # Outputs: (batch_dim_1, batch_dim_2)
         print(dim_tuple[0].size)  # Outputs: 10
         print(dim_tuple[1].size)  # Outputs: 5
-        """
         
+        # Example with broadcasting
+        dim_tuple = dim_assignment(dim_names=['batch'], dim_shapes=[5, 2])
+        print(dim_tuple)  # Outputs: (batch_1, batch_2)
+        print(dim_tuple.get_sizes())  # Outputs: [5,2]
+        
+        # Example with bound and unbound dims
+        dim_tuple = dim_assignment(dim_names=['batch_dim_1', 'batch_dim_2'], dim_shapes=[5, None])
+        dim_tuple.get_sizes()
+        dim_tuple.filter_bound()
+        dim_tuple.filter_unbound()
+    """
+        
+    # Broadcasting over dim_names if needed
+    if len(dim_names) == 1 and dim_shapes is not None and len(dim_shapes) > 1:
+        base_name = dim_names[0]
+        dim_names = [f"{base_name}_{i+1}" for i in range(len(dim_shapes))]
+
     # Validate inputs    
     if not all(isinstance(name, str) and name.isidentifier() for name in dim_names):
         raise ValueError("All dimension names must be valid Python identifiers.")
     if dim_shapes is not None:
-        if not all(isinstance(shape, int) and shape > 0 for shape in dim_shapes):
-            raise ValueError("All dimension shapes must be positive integers.")
+        if not all(shape is None or (isinstance(shape, int) and shape > 0) for shape in dim_shapes):
+            raise ValueError("All dimension shapes must be positive integers or None.")
     
     # Create a local environment to hold the assigned dimensions
     dims_locals = {}
-    for k in range(len(dim_names)):
-        if dim_shapes is not None:
-            exec_string = f"{dim_names[k]} = dims(sizes=[{dim_shapes[k]}])"
+    for name, shape in zip(dim_names, dim_shapes):
+        if shape is not None:
+            exec_string = f"{name} = dims(sizes=[{shape}])"
         else:
-            exec_string = f"{dim_names[k]} = dims()"
+            exec_string = f"{name} = dims()"
         restricted_exec(exec_string, dims_locals)
     
     # Create a tuple of dimensions
-    eval_string = f"({', '.join(dim_names)})"
-    dim_tuple = safe_eval(eval_string, allowed_locals=dims_locals)
+    if len(dim_names) == 1:
+        eval_string = f"({dim_names[0]},)"  # Ensure single element tuple with a trailing comma
+    else:
+        eval_string = f"({', '.join(dim_names)})"
+    dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals))
     
     return dim_tuple
+
 
 
 # Generate trivial dimensions

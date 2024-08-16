@@ -85,8 +85,10 @@ class UnknownParameter(CalipyQuantity):
         
         trivial_dims_batch = generate_trivial_dims(len(self.batch_shape))
         trivial_dims_event = generate_trivial_dims(len(self.event_shape))
+        batch_dims
         
-        self.extension_tensor = torch.ones( #ones[ 1, 1, 2,3] 
+        
+        self.extension_tensor = torch.ones( (trivial_dims_batch + event#ones[ 1, 1, 2,3] 
         self.init_tensor = # ones [10,5, 1, 1]
     
     # Forward pass is initializing and passing parameter
@@ -99,7 +101,16 @@ class UnknownParameter(CalipyQuantity):
     
 batch_dims = dim_assignment(dim_names = ['batch_dim_1', 'batch_dim_2'], dim_shapes = [10,5])
 event_dims = dim_assignment(dim_names = ['event_dim_1', 'event_dim_2'], dim_shapes = [2,3])
-    
+
+
+trivial_dims_batch = generate_trivial_dims(len(batch_dims))
+trivial_dims_event = generate_trivial_dims(len(event_dims))
+
+extension_tensor_dims = trivial_dims_batch + event_dims
+init_tensor_dims = batch_dims + trivial_dims_event
+extension_tensor = torch.ones(extension_tensor_dims.get_sizes())
+init_tensor = torch.ones(init_tensor_dims.get_sizes())
+
 node_structure_up = NodeStructure()
 node_structure_up.set_shape('batch_shape', batch_dims, 'description batch dims')
 node_structure_up.set_shape('event_shape', event_dims, 'description event dims')
