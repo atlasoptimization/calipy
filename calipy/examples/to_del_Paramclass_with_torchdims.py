@@ -76,6 +76,10 @@ class UnknownParameter(CalipyQuantity):
 
     # Class initialization consists in passing args and building shapes
     def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
+        # The whole setup is entirely possible if we instead of shapes use dims
+        # and e.g. set_dims(dims = 'batch_dims', dim_names = ('batch_dim_1', 'batch_dim_2'), dim_sizes = (10, 7))
+        # maybe it is also possible, to set a 'required' flag for some of these
+        # quantities and have this info pop up as class attribute.
         super().__init__(**kwargs)
         self.node_structure = node_structure
         self.batch_shape = self.node_structure.shapes['batch_shape']
@@ -85,11 +89,14 @@ class UnknownParameter(CalipyQuantity):
         
         trivial_dims_batch = generate_trivial_dims(len(self.batch_shape))
         trivial_dims_event = generate_trivial_dims(len(self.event_shape))
-        batch_dims
+        batch_dims = dim_assignment(dim_names =  ['batch_dim'], dim_shapes = self.batch_shape)
+        event_dims = dim_assignment(dim_names =  ['event_dim'], dim_shapes = self.event_shape)
         
+        extension_tensor_dims = trivial_dims_batch + event_dims
+        init_tensor_dims = batch_dims + trivial_dims_event
         
-        self.extension_tensor = torch.ones( (trivial_dims_batch + event#ones[ 1, 1, 2,3] 
-        self.init_tensor = # ones [10,5, 1, 1]
+        self.extension_tensor = torch.ones(extension_tensor_dims.get_sizes())   #ones[ 1, 1, 2,3] 
+        self.init_tensor = torch.ones(init_tensor_dims.get_sizes())             # ones [10,5, 1, 1]
     
     # Forward pass is initializing and passing parameter
     def forward(self, input_vars = None, observations = None):
@@ -111,12 +118,17 @@ init_tensor_dims = batch_dims + trivial_dims_event
 extension_tensor = torch.ones(extension_tensor_dims.get_sizes())
 init_tensor = torch.ones(init_tensor_dims.get_sizes())
 
+# node_structure_up = NodeStructure()
+# node_structure_up.set_shape('batch_shape', batch_dims, 'description batch dims')
+# node_structure_up.set_shape('event_shape', event_dims, 'description event dims')
+  
 node_structure_up = NodeStructure()
-node_structure_up.set_shape('batch_shape', batch_dims, 'description batch dims')
-node_structure_up.set_shape('event_shape', event_dims, 'description event dims')
-    
+node_structure_up.set_shape('batch_shape', (10,5), 'description batch dims')
+node_structure_up.set_shape('event_shape', (2,3), 'description event dims')  
 
 unknown_param = UnknownParameter(node_structure_up)
+unknown_param.node_structure.print_shapes_and_plates()
+unknown_param.forward().shape
     
     
     
@@ -129,6 +141,10 @@ full_dims = batch_dims + event_dims
     
     
     
-    
-    
+def model():
+    with pyro.plate('batch_plate', size = 10, subsample_size = 3, dim =-1) as ind:
+        print(ind)
+    with pyro.plate('batch_plate', size = 10, subsample_size = 3, dim =-1) as ind:
+        print(ind)
+        
     

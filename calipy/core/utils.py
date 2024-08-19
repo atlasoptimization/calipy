@@ -19,6 +19,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import re
 from functorch.dim import dims
+import varname
 
 
 """
@@ -210,7 +211,7 @@ def safe_eval(expr, allowed_globals=None, allowed_locals=None):
 #     return dim_tuple
 
 
-def dim_assignment(dim_names, dim_shapes=None):
+def dim_assignment(dim_names, dim_shapes=None, dim_descriptions=None):
     """
     dim_assignment dynamically assigns dimension objects to names and returns them as a DimTuple.
 
@@ -228,6 +229,10 @@ def dim_assignment(dim_names, dim_shapes=None):
     :param dim_shapes: A list of positive integers or None representing the sizes of each dimension; 
         None indicates an unbound dimension.
     :type dim_shapes: list of int or None
+    :param dim_descriptions: A list of descriptions describing each dimension; 
+        None indicates absence of descriptions.
+    :type dim_shapes: list of str or None
+        
     :return: A DimTuple containing the `Dim` objects assigned to the names in `dim_names`.
     :rtype: DimTuple
 
@@ -282,7 +287,7 @@ def dim_assignment(dim_names, dim_shapes=None):
         eval_string = f"({dim_names[0]},)"  # Ensure single element tuple with a trailing comma
     else:
         eval_string = f"({', '.join(dim_names)})"
-    dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals))
+    dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals), descriptions = dim_descriptions)
     
     return dim_tuple
 
@@ -331,7 +336,7 @@ class DimTuple(tuple):
         full_dims = batch_dims + event_dims
 
         # Accessing the sizes
-        print(full_dims.get_sizes())  # Outputs: [10, None, None]
+        print(full_dims.sizes)  # Outputs: [10, None, None]
 
         # Check if all dimensions are bound
         print(full_dims.is_bound())  # Outputs: False
@@ -340,11 +345,19 @@ class DimTuple(tuple):
         print(full_dims.filter_bound())  # Outputs: DimTuple((bd_1,))
         full_dims.to_dict()
     """
-    def __new__(cls, input_tuple):
-        # __new__ is used for immutable types like tuple
-        return super(DimTuple, cls).__new__(cls, input_tuple)
+    # def __new__(cls, input_tuple):
+    #     # __new__ is used for immutable types like tuple
+    #     return super(DimTuple, cls).__new__(cls, input_tuple)
+    
+    def __new__(cls, input_tuple, descriptions=None):
+        obj = super(DimTuple, cls).__new__(cls, input_tuple)
+        obj.descriptions = descriptions if descriptions is not None else [None] * len(input_tuple)
+        if len(obj.descriptions) != len(input_tuple):
+            raise ValueError("Length of descriptions must match length of input_tuple")
+        return obj
 
-    def get_sizes(self):
+    @property
+    def sizes(self):
         """ Returns a list of sizes for each dimension in the DimTuple.
         If a dimension is unbound, None is returned in its place.
         :return: List of sizes corresponding to each dimension in the DimTuple.
@@ -357,6 +370,64 @@ class DimTuple(tuple):
             except ValueError:
                 sizes.append(None)  # Append None if the dimension is unbound
         return sizes
+    
+    @property
+    def names(self):
+        """ Returns a list of names for each dimension in the DimTuple.
+        :return: List of names corresponding to each dimension in the DimTuple.
+        :rtype: list
+        """
+        names = ['{}'.format(dim.__repr__()) for dim in self]
+        return names
+    
+    
+    def find_indices(self, dim_names, from_right=True):
+        """Returns a list of indices indicating the locations of the dimensions with names 
+        specified in `dim_names` within the DimTuple. Raises an error if any dimension 
+        is found multiple times.
+    
+        :param dim_names: The names of the dims to be located within DimTuple.
+        :type dim_names: list of str
+        :param from_right: If True, indices are counted from the right (e.g., -1, -2). 
+                           If False, indices are counted from the left (e.g., 0, 1).
+        :type from_right: bool
+        :return: A list of indices where the dimensions are located in the DimTuple.
+        :rtype: list of int
+        :raises ValueError: If a dimension is found multiple times.
+        """
+        indices = []
+        for name in dim_names:
+            matching_indices = [i for i, d in enumerate(reversed(self)) if d.__repr__() == name]
+            if len(matching_indices) > 1:
+                raise ValueError(f"Dimension '{name}' is assigned multiple times.")
+            elif not matching_indices:
+                raise ValueError(f"Dimension '{name}' not found.")
+            
+            index = matching_indices[0]
+            if from_right:
+                indices.append(-1 - index)
+            else:
+                indices.append(len(self) - 1 - index)
+        
+        return indices
+    
+    
+    def find_relative_index(self, dim_name, ref_dim_name):
+        """Computes the index of `dim_name` relative to `ref_dim_name` within the DimTuple.
+        The relative index is positive if `dim_name` is to the right of `ref_dim_name`, 
+        and negative if it is to the left.
+    
+        :param dim_name: The name of the dimension whose relative index is to be computed.
+        :type dim_name: str
+        :param ref_dim_name: The name of the reference dimension.
+        :type ref_dim_name: str
+        :return: The relative index of `dim_name` with respect to `ref_dim_name`.
+        :rtype: int
+        :raises ValueError: If either dimension is not found or found multiple times.
+        """
+        dim_index = self.find_indices([dim_name], from_right=False)[0]
+        ref_index = self.find_indices([ref_dim_name], from_right=False)[0]
+        return dim_index - ref_index
     
     def is_bound(self):
         """ Checks if all dimensions in the DimTuple are bound.
@@ -372,7 +443,9 @@ class DimTuple(tuple):
         :rtype: DimTuple
         """
         # Returns a DimTuple containing only the bound dimensions
-        return DimTuple(tuple(d for d in self if d.is_bound))
+        bound_dims = [d for d in self if d.is_bound]
+        bound_descriptions = [desc for d, desc in zip(self, self.descriptions) if d.is_bound]
+        return DimTuple(tuple(bound_dims), descriptions=bound_descriptions)
     
     def is_unbound(self):
         """ Checks if all dimensions in the DimTuple are unbound.
@@ -388,7 +461,9 @@ class DimTuple(tuple):
         :rtype: DimTuple
         """
         # Returns a DimTuple containing only the unbound dimensions
-        return DimTuple(tuple(d for d in self if not d.is_bound))
+        unbound_dims = [d for d in self if not d.is_bound]
+        unbound_descriptions = [desc for d, desc in zip(self, self.descriptions) if not d.is_bound]
+        return DimTuple(tuple(unbound_dims), descriptions=unbound_descriptions)
 
     def bind(self, sizes):
         """ Binds sizes to the dimensions in the DimTuple. Dimensions corresponding
@@ -405,14 +480,15 @@ class DimTuple(tuple):
         if len(sizes) != len(self):
             raise ValueError("Sizes must match the number of dimensions, use None for unbound dims")
         [setattr(d, 'size', size) for d, size in zip(self, sizes) if size is not None]
-        return
     
     def reverse(self):
         """ Returns a new DimTuple with dimensions in reverse order.
         :return: A DimTuple with the dimensions reversed.
         :rtype: DimTuple
         """
-        return DimTuple(reversed(self))
+        reversed_dims = tuple(reversed(self))
+        reversed_descriptions = list(reversed(self.descriptions))
+        return DimTuple(reversed_dims, descriptions=reversed_descriptions)
     
     def to_dict(self):
         """ Converts the DimTuple into a dictionary with dimension names as keys and sizes as values.
@@ -439,7 +515,9 @@ class DimTuple(tuple):
         """
         # Overriding the + operator to return a DimTuple when adding two DimTuple objects
         if isinstance(other, DimTuple):
-            return DimTuple(super().__add__(other))
+            combined_dims = super().__add__(other)
+            combined_descriptions = self.descriptions + other.descriptions
+            return DimTuple(combined_dims, descriptions=combined_descriptions)
         return NotImplemented
 
     def __mul__(self, n):
