@@ -17,6 +17,7 @@ import fnmatch
 import contextlib
 import networkx as nx
 import matplotlib.pyplot as plt
+import copy
 import re
 from functorch.dim import dims
 import varname
@@ -380,6 +381,24 @@ class DimTuple(tuple):
         names = ['{}'.format(dim.__repr__()) for dim in self]
         return names
     
+    def get_local_copy(self):
+        """ Returns a new DimTuple with the same content as source DimTuple that 
+        can be bound and used locally without affecting source DimTuple.
+        :return: A DimTuple with same econtent but different identiy.
+        :rtype: DimTuple
+        """
+        # Returns a DimTuple containing the same content
+        dim_names = self.names
+        dim_shapes = self.sizes
+        dim_descriptions = self.descriptions
+        dim_tuple = dim_assignment(dim_names, dim_shapes, dim_descriptions)
+        return dim_tuple
+    
+    # def __deepcopy__(self, memo):
+    #     # Create a deep copy of the tuple, but handle the dimensions manually
+    #     copied_dims = tuple(copy.deepcopy(dim, memo) if dim.is_bound else dim for dim in self)
+    #     copied_descriptions = copy.deepcopy(self.descriptions, memo)
+    #     return DimTuple(copied_dims, descriptions=copied_descriptions)
     
     def find_indices(self, dim_names, from_right=True):
         """Returns a list of indices indicating the locations of the dimensions with names 

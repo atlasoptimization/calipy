@@ -95,8 +95,8 @@ class UnknownParameter(CalipyQuantity):
         extension_tensor_dims = trivial_dims_batch + event_dims
         init_tensor_dims = batch_dims + trivial_dims_event
         
-        self.extension_tensor = torch.ones(extension_tensor_dims.get_sizes())   #ones[ 1, 1, 2,3] 
-        self.init_tensor = torch.ones(init_tensor_dims.get_sizes())             # ones [10,5, 1, 1]
+        self.extension_tensor = torch.ones(extension_tensor_dims.sizes)   #ones[ 1, 1, 2,3] 
+        self.init_tensor = torch.ones(init_tensor_dims.sizes)             # ones [10,5, 1, 1]
     
     # Forward pass is initializing and passing parameter
     def forward(self, input_vars = None, observations = None):
@@ -115,8 +115,8 @@ trivial_dims_event = generate_trivial_dims(len(event_dims))
 
 extension_tensor_dims = trivial_dims_batch + event_dims
 init_tensor_dims = batch_dims + trivial_dims_event
-extension_tensor = torch.ones(extension_tensor_dims.get_sizes())
-init_tensor = torch.ones(init_tensor_dims.get_sizes())
+extension_tensor = torch.ones(extension_tensor_dims.sizes)
+init_tensor = torch.ones(init_tensor_dims.sizes)
 
 # node_structure_up = NodeStructure()
 # node_structure_up.set_shape('batch_shape', batch_dims, 'description batch dims')
@@ -140,11 +140,4 @@ event_dims = DimTuple((ed_1,))
 full_dims = batch_dims + event_dims
     
     
-    
-def model():
-    with pyro.plate('batch_plate', size = 10, subsample_size = 3, dim =-1) as ind:
-        print(ind)
-    with pyro.plate('batch_plate', size = 10, subsample_size = 3, dim =-1) as ind:
-        print(ind)
-        
-    
+   
