@@ -227,8 +227,8 @@ def dim_assignment(dim_names, dim_shapes=None, dim_descriptions=None):
         These names must be valid Python identifiers. If only one name is provided and multiple shapes,
         the name will be broadcast with indices (e.g., ['batch'] -> ['batch_1', 'batch_2', ...]).
     :type dim_names: list of str
-    :param dim_shapes: A list of positive integers or None representing the sizes of each dimension; 
-        None indicates an unbound dimension.
+    :param dim_shapes: A list of nonnegative integers or None representing the sizes of each dimension; 
+        None indicates an unbound dimension; a value of 0 indicates an empty dimension
     :type dim_shapes: list of int or None
     :param dim_descriptions: A list of descriptions describing each dimension; 
         None indicates absence of descriptions.
@@ -253,13 +253,17 @@ def dim_assignment(dim_names, dim_shapes=None, dim_descriptions=None):
         # Example with broadcasting
         dim_tuple = dim_assignment(dim_names=['batch'], dim_shapes=[5, 2])
         print(dim_tuple)  # Outputs: (batch_1, batch_2)
-        print(dim_tuple.get_sizes())  # Outputs: [5,2]
+        print(dim_tuple.size)  # Outputs: [5,2]
         
         # Example with bound and unbound dims
         dim_tuple = dim_assignment(dim_names=['batch_dim_1', 'batch_dim_2'], dim_shapes=[5, None])
         dim_tuple.get_sizes()
         dim_tuple.filter_bound()
         dim_tuple.filter_unbound()
+        
+        # Example with a dimension skipped
+        dim_tuple = dim_assignment(dim_names=['a'], dim_shapes=[0])
+        print(dim_tuple)  # Outputs: DimTuple(())
     """
         
     # Broadcasting over dim_names if needed
@@ -271,24 +275,39 @@ def dim_assignment(dim_names, dim_shapes=None, dim_descriptions=None):
     if not all(isinstance(name, str) and name.isidentifier() for name in dim_names):
         raise ValueError("All dimension names must be valid Python identifiers.")
     if dim_shapes is not None:
-        if not all(shape is None or (isinstance(shape, int) and shape > 0) for shape in dim_shapes):
-            raise ValueError("All dimension shapes must be positive integers or None.")
+        if not all(shape is None or (isinstance(shape, int) and shape >= 0) for shape in dim_shapes):
+            raise ValueError("All dimension shapes must be nonnegative integers or None.")
     
     # Create a local environment to hold the assigned dimensions
     dims_locals = {}
-    for name, shape in zip(dim_names, dim_shapes):
+    valid_dim_names = []
+    valid_dim_descriptions = []
+    
+    if dim_descriptions is None:
+        dim_descriptions = [None] * len(dim_names)
+    
+    for name, shape, description in zip(dim_names, dim_shapes, dim_descriptions):
+        if shape == 0:
+            continue  # Skip this dimension entirely
         if shape is not None:
             exec_string = f"{name} = dims(sizes=[{shape}])"
         else:
             exec_string = f"{name} = dims()"
         restricted_exec(exec_string, dims_locals)
+        valid_dim_names.append(name)
+        valid_dim_descriptions.append(description)
+
+    # If no valid dimensions were created, return an empty DimTuple
+    if not valid_dim_names:
+        return DimTuple(())
     
     # Create a tuple of dimensions
-    if len(dim_names) == 1:
-        eval_string = f"({dim_names[0]},)"  # Ensure single element tuple with a trailing comma
+    if len(valid_dim_names) == 1:
+        eval_string = f"({valid_dim_names[0]},)"  # Ensure single element tuple with a trailing comma
     else:
-        eval_string = f"({', '.join(dim_names)})"
-    dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals), descriptions = dim_descriptions)
+        eval_string = f"({', '.join(valid_dim_names)})"
+    
+    dim_tuple = DimTuple(safe_eval(eval_string, allowed_locals=dims_locals), descriptions=valid_dim_descriptions)
     
     return dim_tuple
 
