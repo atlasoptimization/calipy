@@ -366,9 +366,64 @@ class CalipyNode(ABC):
 # data, instruments, effects, and quantities of the whole probabilistic model.
 
 class CalipyProbModel(CalipyNode):
+    """ CalipyProbModel is an abstract base class that integrates the model, guide, and training components 
+    for probabilistic models within the Calipy framework. It serves as the foundation for building and 
+    training probabilistic models by providing methods to define the model, guide, and manage optimization
+    and training procedures.
 
+    This class is designed to be subclassed, where users define the specific `model` and `guide` methods 
+    based on their probabilistic model requirements. The `train` method facilitates the training process 
+    using stochastic variational inference (SVI) by interacting with Pyro's SVI module.
+
+    :param type: An optional string representing the type of the model. This can be used to categorize 
+        or identify the model within larger workflows.
+    :type type: str, optional
+    :param name: An optional string representing the name of the model. This name is useful for tracking 
+        and referencing the model within a project or experiment.
+    :type name: str, optional
+    :param info: An optional dictionary containing additional information about the model, such as 
+        metadata or configuration details.
+    :type info: dict, optional
+    
+    :return: An instance of the CalipyProbModel class.
+    :rtype: CalipyProbModel
+
+    Example usage:
+
+    .. code-block:: python
+
+        class MyProbModel(CalipyProbModel):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+                # Integrate nodes or parameters specific to the model
+                self.some_param = pyro.param("some_param", torch.tensor(1.0))
+
+            def model(self, input_data, output_data):
+                # Define the generative model
+                pass
+
+            def guide(self, input_data, output_data):
+                # Define the guide (variational distribution)
+                pass
+
+        prob_model = MyProbModel(name="example_model")
+        prob_model.train(input_data, output_data, optim_opts)
+    """
+    
     # i) Initialization
     def __init__(self, type = None, name = None, info = None):
+        """ Initializes the CalipyProbModel with basic information, setting up the structure for input 
+        and output data handling, and optionally categorizing the model.
+
+        :param type: An optional string to specify the type of the model, aiding in categorization.
+        :type type: str, optional
+        :param name: An optional string to provide a name for the model, useful for identification and tracking.
+        :type name: str, optional
+        :param info: An optional dictionary to store additional metadata or configuration details about the model.
+        :type info: dict, optional
+        
+        :return: None
+        """
         
         # Basic infos
         super().__init__(node_type = type, node_name = name, info_dict = info)
@@ -378,44 +433,190 @@ class CalipyProbModel(CalipyNode):
         # self.guide_dag = CalipyDAG('Guide_DAG')
     
     def forward(self):
+        """  The forward method of CalipyProbModel is abstract and intended to be implemented by subclasses. 
+        This method serves as a placeholder for the core logic that defines how data flows through the model.
+        
+        In the context of CalipyProbModel, this method might be left abstract if not required directly, 
+        as the `model` and `guide` methods typically handle the main computational tasks.
+        
+        :return: None
+        """
         pass
 
         # self.id = "{}_{}".format(self.type, self.name)
     
     @abstractmethod
     def model(self, input_data, output_data):
+        """ Abstract method that must be implemented in subclasses. The `model` method defines the generative 
+        process or the probabilistic model that describes how the observed data is generated from latent 
+        variables. This method is expected to include parameters and sampling statements that define the model's 
+        stochastic behavior.
+
+        :param input_data: The input data required for the model, which might include explanatory variables
+            influencing the probabilistic process.
+        :type input_data: torch.tensor or tuple of torch.tensor
+        :param output_data: The observed data that the model aims to describe or explain through the generative process.
+        :type output_data: torch.tensor or tuple of torch.tensor
+        
+        :return: None
+        """
         pass
     
     @abstractmethod
     def guide(self, input_data, output_data):
+        """ Abstract method that must be implemented in subclasses. The `guide` method defines the variational 
+        distribution used in the inference process. This distribution approximates the posterior distribution 
+        of the latent variables given the observed data.
+
+        :param input_data: The input data required for the guide, which might include explanatory variables
+            influencing the variational distribution.
+        :type input_data: torch.tensor or tuple of torch.tensor
+        :param output_data: The observed data that guides the variational distribution in approximating 
+            the posterior of the latent variables.
+        :type output_data: torch.tensor or tuple of torch.tensor
+        
+        :return: None
+        """
         pass
     
         
-    def train(self, input_data, output_data, optim_opts):
-        self.optim_opts = optim_opts
-        self.optimizer = optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
-        self.loss = optim_opts.get('loss', pyro.infer.Trace_ELBO())
-        self.n_steps = optim_opts.get('n_steps', 1000)
-        self.svi = pyro.infer.SVI(self.model, self.guide, self.optimizer, self.loss)
+    # def train(self, input_data, output_data, optim_opts):
+    #     """ Trains the probabilistic model using stochastic variational inference (SVI). The `train` method 
+    #     iterates over a specified number of steps to optimize the model's parameters by minimizing the 
+    #     specified loss function (default: ELBO).
+
+    #     :param input_data: The input data to be used by the model during training, often comprising features 
+    #         or covariates.
+    #     :type input_data: Any
+    #     :param output_data: The observed data that the model aims to fit, which could include measurements 
+    #         or labels.
+    #     :type output_data: Any
+    #     :param optim_opts: A dictionary of options for the optimizer and loss function, including:
+    #         - `optimizer`: The Pyro optimizer to be used (default: NAdam).
+    #         - `loss`: The loss function used for optimization (default: Trace_ELBO).
+    #         - `n_steps`: The number of optimization steps (default: 1000).
+    #     :type optim_opts: dict
         
-        self.loss_sequence = []
-        for step in range(self.n_steps):
-            loss = self.svi.step(input_vars = input_data, observations = output_data)
-            if step % 100 == 0:
-                print('epoch: {} ; loss : {}'.format(step, loss))
-            else:
-                pass
-            self.loss_sequence.append(loss)
+    #     :return: A list of loss values recorded during training.
+    #     :rtype: list of float
+    #     """
+        
+    #     self.optim_opts = optim_opts
+    #     self.optimizer = optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
+    #     self.loss = optim_opts.get('loss', pyro.infer.Trace_ELBO())
+    #     self.n_steps = optim_opts.get('n_steps', 1000)
+    #     self.svi = pyro.infer.SVI(self.model, self.guide, self.optimizer, self.loss)
+        
+    #     self.loss_sequence = []
+    #     for step in range(self.n_steps):
+    #         loss = self.svi.step(input_vars = input_data, observations = output_data)
+    #         if step % 100 == 0:
+    #             print('epoch: {} ; loss : {}'.format(step, loss))
+    #         else:
+    #             pass
+    #         self.loss_sequence.append(loss)
             
+    #     return self.loss_sequence
+    
+    def train(self, input_data=None, output_data=None, dataloader=None, optim_opts=None):
+        """ Trains the probabilistic model using stochastic variational inference (SVI). The `train` method 
+        supports either direct input/output data or a single DataLoader object for batch processing.
+    
+        :param input_data: The input data to be used by the model during training. This should be provided 
+            if not using a DataLoader.
+        :type input_data: torch.tensor or tuple of torch.tensor, optional
+        :param output_data: The observed data that the model aims to fit. This should be provided if not 
+            using a DataLoader.
+        :type output_data: torch.tensor or tuple of torch.tensor, optional
+        :param dataloader: A DataLoader object that provides batches of synchronized input and output data.
+            If this is provided, `input_data` and `output_data` should be None.
+        :type dataloader: torch.utils.data.DataLoader, optional
+        :param optim_opts: A dictionary of options for the optimizer and loss function, including:
+            - `optimizer`: The Pyro optimizer to be used (default: NAdam).
+            - `loss`: The loss function used for optimization (default: Trace_ELBO).
+            - `n_steps`: The number of optimization steps (default: 1000).
+            - `n_steps_report`: The number of optimization steps after which reporting is done (default: 100).
+        :type optim_opts: dict, optional
+        
+        :return: A list of loss values recorded during training.
+        :rtype: list of float
+    
+        :raises ValueError: If both `input_data`/`output_data` and `dataloader` are provided, or if neither 
+            is provided.
+        """
+    
+        # Validate input configuration
+        if dataloader is not None:
+            if input_data is not None or output_data is not None:
+                raise ValueError("Either provide `input_data` and `output_data`, or `dataloader`, but not both.")
+        elif output_data is None:
+            raise ValueError("Either `input_data` and `output_data` must be provided, or `dataloader` must be set.")
+    
+        # Fetch optional arguments
+        self.optim_opts = optim_opts or {}
+        self.optimizer = self.optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
+        self.loss = self.optim_opts.get('loss', pyro.infer.Trace_ELBO())
+        self.n_steps = self.optim_opts.get('n_steps', 1000)
+        self.n_steps_report = self.optim_opts.get('n_steps_report', 100)
+        
+        # Set optimizer and initialize training
+        self.svi = pyro.infer.SVI(self.model, self.guide, self.optimizer, self.loss)
+        self.loss_sequence = []
+    
+        if dataloader is not None:
+            # Handle DataLoader case
+            for epoch in range(self.n_steps):
+                epoch_loss = 0
+                for batch_input, batch_output, idx in dataloader:
+                    loss = self.svi.step(input_vars=batch_input, observations=batch_output)
+                    epoch_loss += loss
+                
+                epoch_loss /= len(dataloader)
+                self.loss_sequence.append(epoch_loss)
+    
+                if epoch % self.n_steps_report == 0:
+                    print(f'epoch: {epoch} ; loss : {epoch_loss}')
+        else:
+            # Handle direct data input case
+            for step in range(self.n_steps):
+                loss = self.svi.step(input_vars=input_data, observations=output_data)
+                if step % self.n_steps_report == 0:
+                    print(f'epoch: {step} ; loss : {loss}')
+                self.loss_sequence.append(loss)
+        
         return self.loss_sequence
     
+            
+    
     def render(self, input_vars = None):
+        """ Renders a graphical representation of the probabilistic model and guide using Pyro's 
+        `render_model` function. This visualization helps in understanding the structure of the model, 
+        including the relationships between variables and distributions.
+
+        :param input_vars: Optional input variables that might influence the model structure.
+        :type input_vars: Any, optional
+        
+        :return: A tuple containing the graphical representations of the model and guide.
+        :rtype: tuple of (graphical_model, graphical_guide)
+        """
+        
         graphical_model = pyro.render_model(model = self.model, model_args= (input_vars,), render_distributions=True, render_params=True)
         graphical_guide = pyro.render_model(model = self.guide, model_args= (input_vars,), render_distributions=True, render_params=True)
         return graphical_model, graphical_guide
     
     
     def render_comp_graph(self, input_vars = None):
+        """ Renders the computational graph of the model and guide using `torchviz`. This method 
+        visualizes the flow of computations within the model, which can be useful for debugging 
+        or understanding the sequence of operations.
+
+        :param input_vars: Optional input variables that influence the computational graph.
+        :type input_vars: Any, optional
+        
+        :return: A tuple containing the computational graphs of the model and guide.
+        :rtype: tuple of (comp_graph_model, comp_graph_guide)
+        """
+        
         # Model pass
         model_output = self.model(input_vars)
         comp_graph_model = torchviz.make_dot(model_output)
@@ -425,6 +626,9 @@ class CalipyProbModel(CalipyNode):
         return comp_graph_model, comp_graph_guide
     
     def __repr__(self):
+        """ Provides a string representation of the CalipyProbModel, including its type and name, 
+        which is useful for logging or debugging.
+        """
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
 
 
