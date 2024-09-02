@@ -80,11 +80,22 @@ input_data = None
 class CalipyDataset(Dataset):
     def __init__(self, input_data, output_data, shape_dict):
         
-        # check shape_dict
-        # input_data batch_shape == output_data batch_shape
-        # if not shape_dict['input_batch_shape'] == shape_dict['output_batch_shape']:
-        #     raise Exception('batch shapes need to be equal for input_data and output_data but are {} and {}'.
-        #                     format(shape_dict['input_batch_shape'], shape_dict['output_batch_shape']))
+        # dataset type can be 'tensor', 'tensortuple', or 'tensortuplelist'
+        # - default is tensor which means input_data and output_data are tensors,
+        # e.g. output_data = torch.randn([2,2])
+        # dims: batch and event dims are recorded in shape_dict with keys 'batch_dim',
+        # 'input_event_dim', 'output_event_dim'. This use allows subbatching over
+        # a flattened batch_dim.
+        # - tensortuple allows input_data, output_data to be a tuple of tensors,
+        # e.g. output_data = (torch.randn([2,2]), torch.ones([3]))
+        # dims: the output_data is considered to be a single event and will be
+        # handed to inference algorithms. Subbatching can be done by conversion
+        # to tensortuplelist, which assumes the list index to be the batching index
+        # - tensortuplelist allows input_data, output_data to be a tuple of tensors 
+        # (data_1, data_2, ...) and produces a list [(data_11, data_12 ,...) ,
+        # ... (data_n1, data_n2, ...)] 
+        # dims: each list entry is a tuple of tensors interpreted as a single
+        # event and the list index is the batching index.
         
         self.batch_dim = dim_assignment(['batch_dim'], dim_shapes = shape_dict['batch_shape'])
         
@@ -127,18 +138,19 @@ class CalipyDataset(Dataset):
     def __getitem__(self, idx):
         # Check if idx is a tensor or list of indices
         if isinstance(idx, (torch.Tensor, list)):
-            # Handle the case where idx is a tensor or list of indices
-            if isinstance(idx, torch.Tensor):
-                idx = idx.tolist()  # Convert tensor to list
+            # # Handle the case where idx is a tensor or list of indices
+            # if isinstance(idx, torch.Tensor):
+            #     idx = idx.tolist()  # Convert tensor to list
             
-            input_data_batch = [self.data[0][i, ...].reshape(self.input_dim_single.sizes) if self.data[0] is not None else None for i in idx]
-            output_data_batch = [self.data[1][i, ...].reshape(self.output_dim_single.sizes) for i in idx]
+            # input_data_batch = [self.data[0][i, ...].reshape(self.input_dim_single.sizes) if self.data[0] is not None else None for i in idx]
+            # output_data_batch = [self.data[1][i, ...].reshape(self.output_dim_single.sizes) for i in idx]
     
-            # Stack the batch of data together, handling None values if necessary
-            input_data_batch = torch.cat([item for item in input_data_batch if item is not None]) if input_data_batch[0] is not None else None
-            output_data_batch = torch.cat(output_data_batch)
+            # # Stack the batch of data together, handling None values if necessary
+            # input_data_batch = torch.cat([item for item in input_data_batch if item is not None]) if input_data_batch[0] is not None else None
+            # output_data_batch = torch.cat(output_data_batch)
     
-            return (input_data_batch, output_data_batch, idx)
+            # return (input_data_batch, output_data_batch, idx)
+            pass
         
         else:
             # Handle the case where idx is a single integer
