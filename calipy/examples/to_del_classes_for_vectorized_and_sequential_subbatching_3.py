@@ -145,9 +145,9 @@ class SampleResult:
         
         
 def sample(name, dist, plate_names, plate_sizes, vectorizable=True, observations=None, indices=None):
+    n_event_dims = len(event_shape)
     if vectorizable:
         n_plates = len(plate_sizes)
-        n_event_dims = len(event_shape)
         # Vectorized sampling
         dims = [(-n_plates + i) for i in range(n_plates)]
         plate_nrs = [k for k in range(n_plates)]
@@ -171,13 +171,15 @@ def sample(name, dist, plate_names, plate_sizes, vectorizable=True, observations
     else:
         # Non-vectorized sampling remains the same
         ranges_prior = [range(size) for size in plate_sizes]
-        ranges_obs = [range(size) for size in (observations.shape if observations is not None else [])]
+        ranges_obs = [range(size) for size in (observations.shape[0:-n_event_dims] if observations is not None else [])]
         ranges = ranges_obs if observations is not None else ranges_prior
         samples = []
         for idx in itertools.product(*ranges):
             idx_str = '_'.join(map(str, idx))
+            subsample_index = idx_str
+            # subsample_index = indices[idx] if indices is not None else idx_str # Naming incorrect
             obs_or_None = observations[idx] if observations is not None else None
-            x = pyro.sample(f"{name}_{idx_str}", dist, obs=obs_or_None)
+            x = pyro.sample(f"{name}_{subsample_index}", dist, obs=obs_or_None)
             samples.append(x)
         return SampleResult(samples, plate_sizes, event_shape, vectorizable)
 
@@ -207,8 +209,8 @@ print("Non-Vectorized Output:", output_non_vectorized)
 
 
 # Inference
-# vectorizable = True
-vectorizable = False
+vectorizable = True
+# vectorizable = False
 spec_model = lambda observations, indices :  model(observations = observations, indices = indices, vectorizable = vectorizable)
 model_trace = pyro.poutine.trace(spec_model)
 spec_trace = model_trace.get_trace(data, None)
