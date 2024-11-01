@@ -285,6 +285,8 @@ def dim_assignment(dim_names, dim_shapes=None, dim_descriptions=None):
     
     if dim_descriptions is None:
         dim_descriptions = [None] * len(dim_names)
+    if dim_shapes is None:
+        dim_shapes = [None] * len(dim_names)
     
     for name, shape, description in zip(dim_names, dim_shapes, dim_descriptions):
         if shape == 0:

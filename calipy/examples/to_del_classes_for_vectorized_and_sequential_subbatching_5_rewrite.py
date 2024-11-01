@@ -14,6 +14,7 @@ import itertools
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from functorch.dim import dims
+from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack
 
 import numpy as np
 import random
@@ -21,26 +22,32 @@ import matplotlib.pyplot as plt
 
 # i) Generate synthetic data
 
-n_data_1 = 21
-n_data_2 = 1
-batch_shape = [n_data_1]
+n_data_1 = 5
+n_data_2 = 3
+batch_shape = [n_data_1, n_data_2]
 n_event = 2
 n_event_dims = 1
-n_data_total = n_data_1 + n_data_2
+n_data_total = n_data_1 * n_data_2
 torch.manual_seed(42)
 pyro.set_rng_seed(42)
 
 # # Plate names and sizes
-plate_names = ['batch']
-plate_sizes = [n_data_1]
+plate_names = ['batch_plate_1', 'batch_plate_2']
+plate_sizes = [n_data_1, n_data_2]
 
-mu_true = torch.zeros([1,2])
+mu_true = torch.zeros([1,1,2])
 sigma_true = torch.tensor([[1,0],[0,0.01]])
 
-extension_tensor = torch.ones([n_data_1,1])
+extension_tensor = torch.ones([n_data_1,n_data_2,1])
 # extension_tensor = torch.ones([n_data_1, n_data_2])
 data_dist = pyro.distributions.MultivariateNormal(loc = mu_true * extension_tensor, covariance_matrix = sigma_true)
 data = data_dist.sample()
+
+
+# functorch dims
+batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'])
+event_dims = dim_assignment(dim_names = ['ed_1'])
+data_dims = batch_dims + event_dims
 
 
 # ii) Build dataloader
@@ -50,22 +57,29 @@ class CalipyObservation:
     Stores observations along with batch and event dimensions.
     Each observation has a unique name for reference during sampling.
     """
-    def __init__(self, observations, plate_names, batch_shape, event_shape):
-        self.observations = observations  # Should be a tensor
-        self.observation_length = self.observations.shape[0]
-        self.batch_shape = batch_shape
-        self.event_shape = event_shape
-        self.plate_names = plate_names
+    def __init__(self, observations, batch_dims, event_dims, subsample_indices = None):
+
+        self.subsample_indices = subsample_indices
+        self.batch_dims = batch_dims.get_local_copy()
+        self.event_dims = event_dims.get_local_copy()
+        self.obs_dims = self.batch_dims + self.event_dims
+        self.observations = observations[self.obs_dims]  # Should be a tensor
+        # self.plate_names = plate_names
         self.index_to_name_dict = self._generate_index_to_name_dict()
-        self.name_to_index_dict = self._generate_name_to_index_dict
+        self.name_to_index_dict = self._generate_name_to_index_dict()
+        self.name_to_obs_dict = self._generate_name_to_obs_dict()
+        self.index_to_obs_dict = self._generate_index_to_obs_dict()
         
 
     def _generate_index_to_name_dict(self):
         # Map indices to unique names
-        indices = list(itertools.product(*[range(size) for size in self.batch_shape]))
+        local_indices = list(itertools.product(*[range(size) for size in self.batch_shape]))
+        global_indices = self.subsample_indices if self.subsample_indices is not None else local_indices
         index_to_name_dict = {}
         for idx in indices:
-            idx_str = '_'.join(f"plate_{self.plate_names[i]}_sample_{idx[i]}" for i in range(len(self.plate_names)))
+            # idx_str = '_'.join("plate_{}_sample_{}".format(self.plate_names[i], idx[i]) for i in range(len(self.plate_names)))
+            idx_code = [idx[k].item() for k in range(len(indices.shape))]
+            idx_str =  "sample_{}".format(idx_code)
             index_to_name_dict[idx] = idx_str
         return index_to_name_dict
     
@@ -75,6 +89,17 @@ class CalipyObservation:
         for index, name in self.index_to_name_dict.items():
             name_to_index_dict[name] = index
         return name_to_index_dict
+    
+    def _generate_name_to_obs_dict(self):
+        # Map observation names to observation values
+        name_to_obs_dict = {}
+        for obs_name, index in self.name_to_index_dict.items():
+            name_to_obs_dict[obs_name] = self.observations[index,...]
+        return name_to_obs_dict
+    
+    def _generate_index_to_obs_dict(self):
+        # Map subsample indices to observation values
+        pass
     
     def get_observation(self, idx):
         # Retrieve observation and its unique name
@@ -87,14 +112,14 @@ class CalipyObservation:
         return repr_str
 
 class SubbatchDataset(Dataset):
-    def __init__(self, data, subsample_size, batch_shape=None, event_shape=None):
+    def __init__(self, data, subsample_sizes, batch_shape=None, event_shape=None):
         self.data = data
-        self.data_length = self.data.shape[0]
-        self.subsample_size = subsample_size
+        self.batch_shape = batch_shape
+        self.subsample_sizes = subsample_sizes
 
         # Determine batch_shape and event_shape
         if batch_shape is None:
-            batch_dims = len(subsample_size)
+            batch_dims = len(subsample_sizes)
             self.batch_shape = data.shape[:batch_dims]
         else:
             self.batch_shape = batch_shape
@@ -106,8 +131,8 @@ class SubbatchDataset(Dataset):
 
         # Compute number of blocks using ceiling division to include all data
         self.num_blocks = [
-            (self.batch_shape[i] + subsample_size[i] - 1) // subsample_size[i]
-            for i in range(len(subsample_size))
+            (self.batch_shape[i] + subsample_sizes[i] - 1) // subsample_sizes[i]
+            for i in range(len(subsample_sizes))
         ]
         self.block_indices = list(itertools.product(*[range(n) for n in self.num_blocks]))
         random.shuffle(self.block_indices)
@@ -119,20 +144,20 @@ class SubbatchDataset(Dataset):
         block_idx = self.block_indices[idx]
         slices = []
         indices_ranges = []
-        for i, (b, s) in enumerate(zip(block_idx, self.subsample_size)):
+        for i, (b, s) in enumerate(zip(block_idx, self.subsample_sizes)):
             start = b * s
             end = min(start + s, self.batch_shape[i])
             slices.append(slice(start, end))
             indices_ranges.append(torch.arange(start, end))
         # Include event dimensions in the slices
         slices.extend([slice(None)] * len(self.event_shape))
-        obs_block = CalipyObservation(self.data[tuple(slices)], plate_names, self.batch_shape, self.event_shape)
         meshgrid = torch.meshgrid(*indices_ranges, indexing='ij')
-        indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_size))
+        indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_sizes))
+        obs_block = CalipyObservation(self.data[tuple(slices)], self.batch_shape, self.event_shape, subsample_indices = indices)
         return obs_block, indices
 
 # Usage example
-subsample_sizes = [17]
+subsample_sizes = [4, 2]
 subbatch_dataset = SubbatchDataset(data, subsample_sizes, batch_shape=batch_shape, event_shape=[2])
 subbatch_dataloader = DataLoader(subbatch_dataset, batch_size=None)
 
@@ -216,7 +241,8 @@ def calipy_sample(name, dist, plate_names, plate_sizes, vectorizable=True, obs=N
     event_shape = dist.event_shape
     batch_shape = dist.batch_shape
     n_plates = len(plate_sizes)
-    n_default = 1
+    n_default = 3
+    batch_shape_default = [n_default]*len(batch_shape)
     ssi = subsample_indices
 
     # cases [1,x,x] vectorizable
@@ -266,39 +292,52 @@ def calipy_sample(name, dist, plate_names, plate_sizes, vectorizable=True, obs=N
             
             # case [0,0] (obs, ssi)
             if obs == None and ssi == None:
-                # Create n_default new observations with ssi range(n_default)
-                ssi_list = list(range(n_default))
-                obs_name = ["sample_{}".format(sample_nr) for sample_nr in ssi_list] 
-                obs_value = n_default*[None]
+                # Create new observations of shape batch_shape_default with ssi
+                # a flattened list of product(range(n_default))
+                batch_shape_obs = batch_shape_default
+                ssi_lists = [list(range(bs)) for bs in batch_shape_obs]
+                ssi_list = [torch.tensor(idx) for idx in itertools.product(*ssi_lists)]
+                ssi_codes = [[ssi[k].item() for k in range(len(ssi.shape)+1)] for ssi in ssi_list]
+                ssi_tensor = torch.vstack(ssi_list)
+                obs_name_list = ["sample_{}".format(ssi_code) for ssi_code in ssi_codes] 
+                obs_value_list = len(ssi_list)*[None]
             
             # case [0,1] (obs, ssi)
             if obs == None and ssi is not None:
                 # Create len(ssi) new observations with given ssi's
-                ssi_lists = ssi
-                obs_name = ["sample_{}".format(sample_nr) for sample_nr in ssi_list] 
-                obs_value = len(ssi_lists)*[None]
+                ssi_list = ssi
+                ssi_codes = [[ssi[k].item() for k in range(len(ssi.shape)+1)] for ssi in ssi_list]
+                ssi_tensor = torch.vstack(ssi_list)
+                obs_name_list = ["sample_{}".format(ssi_code) for ssi_code in ssi_codes] 
+                obs_value_list = len(ssi_list)*[None]
             
             # case [1,0] (obs, ssi)
             if obs is not None and ssi == None:
-                ssi_list = [0]
-                obs_name, obs_value = None, None
+                #  Create obs with standard ssi derived from obs batch_shape
+                batch_shape_obs = obs.shape[:len(batch_shape_default)]
+                ssi_lists = [list(range(bs)) for bs in batch_shape_obs]
+                ssi_list = [torch.tensor(idx) for idx in itertools.product(*ssi_lists)]
+                ssi_codes = [[ssi[k].item() for k in range(len(ssi.shape)+1)] for ssi in ssi_list]
+                ssi_tensor = torch.vstack(ssi_list)
+                obs_name_list = ["sample_{}".format(ssi_code) for ssi_code in ssi_codes] 
+                obs_value_list = [obs[ssi,...] for ssi in ssi_list]
             
             # case [1,1] (obs, ssi)
             if obs is not None and ssi is not None:
-                pass
+                # Create obs associated to given ssi's
+                batch_shape_obs = obs.shape[:len(batch_shape_default)]
+                ssi_list = ssi
+                ssi_codes = [[ssi[k].item() for k in range(len(ssi.shape)+1)] for ssi in ssi_list]
+                ssi_tensor = torch.vstack(ssi_list)
+                obs_name_list = ["sample_{}".format(ssi_code) for ssi_code in ssi_codes] 
+                obs_value_list = [obs[ssi,...] for ssi in ssi_list]
             
-            # Determine ranges for each plate
-            if subsample_indices is not None:
-                subsample_index_lists = [[idx.tolist()[0] for idx in subsample_indices]]
-                
-            if obs is not None or subsample_indices is not None:
-                if obs is not None:
-                    # batch_index_lists = [list(range(size)) for size in obs.batch_shape] 
-                    batch_index_lists = [list(range(obs.observation_length))]  
-                if subsample_indices is not None:
-                    batch_index_lists = [list(range(len(subsample_indices)))]    
-            else:
-                batch_index_lists = [list(range(size)) for size in plate_sizes]
+            # Iterate over the lists and sample
+            n_samples = len(obs_name_list)
+            samples = []
+            plate_list = [pyro.plate(plate_names[plate], plate_sizes[plate], subsample = ssi_tensor[:,plate]) for plate in range(len(plate_names))]
+            
+            
     
             # Iterate over all combinations of indices
             samples = []
