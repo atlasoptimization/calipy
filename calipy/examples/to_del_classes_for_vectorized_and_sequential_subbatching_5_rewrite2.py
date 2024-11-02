@@ -118,6 +118,64 @@ class DataTuple:
             
         return DataTuple(key_list, value_list)
     
+    def apply_from_dict(self, fun_dict):
+        """
+        Applies functions from a dictionary to corresponding entries in the DataTuple.
+        If a key in fun_dict matches a key in DataTuple, the function is applied.
+    
+        :param fun_dict: Dictionary with keys corresponding to DataTuple keys and values as functions.
+        :return: New DataTuple with functions applied where specified.
+        """
+        new_dict = {}
+        for key, value in self._data_dict.items():
+            if key in fun_dict:
+                new_value = fun_dict[key](value)
+            else:
+                new_value = value
+            new_dict[key] = new_value
+        key_list, value_list = zip(*new_dict.items())
+        return DataTuple(key_list, value_list)
+
+
+    def get_subattributes(self, attr):
+        """
+        Allows direct access to attributes or methods of elements inside the DataTuple.
+        For example, calling `data_tuple.get_subattributes('shape')` will return a DataTuple
+        containing the shapes of each tensor in `data_tuple`.
+
+        :param attr: The attribute or method name to be accessed.
+        :return: DataTuple containing the attribute values or method results for each element.
+        """
+        new_dict = {}
+        for key, value in self._data_dict.items():
+            if hasattr(value, attr):
+                attribute = getattr(value, attr)
+                # If it's a method, call it
+                new_dict[key] = attribute() if callable(attribute) else attribute
+            else:
+                raise AttributeError(f"Object '{key}' of type '{type(value)}' has no attribute '{attr}'")
+        key_list, value_list = zip(*new_dict.items())
+        return DataTuple(key_list, value_list)
+    
+    def apply_class(self, class_type):
+        """
+        Allows applying a class constructor to all elements in the DataTuple.
+        For example, DifferentClass(data_tuple) will apply DifferentClass to each element in data_tuple.
+
+        :param class_type: The class constructor to be applied to each element.
+        :return: New DataTuple with the class constructor applied to each element.
+        """
+        if not callable(class_type):
+            raise ValueError("The provided class_type must be callable.")
+
+        new_dict = {}
+        for key, value in self._data_dict.items():
+            new_dict[key] = class_type(value)
+        
+        key_list, value_list = zip(*new_dict.items())
+        return DataTuple(key_list, value_list)
+ 
+    
     def bind_dims(self, datatuple_dims):
         """ 
         Returns a new DataTuple of tensors with dimensions bound to the dims
@@ -194,7 +252,40 @@ class DataTuple:
             else:
                 repr_items.append(f"{k}: {v.__repr__()}")
         return f"DataTuple({', '.join(repr_items)})"
-    
+
+# Test the DataTuple definitions
+# Define names and values for DataTuple
+names = ['tensor_a', 'tensor_b']
+values = [torch.ones(2, 3), torch.zeros(4, 5)]
+
+# Create DataTuple instance
+data_tuple = DataTuple(names, values)
+
+# 1. Apply a function dictionary to DataTuple
+fun_dict = {'tensor_a': lambda x: x + 1, 'tensor_b': lambda x: x - 1}
+result_tuple = data_tuple.apply_from_dict(fun_dict)
+print("Result of applying function dictionary:", result_tuple)
+
+# 2. Get the shapes of each tensor in DataTuple
+shapes_tuple = data_tuple.get_subattributes('shape')
+print("Shapes of each tensor in DataTuple:", shapes_tuple)
+
+# 3. Apply a custom class DifferentClass to each element in DataTuple
+class DifferentClass:
+    def __init__(self, tensor):
+        self.tensor = tensor
+
+    def __repr__(self):
+        return f"DifferentClass(tensor={self.tensor})"
+
+different_tuple = data_tuple.apply_class(DifferentClass)
+print("Result of applying DifferentClass to DataTuple:", different_tuple)
+
+# 4. Adding two DataTuples
+another_values = [torch.ones(2, 3) * 2, torch.ones(4, 5) * 3]
+another_data_tuple = DataTuple(names, another_values)
+added_tuple = data_tuple + another_data_tuple
+print("Result of adding two DataTuples:", added_tuple)   
    
 
 # ii) Build dataloader
@@ -243,18 +334,29 @@ class CalipyObservation:
     def _initialize_global_indices(self):
         # Initialize global indices based on subsampling, or default to local indices if none provided
         if self.subsample_indices is None:
-            return self._initialize_local_indices()
+            return self.obs_local_indices
         else:
             return self.subsample_indices  # This needs to be a meaningful subsampling view
 
     def _generate_index_to_name_dict(self):
         # Map indices to unique names
-        index_to_name_dict = {}
-        for key, indices in self.obs_global_indices.items():
-            for idx in indices:
-                idx_str = f"{key}_sample_{'_'.join(str(i) for i in idx)}"
+        key_list = []
+        value_list = []
+        # cycle through the DataTuple keys
+        for key, indextensor in self.obs_global_indices.items():
+            key_list.append(key)
+            index_to_name_dict = {}
+            indextensor_flat = indextensor.flatten(0,len(self.obs_dims[key])-1)
+            
+            # cycle through the indextensor
+            for k in range(indextensor_flat.shape[0]):
+                idx = indextensor_flat[k,:]
+                dim_name_list = [str(dim) for dim in self.obs_dims[key]]
+                idx_name_list = [str(i.long().item()) for i in idx]
+                idx_str = "{}__sample__{}__{}".format(key, '_'.join(dim_name_list), '_'.join(idx_name_list))
                 index_to_name_dict[(key, idx)] = idx_str
-        return index_to_name_dict
+            value_list.append(index_to_name_dict)
+        return DataTuple(key_list, value_list)
 
     def get_entry(self, **batch_dims_spec):
         # Retrieve an observation by specifying batch dimensions explicitly
@@ -270,8 +372,7 @@ class CalipyObservation:
         return self.obs_global_indices[key][idx]
 
     def __repr__(self):
-        repr_str = 'CalipyObservation object with observations: {}'\
-            .format(', '.join(f"{k}: {v.shape}" for k, v in self.observations.items()))
+        repr_str = 'CalipyObservation object with observations: {}'.format(self.observations.__repr__())
         return repr_str
 
 # Instantiate CalipyObservation
