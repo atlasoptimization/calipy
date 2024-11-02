@@ -71,7 +71,7 @@ batch_dims_A = dim_assignment(dim_names = ['bd_1_A', 'bd_2_A'])
 event_dims_A = dim_assignment(dim_names = ['ed_1_A'])
 data_dims_A = batch_dims_A + event_dims_A
 
-batch_dims_B = dim_assignment(dim_names = ['bd_1_B', 'bd_2_B'])
+batch_dims_B = dim_assignment(dim_names = ['bd_1_B'])
 event_dims_B = dim_assignment(dim_names = ['ed_1_B'])
 data_dims_B = batch_dims_B + event_dims_B
 
@@ -98,6 +98,52 @@ class DataTuple:
 
     def items(self):
         return self._data_dict.items()
+    
+    def apply_elementwise(self, function):
+        """ 
+        Returns a new DataTuple with keys = self._data_dict.keys() and associated
+        values = function(self._data_dict.values())
+        """
+        new_dict = {}
+        key_list = []
+        value_list = []
+        
+        for key, value in self._data_dict.items():
+            new_key = key
+            new_value =  function(value)
+            
+            new_dict[new_key] = new_value
+            key_list.append(new_key)
+            value_list.append(new_value)
+            
+        return DataTuple(key_list, value_list)
+    
+    def bind_dims(self, datatuple_dims):
+        """ 
+        Returns a new DataTuple of tensors with dimensions bound to the dims
+        recorded in the DataTuple datatuple_dims.
+        """
+        
+        for key, value in self._data_dict.items():
+            if isinstance(value, torch.Tensor) or value is None:
+                pass
+            else:
+                raise Exception('bind dims only available for tensors or None '\
+                                'but tuple element is {}'.format(value.__class__))
+        new_dict = {}
+        key_list = []
+        value_list = []
+        
+        for key, value in self._data_dict.items():
+            new_key = key
+            new_value =  value[datatuple_dims[key]]
+            
+            new_dict[new_key] = new_value
+            key_list.append(new_key)
+            value_list.append(new_value)
+            
+        return DataTuple(key_list, value_list)
+                    
 
     def get_local_copy(self):
         """
@@ -105,12 +151,18 @@ class DataTuple:
         Non-DimTuple items remain unchanged.
         """
         local_copy_data = {}
+        key_list = []
+        value_list = []
+        
         for key, value in self._data_dict.items():
             if isinstance(value, DimTuple):
                 local_copy_data[key] = value.get_local_copy()
             else:
                 local_copy_data[key] = value
-        return DataTuple(list(local_copy_data.keys()), list(local_copy_data.values()))
+            key_list.append(key)
+            value_list.append(value)
+            
+        return DataTuple(key_list, value_list)
 
     def __add__(self, other):
         """ 
@@ -143,7 +195,7 @@ class DataTuple:
                 repr_items.append(f"{k}: {v.__repr__()}")
         return f"DataTuple({', '.join(repr_items)})"
     
-    
+   
 
 # ii) Build dataloader
 class CalipyObservation:
@@ -152,15 +204,22 @@ class CalipyObservation:
     Each observation has a unique name for reference during sampling.
     """
     def __init__(self, observations, batch_dims, event_dims, subsample_indices=None, vectorizable=True):
-        # Handle tensor tuples or single tensors as observations
-        self.observations = observations
 
         # Metadata: keep it directly tied with observations
+        self.entry_names = [key for key in observations.keys()]
         self.batch_dims = batch_dims.get_local_copy()
         self.event_dims = event_dims.get_local_copy()
         self.obs_dims = self.batch_dims + self.event_dims
-        self.subsample_indices = subsample_indices
+        self.index_dims = DataTuple(self.entry_names, [dim_assignment(['id_{}'.format(key)],
+                                    [len(self.obs_dims[key])]) for key in self.entry_names])
+        self.ssi_dims = self.obs_dims + self.index_dims
         self.vectorizable = vectorizable
+        
+        # Handle tensor tuples for obs and ssi
+        self.observations = observations
+        self.observations_bound = observations.bind_dims(self.obs_dims)
+        self.subsample_indices = subsample_indices
+        self.subsample_indices_bound = subsample_indices.bind_dims(self.ssi_dims) if subsample_indices is not None else None
 
         # Initialize local and global indices for easy reference
         self.obs_local_indices = self._initialize_local_indices()
@@ -169,9 +228,16 @@ class CalipyObservation:
 
     def _initialize_local_indices(self):
         # Create local indices based on the current tensor shape
-        indices = {}
+        key_list = []
+        value_list = []
         for key, tensor in self.observations.items():
-            indices[key] = list(itertools.product(*[range(size) for size in tensor.shape[:len(self.batch_dims)]]))
+            key_list.append(key)
+            index_tensor = torch.zeros(self.ssi_dims[key].sizes)
+            index_list = list(itertools.product(*[range(size) for size in tensor.shape]))
+            for index in index_list:
+                index_tensor[index + (...,)] = torch.tensor(index)
+            value_list.append(index_tensor)
+        indices = DataTuple(key_list, value_list)
         return indices
 
     def _initialize_global_indices(self):
@@ -213,6 +279,7 @@ obs_name_list = ['T_grid', 'T_rod']
 observations = DataTuple(obs_name_list, [data_A, data_B])
 batch_dims = DataTuple(obs_name_list, [batch_dims_A, batch_dims_B])
 event_dims = DataTuple(obs_name_list, [event_dims_A, event_dims_B])
+obs_dims = batch_dims + event_dims
 
 calipy_obs = CalipyObservation(observations, batch_dims, event_dims)
 print(calipy_obs)
