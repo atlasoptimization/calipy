@@ -99,24 +99,6 @@ class DataTuple:
     def items(self):
         return self._data_dict.items()
     
-    def apply_elementwise(self, function):
-        """ 
-        Returns a new DataTuple with keys = self._data_dict.keys() and associated
-        values = function(self._data_dict.values())
-        """
-        new_dict = {}
-        key_list = []
-        value_list = []
-        
-        for key, value in self._data_dict.items():
-            new_key = key
-            new_value =  function(value)
-            
-            new_dict[new_key] = new_value
-            key_list.append(new_key)
-            value_list.append(new_value)
-            
-        return DataTuple(key_list, value_list)
     
     def apply_from_dict(self, fun_dict):
         """
@@ -136,6 +118,16 @@ class DataTuple:
         key_list, value_list = zip(*new_dict.items())
         return DataTuple(key_list, value_list)
 
+    def apply_elementwise(self, function):
+        """ 
+        Returns a new DataTuple with keys = self._data_dict.keys() and associated
+        values = function(self._data_dict.values())
+        """
+        
+        fun_dict = {key: function for key in self.data_dict.keys()}
+        return_tuple = self.apply_from_dict(fun_dict)        
+            
+        return return_tuple
 
     def get_subattributes(self, attr):
         """
@@ -208,19 +200,22 @@ class DataTuple:
         Returns a new DataTuple with local copies of all DimTuple instances.
         Non-DimTuple items remain unchanged.
         """
-        local_copy_data = {}
-        key_list = []
-        value_list = []
         
-        for key, value in self._data_dict.items():
-            if isinstance(value, DimTuple):
-                local_copy_data[key] = value.get_local_copy()
-            else:
-                local_copy_data[key] = value
-            key_list.append(key)
-            value_list.append(value)
+        return_tuple = self.get_subattributes('get_local_copy')
+        return return_tuple
+        # local_copy_data = {}
+        # key_list = []
+        # value_list = []
+        
+        # for key, value in self._data_dict.items():
+        #     if isinstance(value, DimTuple):
+        #         local_copy_data[key] = value.get_local_copy()
+        #     else:
+        #         local_copy_data[key] = value
+        #     key_list.append(key)
+        #     value_list.append(value)
             
-        return DataTuple(key_list, value_list)
+        # return DataTuple(key_list, value_list)
 
     def __add__(self, other):
         """ 
@@ -286,7 +281,289 @@ another_values = [torch.ones(2, 3) * 2, torch.ones(4, 5) * 3]
 another_data_tuple = DataTuple(names, another_values)
 added_tuple = data_tuple + another_data_tuple
 print("Result of adding two DataTuples:", added_tuple)   
-   
+  
+
+# New CalipyIndexer Class
+class CalipyIndexer:
+    """
+    Class to handle indexing operations for observations, including creating local and global indices,
+    managing subsampling, and generating named dictionaries for indexing purposes.
+    """
+    def __init__(self, tensor, dims):
+        # Integrate initial data
+        self.tensor = tensor
+        self.tensor_dims = dims.get_local_copy()
+        self.tensor_named = tensor[self.tensor_dims]
+        
+        # Create index tensors
+        self.create_local_index_tensor()
+        # self.create_global_index_tensor()
+
+
+    def create_local_index_tensor(self):
+        """
+        Create a local index tensor enumerating all possible indices for all the dims.
+        The indices local_index_tensor are chosen such that they can be used for 
+        indexing the tensor via value = tensor[i,j,k] = tensor[local_index_tensor[i,j,k,:]],
+        i.e. the index at [i,j,k] is [i,j,k]. A more compact form of indexing
+        is given by directly accessing the index tuples via tensor = tensor[local_index_tensor_tuple]
+
+        :return: Writes torch tensors with indices representing all possible positions within the tensor
+            local_index_tensor: index_tensor containing an index at each location of value in tensor
+            local_index_tensor_tuple: index_tensor split into tuple for straightforward indexing
+            local_index_tensor_named: index_tensor with dimensions named and bound
+        """
+        # Set up dims
+        self.index_dim = dim_assignment(['index_dim'])
+        self.index_tensor_dims = self.tensor_dims + self.index_dim
+        
+        # Iterate through ranges
+        index_ranges = [torch.arange(dim_size) for dim_size in self.tensor_dims.sizes]
+        meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
+        index_tensor = torch.stack(meshgrid, dim=-1)
+        
+        # Write out results
+        self.local_index_tensor = index_tensor
+        self.local_index_tensor_tuple = index_tensor.unbind(-1)
+        self.local_index_tensor_named = index_tensor[self.index_tensor_dims]
+        return
+
+    def create_global_index_tensor(self, subsample_indices = None, data_source_name = None):
+        """
+        Create a global index tensor enumerating all possible indices for all the dims. The
+        indices global_index_tensor are chosen such that they can be used to access the data
+        in data_source with name data_source_name via self.tensor  = data_source[global_index_tensor_tuple] 
+        
+        :param subsample_indices: A tensor containing an index at each location of value in tensor
+        :param data_source_name: A string serving as info to record which object the global indices are indexing.
+        
+        :return: Writes torch tensors with indices representing all possible positions within the tensor
+            global_index_tensor: index_tensor containing an index at each location of value in tensor
+            global_index_tensor_tuple: index_tensor split into tuple for straightforward indexing
+            global_index_tensor_named: index_tensor with dimensions named and bound
+        """
+        
+        self.data_source_name = data_source_name
+        
+        # If no subsample_indices given, global = local
+        if subsample_indices is None:
+            self.global_index_tensor = self.local_index_tensor
+            self.global_index_tensor_tuple = self.local_index_tensor_tuple
+            self.global_index_tensor_named = self.local_index_tensor_named
+        # Else derive global indices from subsample_indices
+        else:
+            self.global_index_tensor = subsample_indices
+            self.global_index_tensor_tuple = subsample_indices.unbind(-1)
+            self.global_index_tensor_named = subsample_indices[self.index_tensor_dims]
+        return
+
+
+    def subsample_blocks(self, batch_dims, subsample_sizes):
+        """
+        Generate indices for block subbatching across multiple batch dimensions.
+
+        :param batch_dims: DimTuple with dims along which subbatching happens
+        :param subsample_sizes: Tuple with sizes of the blocks to create.
+        :return: List of tuples representing the block indices.
+        """
+        
+        # Extract shapes
+        batch_dims = batch_dims.get_local_copy()
+        tensor_reordered = self.tensor_named.order(*batch_dims)
+        batch_shape = tensor_reordered.shape
+        
+        # Compute number of blocks in dims 
+        self.num_blocks = [
+            (self.batch_shape[i] + subsample_sizes[i] - 1) // subsample_sizes[i]
+            for i in range(len(subsample_sizes))
+        ]
+        self.block_indices = list(itertools.product(*[range(n) for n in self.num_blocks]))
+        random.shuffle(self.block_indices)
+
+        block_index_tensors = []
+        for block_idx in self.block_indices:
+            block_index_tensor = self.get_indextensor_from_block(block_idx)
+            block_index_tensors.append(block_index_tensor)
+    
+    def get_indextensor_from_block(self, block_index):
+        slices = []
+        indices_ranges = []
+        for i, (b, s) in enumerate(zip(block_index, self.subsample_sizes)):
+            start = b * s
+            end = min(start + s, self.batch_shape[i])
+            slices.append(slice(start, end))
+            indices_ranges.append(torch.arange(start, end))
+        # Include event dimensions in the slices
+        slices.extend([slice(None)] * len(self.event_shape))
+        meshgrid = torch.meshgrid(*indices_ranges, indexing='ij')
+        indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_sizes))
+
+    # def __getitem__(self, idx):
+    #     block_idx = self.block_indices[idx]
+    #     slices = []
+    #     indices_ranges = []
+    #     for i, (b, s) in enumerate(zip(block_idx, self.subsample_sizes)):
+    #         start = b * s
+    #         end = min(start + s, self.batch_shape[i])
+    #         slices.append(slice(start, end))
+    #         indices_ranges.append(torch.arange(start, end))
+    #     # Include event dimensions in the slices
+    #     slices.extend([slice(None)] * len(self.event_shape))
+    #     meshgrid = torch.meshgrid(*indices_ranges, indexing='ij')
+    #     indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_sizes))
+    #     obs_block = CalipyObservation(self.data[tuple(slices)], self.batch_shape, self.event_shape, subsample_indices = indices)
+    #     return obs_block, indices
+    
+    
+    
+    def indexfun(tuple_of_indices, vectorizable = True):
+        """ Function to create a multiindex that can handle an arbitrary number of indices 
+        (both integers and vectors), while preserving the shape of the original tensor.
+        # Example usage 1 
+        A = torch.randn([4,5])  # Tensor of shape [4, 5]
+        i = torch.tensor([1])
+        j = torch.tensor([3, 4])
+        # Call indexfun to generate indices
+        indices_A, symbol = indexfun((i, j))
+        # Index the tensor
+        result_A = A[indices_A]     # has shape [1,2]
+        # Example usage 2
+        B = torch.randn([4,5,6,7])  # Tensor of shape [4, 5, 6, 7]
+        k = torch.tensor([1])
+        l = torch.tensor([3, 4])
+        m = torch.tensor([3])
+        n = torch.tensor([0,1,2,3])
+        # Call indexfun to generate indices
+        indices_B, symbol = indexfun((k,l,m,n))
+        # Index the tensor
+        result_B = B[indices_B]     # has shape [1,2,1,4]
+        """
+        # Calculate the shape needed for each index to broadcast correctly
+        if vectorizable == True:        
+            idx = tuple_of_indices
+            shape = [1] * len(idx)  # Start with all singleton dimensions
+            broadcasted_indices = []
+        
+            for i, x in enumerate(idx):
+                target_shape = list(shape)
+                target_shape[i] = len(x)
+                # Reshape the index to target shape
+                x_reshaped = x.view(target_shape)
+                # Expand to match the full broadcast size
+                x_broadcast = x_reshaped.expand(*[len(idx[j]) if j != i else x_reshaped.shape[i] for j in range(len(idx))])
+                broadcasted_indices.append(x_broadcast)
+                indexsymbol = 'vectorized'
+        else:
+            broadcasted_indices = tuple_of_indices
+            indexsymbol = broadcasted_indices
+        
+        # Convert list of broadcasted indices into a tuple for direct indexing
+        return tuple(broadcasted_indices), indexsymbol  
+    
+    def __repr__(self):
+        dim_name_list = self.dims.names
+        dim_sizes_list = self.dims.sizes
+        repr_string = 'CalipyIndexer for tensor with dims {} of sizes {}'.format(dim_name_list, dim_sizes_list)
+        return repr_string
+    
+
+
+    # def create_local_indices(self, observations):
+    #     """
+    #     Create local indices for each observation tensor.
+
+    #     :param observations: DataTuple containing the observation tensors.
+    #     :return: DataTuple with index tensors corresponding to each observation tensor.
+    #     """
+    #     key_list = []
+    #     value_list = []
+    #     for key, tensor in observations.items():
+    #         index_tensor = self.create_index_tensor(tensor.shape)
+    #         key_list.append(key)
+    #         value_list.append(index_tensor)
+    #     return DataTuple(key_list, value_list)
+
+    # def create_global_indices(self, observations, subsample_indices=None):
+    #     """
+    #     Create global indices for observations based on subsampling if provided.
+
+    #     :param observations: DataTuple containing the observation tensors.
+    #     :param subsample_indices: DataTuple containing subsample indices for each observation, if applicable.
+    #     :return: DataTuple with global index tensors corresponding to each observation tensor.
+    #     """
+    #     if subsample_indices is None:
+    #         return self.create_local_indices(observations)
+    #     else:
+    #         return subsample_indices
+
+    # def generate_index_name_dict(self, global_indices):
+    #     """
+    #     Generate a dictionary that maps indices to unique names.
+
+    #     :param global_indices: DataTuple containing global index tensors.
+    #     :return: DataTuple with dictionaries mapping indices to unique names for each observation.
+    #     """
+    #     key_list = []
+    #     value_list = []
+    #     for key, indextensor in global_indices.items():
+    #         index_to_name_dict = {}
+    #         indextensor_flat = indextensor.flatten(0, len(self.obs_dims[key])-1)
+    #         for k in range(indextensor_flat.shape[0]):
+    #             idx = indextensor_flat[k, :]
+    #             dim_name_list = [str(dim) for dim in self.obs_dims[key]]
+    #             idx_name_list = [str(i.long().item()) for i in idx]
+    #             idx_str = f"{key}__sample__{'_'.join(dim_name_list)}__{'_'.join(idx_name_list)}"
+    #             index_to_name_dict[tuple(idx.tolist())] = idx_str
+    #         key_list.append(key)
+    #         value_list.append(index_to_name_dict)
+    #     return DataTuple(key_list, value_list)
+    
+# Check the functionality of this class
+indexer_A = CalipyIndexer(data_A, data_dims_A)
+subsample_indices_block = indices
+
+# ii) Updated CalipyObservation Class
+# class CalipyObservation:
+#     """
+#     Stores observations along with batch and event dimensions.
+#     Each observation has a unique name for reference during sampling.
+#     """
+#     def __init__(self, observations, batch_dims, event_dims, subsample_indices=None, vectorizable=True):
+#         # Metadata: keep it directly tied with observations
+#         self.entry_names = [key for key in observations.keys()]
+#         self.indexer = CalipyIndexer(batch_dims, event_dims)
+#         self.batch_dims = batch_dims.get_local_copy()
+#         self.event_dims = event_dims.get_local_copy()
+#         self.obs_dims = self.batch_dims + self.event_dims
+#         self.vectorizable = vectorizable
+        
+#         # Handle tensor tuples for obs and ssi
+#         self.observations = observations
+#         self.observations_bound = observations.bind_dims(self.obs_dims)
+#         self.subsample_indices = subsample_indices
+#         self.subsample_indices_bound = subsample_indices.bind_dims(self.obs_dims) if subsample_indices is not None else None
+
+#         # Initialize local and global indices for easy reference using CalipyIndexer
+#         self.obs_local_indices = self.indexer.create_local_indices(observations)
+#         self.obs_global_indices = self.indexer.create_global_indices(observations, subsample_indices)
+#         self.index_to_name_dict = self.indexer.generate_index_name_dict(self.obs_global_indices)
+
+#     def get_entry(self, **batch_dims_spec):
+#         # Retrieve an observation by specifying batch dimensions explicitly
+#         indices = [batch_dims_spec[dim] for dim in self.batch_dims]
+#         obs_values = {key: tensor[tuple(indices)] if len(tensor) > 0 else None for key, tensor in self.observations.items()}
+#         obs_name = {key: self.index_to_name_dict[(key, tuple(indices))] for key in obs_values.keys()}
+#         return obs_name, obs_values
+
+#     def get_local_index(self, key, idx):
+#         return self.obs_local_indices[key][idx]
+
+#     def get_global_index(self, key, idx):
+#         return self.obs_global_indices[key][idx]
+
+#     def __repr__(self):
+#         repr_str = f'CalipyObservation object with observations: {self.observations.__repr__()}'
+#         return repr_str
 
 # ii) Build dataloader
 class CalipyObservation:
