@@ -284,6 +284,25 @@ print("Result of adding two DataTuples:", added_tuple)
   
 
 # New CalipyIndexer Class
+class CalipyIndex:
+    """ 
+    Class acting as a collection of infos on a specific index tensor collecting
+    basic index_tensor, index_tensor_tuple, and index_tensor_named. This class
+    represents a specific index tensor.
+        index_tensor.tensor is the original index tensor
+        index_tensor.tuple can be used for indexing via data[tuple]
+        index_tensor.named can be used for dimension specific operations
+    """
+    def __init__(self, index_tensor, index_tensor_dims):
+        self.tensor = index_tensor
+        self.tuple = index_tensor.unbind(-1)
+        self.named = index_tensor[index_tensor_dims]
+        self.dims = index_tensor_dims
+
+    def __repr__(self):
+        repr_string = 'CalipyIndex for tensor with dims {} of sizes {}'.format(self.dims.names, self.dims.sizes)
+        return repr_string
+
 class CalipyIndexer:
     """
     Class to handle indexing operations for observations, including creating local and global indices,
@@ -296,11 +315,11 @@ class CalipyIndexer:
         self.tensor_named = tensor[self.tensor_dims]
         
         # Create index tensors
-        self.create_local_index_tensor()
-        # self.create_global_index_tensor()
+        self.local_index = self.create_local_index()
+        # self.global_index = self.create_global_index()
 
 
-    def create_local_index_tensor(self):
+    def create_local_index(self):
         """
         Create a local index tensor enumerating all possible indices for all the dims.
         The indices local_index_tensor are chosen such that they can be used for 
@@ -323,12 +342,11 @@ class CalipyIndexer:
         index_tensor = torch.stack(meshgrid, dim=-1)
         
         # Write out results
-        self.local_index_tensor = index_tensor
-        self.local_index_tensor_tuple = index_tensor.unbind(-1)
-        self.local_index_tensor_named = index_tensor[self.index_tensor_dims]
-        return
+        local_index = CalipyIndex(index_tensor, self.index_tensor_dims)
 
-    def create_global_index_tensor(self, subsample_indices = None, data_source_name = None):
+        return local_index
+
+    def create_global_index(self, subsample_indices = None, data_source_name = None):
         """
         Create a global index tensor enumerating all possible indices for all the dims. The
         indices global_index_tensor are chosen such that they can be used to access the data
@@ -347,18 +365,16 @@ class CalipyIndexer:
         
         # If no subsample_indices given, global = local
         if subsample_indices is None:
-            self.global_index_tensor = self.local_index_tensor
-            self.global_index_tensor_tuple = self.local_index_tensor_tuple
-            self.global_index_tensor_named = self.local_index_tensor_named
+            global_index = self.local_index
+
         # Else derive global indices from subsample_indices
         else:
-            self.global_index_tensor = subsample_indices
-            self.global_index_tensor_tuple = subsample_indices.unbind(-1)
-            self.global_index_tensor_named = subsample_indices[self.index_tensor_dims]
-        return
+            global_index = CalipyIndex(subsample_indices, self.index_tensor_dims)
+
+        return global_index
 
 
-    def subsample_blocks(self, batch_dims, subsample_sizes):
+    def block_subsample(self, batch_dims, subsample_sizes):
         """
         Generate indices for block subbatching across multiple batch dimensions.
 
@@ -370,50 +386,54 @@ class CalipyIndexer:
         # Extract shapes
         batch_dims = batch_dims.get_local_copy()
         tensor_reordered = self.tensor_named.order(*batch_dims)
-        batch_shape = tensor_reordered.shape
+        self.block_batch_shape = tensor_reordered.shape
         
         # Compute number of blocks in dims 
         self.num_blocks = [
-            (self.batch_shape[i] + subsample_sizes[i] - 1) // subsample_sizes[i]
+            (self.block_batch_shape[i] + subsample_sizes[i] - 1) // subsample_sizes[i]
             for i in range(len(subsample_sizes))
         ]
         self.block_indices = list(itertools.product(*[range(n) for n in self.num_blocks]))
         random.shuffle(self.block_indices)
 
-        block_index_tensors = []
+        block_indices = []
         for block_idx in self.block_indices:
-            block_index_tensor = self.get_indextensor_from_block(block_idx)
-            block_index_tensors.append(block_index_tensor)
+            block_index = self._get_indextensor_from_block(block_idx, batch_dims, subsample_sizes)
+            block_indices.append(block_index)
+        self.block_indices = block_indices
+        return block_indices
     
-    def get_indextensor_from_block(self, block_index):
-        slices = []
-        indices_ranges = []
-        for i, (b, s) in enumerate(zip(block_index, self.subsample_sizes)):
+    def _get_indextensor_from_block(self, block_index,  batch_dims, subsample_sizes):
+        # Manage dimensions
+        batch_dims = batch_dims.get_local_copy()
+        nonbatch_dims = self.tensor_dims.reduce_dims(batch_dims.names)
+        block_index_dims = self.tensor_dims.unbind() + self.index_dims
+        
+        # Block index is n-dimensional with n = number of dims in batch_dims
+        indices_ranges_batch = {}
+        for i, (b, s, d) in enumerate(zip(block_index, subsample_sizes, batch_dims)):
             start = b * s
-            end = min(start + s, self.batch_shape[i])
-            slices.append(slice(start, end))
-            indices_ranges.append(torch.arange(start, end))
+            end = min(start + s, self.block_batch_shape[i])
+            indices_ranges_batch[d] = torch.arange(start, end)
+        
         # Include event dimensions in the slices
-        slices.extend([slice(None)] * len(self.event_shape))
-        meshgrid = torch.meshgrid(*indices_ranges, indexing='ij')
-        indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_sizes))
+        nonbatch_shape = self.tensor_named.order(nonbatch_dims).shape
+        indices_ranges_nonbatch = {d: torch.arange(d.size) for d in nonbatch_dims}
+        
+        indices_ordered = {}
+        indices_ordered_list = []
+        for i, (d, dn) in enumerate(zip(self.tensor_dims, self.tensor_dims.names)):
+            if dn in batch_dims.names:
+                indices_ordered[d] = indices_ranges_batch[d]
+            elif dn in nonbatch_dims.names:
+                indices_ordered[d] = indices_ranges_nonbatch[d]
+            indices_ordered_list.append(indices_ordered[d])
+            
+        meshgrid = torch.meshgrid(*indices_ordered_list, indexing='ij')
+        block_index_tensor = torch.stack(meshgrid, dim=-1)
+        block_index = CalipyIndex(block_index_tensor, block_index_dims)
 
-    # def __getitem__(self, idx):
-    #     block_idx = self.block_indices[idx]
-    #     slices = []
-    #     indices_ranges = []
-    #     for i, (b, s) in enumerate(zip(block_idx, self.subsample_sizes)):
-    #         start = b * s
-    #         end = min(start + s, self.batch_shape[i])
-    #         slices.append(slice(start, end))
-    #         indices_ranges.append(torch.arange(start, end))
-    #     # Include event dimensions in the slices
-    #     slices.extend([slice(None)] * len(self.event_shape))
-    #     meshgrid = torch.meshgrid(*indices_ranges, indexing='ij')
-    #     indices = torch.stack(meshgrid, dim=-1).reshape(-1, len(self.subsample_sizes))
-    #     obs_block = CalipyObservation(self.data[tuple(slices)], self.batch_shape, self.event_shape, subsample_indices = indices)
-    #     return obs_block, indices
-    
+        return block_index   
     
     
     def indexfun(tuple_of_indices, vectorizable = True):
@@ -520,7 +540,13 @@ class CalipyIndexer:
     
 # Check the functionality of this class
 indexer_A = CalipyIndexer(data_A, data_dims_A)
-subsample_indices_block = indices
+local_index = indexer_A.local_index
+local_index.tensor.shape
+local_index.named.dims
+assert (data_A[local_index.tuple] == data_A).all()
+block_batch_dims_A = batch_dims_A
+block_subsample_sizes_A = [5,3]
+subsample_indices_block = indexer_A.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
 
 # ii) Updated CalipyObservation Class
 # class CalipyObservation:
