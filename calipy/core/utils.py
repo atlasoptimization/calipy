@@ -242,33 +242,47 @@ class DimTuple(tuple):
     .. code-block:: python
 
         # Create dimensions
-        bd_1, bd_2 = dims(2)
-        ed_1 = dims(1)
+        bd_1 = CalipyDim('bd_1', size = 5)
+        bd_2 = CalipyDim('bd_2')
+        ed_1 = CalipyDim('ed_1')
 
         # Initialize DimTuples
         batch_dims = DimTuple((bd_1, bd_2))
         event_dims = DimTuple((ed_1,))
-
-        # Bind sizes to some dimensions
-        batch_dims.bind([10, None])
-
-        # Combine DimTuples
-        full_dims = batch_dims + event_dims
-
-        # Accessing the sizes
-        print(full_dims.sizes)  # Outputs: [10, None, None]
-
-        # Check if all dimensions are bound
-        print(full_dims.is_bound())  # Outputs: False
-
-        # Filter bound dimensions & show dict
-        print(full_dims.filter_bound())  # Outputs: DimTuple((bd_1,))
-        full_dims.to_dict()
         
-        # Broadcasting dimensions
-        # Dimensions with shapes of 1 can be broadcasted over
-        bc_dims_1 = CalipyDim(['bc_dim_1'])
+        # Equivalent command
+        batch_dims = dim_assignment(dim_names=['bd_1', 'bd_2'], dim_sizes=[5, None])
+        event_dims = dim_assignment(dim_names=['ed_1'])
+        
+        # Check sizes, names, properties
+        batch_dims.names
+        batch_dims.sizes
+        batch_dims.filter_bound()
+        batch_dims.filter_unbound()
+        
+        # Extract info
+        batch_dims.find_indices(['bd_2'])
+        batch_dims.find_relative_index('bd_1', 'bd_2')
+        batch_dict = batch_dims.to_dict()
+
+        # Change sizes for some dimensions
+        bound_dims = batch_dims.bind([11, None])
+        unbound_dims = batch_dims.unbind(['bd_1'])
+        squeezed_dims = batch_dims.squeeze_dims(['bd_2'])
+        
+        # Add DimTuples
+        full_dims = batch_dims + event_dims
+        # raises an exception (as it should): batch_dims + bound_dims
+                
+        # Multiply DimTuples
+        # Dimensions with size of 1 can be broadcasted over, names must match
+        dt_factor_1 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,1,None])
+        dt_factor_2 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,3,12])
+        broadcasted_dims = dt_factor_1 * dt_factor_2        # sizes = [5,3,None]
+        
     """
+    
+
     
     def __new__(cls, input_tuple):
         obj = super(DimTuple, cls).__new__(cls, input_tuple)
@@ -501,27 +515,60 @@ class DimTuple(tuple):
             return DimTuple(combined_dims)
         return NotImplemented
 
-    def __mul__(self, n):
-        # Allows repeating the DimTuple n times
-        return DimTuple(super().__mul__(n))
+    def __mul__(self, other_tuple):
+        """ Overloads the * operator to return a new DimTuple when multiplying two DimTuple objects.
+        Multiplication of two DimTuples is possible when their dims line up exactly and
+        the sizes of the dims are broadcasteable: For each pair of dims, sizes need to be identical,
+        one of both must be 1, or one of both must be None.
+        
+        :param other: The DimTuple to multiply.
+        :type other: DimTuple
+        :return: A new DimTuple with the dimensions matching both DimTuples.
+        :rtype: DimTuple
+        :raises NotImplemented: If other is not a DimTuple.
+        """
+        
+        # Check if dim names line up
+        if not other_tuple.names == self.names:
+            raise Exception('Names of dimensions of both DimTuples need to line up.'\
+                            ' But are {} vs {}'.format(self.names, other_tuple.names))
+
+        # Perform multiplication
+        d_new_list = []
+        for d1, d2 in zip(self, other_tuple):
+            if d1.size == None or d2.size == None:
+                d_new_size = None
+            elif d1.size == 1 or d2.size == 1:
+                d_new_size = d1.size*d2.size
+            elif d1.size == d2.size:
+                d_new_size = d1.size
+            else:
+                raise Exception('Dim sizes are incompatible with d1.size = {} and d2.size = {}'.format(d1.size, d2.size))
+        
+            d_new_list.append(CalipyDim(d1.name, d_new_size, d1.description))
+        return DimTuple(tuple(d_new_list))
 
 
-dim_tuple = dim_assignment(dim_names=['batch_dim_1', 'batch_dim_2'], dim_sizes=[5, None])
-dim_tuple.is_bound
-dim_tuple.is_unbound
-dim_tuple.filter_bound()
-dim_tuple.filter_unbound()
-dim_tuple.find_indices(['batch_dim_2'])
-dim_tuple.find_relative_index('batch_dim_1', 'batch_dim_2')
-bound_tuple = dim_tuple.bind([11, None])
-unbound_tuple = dim_tuple.unbind(['batch_dim_1'])
-squeezed_tuple = dim_tuple.squeeze_dims(['batch_dim_2'])
-reversed_tuple = dim_tuple.reverse()
-dim_dict = dim_tuple.to_dict()
+# dim_tuple = dim_assignment(dim_names=['batch_dim_1', 'batch_dim_2'], dim_sizes=[5, None])
+# dim_tuple.is_bound
+# dim_tuple.is_unbound
+# dim_tuple.filter_bound()
+# dim_tuple.filter_unbound()
+# dim_tuple.find_indices(['batch_dim_2'])
+# dim_tuple.find_relative_index('batch_dim_1', 'batch_dim_2')
+# bound_tuple = dim_tuple.bind([11, None])
+# unbound_tuple = dim_tuple.unbind(['batch_dim_1'])
+# squeezed_tuple = dim_tuple.squeeze_dims(['batch_dim_2'])
+# reversed_tuple = dim_tuple.reverse()
+# dim_dict = dim_tuple.to_dict()
 
-dim_tuple_2 = dim_assignment(dim_names=['event_dim'])
-combined_tuple = dim_tuple+dim_tuple_2
-# raises an exception (as it should): dim_tuple+bound_tuple
+# dim_tuple_2 = dim_assignment(dim_names=['event_dim'])
+# added_tuple = dim_tuple+dim_tuple_2
+# # raises an exception (as it should): dim_tuple+bound_tuple
+
+# dt_factor_1 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,1,None])
+# dt_factor_2 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,3,12])
+# multiplied_tuple = dt_factor_1 * dt_factor_2
 
 
 # OLD BEFORE INTRO OF CALIPYDIM
