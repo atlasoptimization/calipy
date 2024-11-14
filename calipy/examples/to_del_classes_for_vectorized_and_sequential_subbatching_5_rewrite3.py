@@ -409,26 +409,26 @@ class CalipyIndexer:
     def _get_indextensor_from_block(self, block_index,  batch_tdims, subsample_sizes):
         # Manage dimensions
         # batch_dims = batch_dims.get_local_copy()
-        nonbatch_dims = self.tensor_torchdims.delete_dims(batch_tdims)
-        block_index_dims = self.tensor_dims.unbind() + self.index_dims
+        nonbatch_tdims = self.tensor_torchdims.delete_dims(batch_tdims.names)
+        block_index_dims = self.tensor_dims + self.index_dim
         
         # Block index is n-dimensional with n = number of dims in batch_dims
         indices_ranges_batch = {}
-        for i, (b, s, d) in enumerate(zip(block_index, subsample_sizes, batch_dims)):
+        for i, (b, s, d) in enumerate(zip(block_index, subsample_sizes, batch_tdims)):
             start = b * s
             end = min(start + s, self.block_batch_shape[i])
             indices_ranges_batch[d] = torch.arange(start, end)
         
         # Include event dimensions in the slices
-        nonbatch_shape = self.tensor_named.order(nonbatch_dims).shape
-        indices_ranges_nonbatch = {d: torch.arange(d.size) for d in nonbatch_dims}
+        nonbatch_shape = self.tensor_named.order(nonbatch_tdims).shape
+        indices_ranges_nonbatch = {d: torch.arange(d.size) for d in nonbatch_tdims}
         
         indices_ordered = {}
         indices_ordered_list = []
-        for i, (d, dn) in enumerate(zip(self.tensor_dims, self.tensor_dims.names)):
-            if dn in batch_dims.names:
+        for i, (d, dn) in enumerate(zip(self.tensor_torchdims, self.tensor_torchdims.names)):
+            if dn in batch_tdims.names:
                 indices_ordered[d] = indices_ranges_batch[d]
-            elif dn in nonbatch_dims.names:
+            elif dn in nonbatch_tdims.names:
                 indices_ordered[d] = indices_ranges_nonbatch[d]
             indices_ordered_list.append(indices_ordered[d])
             

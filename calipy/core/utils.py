@@ -199,7 +199,7 @@ class CalipyDim:
 
 
     def __repr__(self):
-        return self.name
+        return 'Dim ' + self.name
 
     def __eq__(self, other):
         return isinstance(other, CalipyDim) and self.name == other.name
@@ -377,10 +377,14 @@ class TorchdimTuple(tuple):
         :rtype: TorchdimTuple
         """
         unlisted_dims = []
+        unlisted_dim_names = []
         for d, dname in zip(self, self.names):
             if dname not in dim_keys:
                 unlisted_dims.append(d)        
-        return TorchdimTuple(tuple(unlisted_dims))
+                unlisted_dim_names.append(dname)
+        sub_tuple = tuple(unlisted_dims)
+        sub_superior_dims = self.superior_dims[unlisted_dim_names]
+        return TorchdimTuple(sub_tuple, sub_superior_dims)
     
     def __getitem__(self, dim_keys):
         """ Returns torchdims based on either integer indices, a list of dim names
@@ -398,9 +402,9 @@ class TorchdimTuple(tuple):
         # Case 2: If dim_keys is a list of names, get identically named elements of TorchdimTuple
         elif isinstance(dim_keys, list):
             sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
-            subtuple = tuple(sublist)
+            sub_tuple = tuple(sublist)
             sub_superior_dims = self.superior_dims[dim_keys]
-            return TorchdimTuple(subtuple, sub_superior_dims)
+            return TorchdimTuple(sub_tuple, sub_superior_dims)
         
         # Case 3: If dim_keys is an instance of DimTuple, look for identically named elements
         elif isinstance(dim_keys, DimTuple):
