@@ -101,13 +101,76 @@ def context_plate_stack(plate_stack):
         for plate in plate_stack:
             stack.enter_context(plate)
         yield  # Yield control back to the with-block calling this context manager
+        
+# Functions for dimension declaration per list
 
+# restricted exec function
+def restricted_exec(exec_string, allowed_locals):
+    # Allow only simple assignment of `dims` using a regular expression
+    if not re.match(r'^\w+\s*=\s*dims\(sizes=\[\d+(,\s*\d+)*\]\)$', exec_string) \
+        and not re.match(r'^\w+\s*=\s*dims\(\)$', exec_string):
+        raise ValueError("Invalid exec command")
+    
+    # Execute the command in a very limited scope
+    allowed_globals = {"dims": dims}
+    exec(exec_string, allowed_globals, allowed_locals)
+
+# Safe eval function
+def safe_eval(expr, allowed_globals=None, allowed_locals=None):
+    if allowed_globals is None:
+        allowed_globals = {}
+    if allowed_locals is None:
+        allowed_locals = {}
+    return eval(expr, {"__builtins__": None, **allowed_globals}, allowed_locals)
+
+
+# CalipyDim and Dimension management
 
 class CalipyDim:
+    """ CalipyDim class contains information useful to manage dimensions and is
+    the prime ingredient to DimTuple class which implements arithmentics on 
+    dimensions. When initialized, it represents a dim primarily as a name and
+    attaches a size to it - either a nonnegative integer number or None which
+    represents the size of the dim bein undefined. Furthermore, a description
+    of the dim can be provided.
+    CalipyDim objects can be bound to tensors by their as_torchdim attribute 
+    which converts accesses a representation in terms of functorch.dim Dim objects
+    that allows indexing of tensors.
+    
+    :param name: A string representing the name by which the dimension is to be identified 
+    :type name: str
+    :param size: A nonnegative integer or None representing the size of this dimension; 
+        None indicates an unbound dimension; a value of 0 indicates an empty dimension
+    :type size: int or None
+    :param description: A description describing this dimension; 
+        None indicates absence of description.
+    :type description: str or None
+        
+    :return: A CalipyDim object containing names, size, description of a dimension
+    :rtype: CalipyDim
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Single dimension properties
+        bd_1 = CalipyDim('bd_1', size = 5, description = 'batch dimension 1')
+        bd_2 = CalipyDim('bd_2', size = None, description = 'batch dimension 2')
+        A = torch.normal(0, 1, [5,3])
+        A[bd_1.torchdim, bd_2.torchdim]
+        
+        # Typical use case with dim_assignment
+        dim_names = ['d1', 'd2']
+        dim_sizes = [10, 5]
+        dim_tuple = dim_assignment(dim_names, dim_sizes)
+        dim_tuple[0]    # Is CalipyDim d1
+
+    """
     def __init__(self, name, size = None, description = None):
         self.name = name  # Unique identifier for the dimension
         self.size = size
         self.description = description
+        # self.torchdim = self.convert_to_torchdim()
 
     @property
     def is_bound(self):
@@ -116,6 +179,24 @@ class CalipyDim:
         else:
             bool_val = False
         return bool_val
+
+    def build_torchdim(self):
+        """ Create a functorch.dim object that can e used for indexing by calling
+        the functorch.dim.dims function.
+        """
+        # Execute dimension initialization
+        dims_locals = {}
+        if self.size is not None:
+            exec_string = f"{self.name} = dims(sizes=[{self.size}])"
+        else:
+            exec_string = f"{self.name} = dims()"
+        restricted_exec(exec_string, dims_locals)
+        
+        # Compile return
+        eval_string = f"{self.name}"
+        return_dim = safe_eval(eval_string, allowed_locals = dims_locals)
+        return return_dim
+
 
     def __repr__(self):
         return self.name
@@ -219,6 +300,116 @@ def generate_trivial_dims(ndim):
     trivial_dims = dim_assignment(dim_names, dim_sizes = [1 for name in dim_names])
     return trivial_dims
     
+class TorchdimTuple(tuple):
+    """ TorchdimTuple is a subclass of the Tuple class that allows esy handling
+    of tuples build from functorchdim.dim.Dim objects. These tuples occur in the
+    DimTuple class, which is the main class to represent dimensions.   
+    
+    :param input_tuple: A tuple of dimensions to be managed by TorchdimTuple.
+    :type input_tuple: tuple of functorch.dim.Dim objects
+    :param superior_dims: DimTuple object containing CalipyDim objects providing
+        further info on the torchdims in the TorchdimTuple object.
+    :type superior_dims: DimTuple object 
+    
+    :return: An instance of TorchdimTuple containing the dimension objects.
+    :rtype: TorchdimTuple
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Create dimensions
+        (bd,ed) = dims(2)
+        torchdim_tuple = TorchdimTuple((bd,ed))
+        torchdim_tuple.sizes
+        
+        # Bind dimensions
+        A = torch.normal(0,1,[5,3])
+        A_named = A[torchdim_tuple]
+        torchdim_tuple.sizes
+        
+        # When being built from DimTuple, inherit info
+        batch_dims = dim_assignment(dim_names=['bd_1', 'bd_2'], dim_sizes=[5, None])
+        event_dims = dim_assignment(dim_names=['ed_1'])
+        full_dims = batch_dims + event_dims
+        full_torchdims = full_dims.build_torchdims()
+        full_torchdims.sizes
+        full_torchdims.names
+        
+        # Also allow for string-based and dim-based indexing
+        full_torchdims[0]
+        full_torchdims[['bd_1']]
+        full_torchdims[batch_dims.names]
+        full_torchdims[batch_dims]
+        
+        
+    """
+    
+    def __new__(cls, input_tuple, superior_dims = None):
+        obj = super(TorchdimTuple, cls).__new__(cls, input_tuple)
+        if superior_dims is not None:
+            obj.names = [d.name for d in superior_dims]
+            obj_sizes = [d.size for d in superior_dims]
+            obj.descriptions = [d.description for d in superior_dims]
+        return obj
+        
+    @property
+    def sizes(self):
+        """ Returns a list of sizes for each of the dims in TorchdimTuple. 
+        """
+        sizes = []
+        for d in self:
+            try:
+                sizes.append(d.size)  # Attempt to get the size
+            except ValueError:
+                sizes.append(None)  # Append None if the dimension is unbound
+        return sizes
+    
+    def delete_dims(self, dim_keys):
+        """ Computes a TorchdimTuple object reduced_dim_tuple with the dims referenced
+        in dim_keys deleted from reduced_dim_tuple. Consequently, reduced_dim_tuple
+        contains only those dims which are not mentioned in dim_keys.
+        
+        :param dim_keys: Identifier for determining which dimensions to select
+        :type dim_names: DimTuple
+        :return: A TorchdimTuple object with the selected dimensions removed
+        :rtype: TorchdimTuple
+        """
+        unlisted_dims = []
+        for d, dname in zip(self, self.names):
+            if dname not in dim_keys:
+                unlisted_dims.append(d)        
+        return TorchdimTuple(tuple(unlisted_dims))
+    
+    def __getitem__(self, dim_keys):
+        """ Returns torchdims based on either integer indices, a list of dim names
+        or the contents of a DimTuple object. 
+        
+        :param dim_keys: Identifier for determining which dimensions to select
+        :type dim_names: Integer, slice, list of strings, DimTuple
+        :return: A TorchdimTuple object with the selected dimensions included
+        :rtype: TorchdimTuple
+        """
+        # Case 1: If dim_keys is an integer or slice, behave like a standard tuple
+        if isinstance(dim_keys, (int, slice)):
+            return super().__getitem__(dim_keys)
+        
+        # Case 2: If dim_keys is a list of names, get identically named elements of TorchdimTuple
+        elif isinstance(dim_keys, list):
+            sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
+            subtuple = tuple(sublist)
+            return TorchdimTuple(subtuple)
+        
+        # Case 3: If dim_keys is an instance of DimTuple, look for identically named elements
+        elif isinstance(dim_keys, DimTuple):
+            torchdim_tuple = self[dim_keys.names]
+            return torchdim_tuple
+        
+        # Case 4: Raise an error for unsupported types
+        else:
+            raise TypeError(f"Unsupported key type: {type(dim_keys)}")
+        
+        
 
 class DimTuple(tuple):
     """ DimTuple is a custom subclass of Python's `tuple` designed to manage and manipulate tuples of 
@@ -280,13 +471,18 @@ class DimTuple(tuple):
         dt_factor_2 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,3,12])
         broadcasted_dims = dt_factor_1 * dt_factor_2        # sizes = [5,3,None]
         
+        # Use torchdim functionality
+        A = torch.normal(0,1, [5,3,2])
+        torchdim_tuple = broadcasted_dims.build_torchdims()
+        A_named = A[torchdim_tuple]
+        
     """
-    
-
     
     def __new__(cls, input_tuple):
         obj = super(DimTuple, cls).__new__(cls, input_tuple)
         obj.descriptions = [d.description for d in input_tuple]
+        # obj.torchdim = obj.convert_to_torchdim()
+        
         # Check if names unique
         names = [obj.name for obj in input_tuple]
         duplicates = {name for name in names if names.count(name) > 1}
@@ -300,12 +496,13 @@ class DimTuple(tuple):
         :return: List of sizes corresponding to each dimension in the DimTuple.
         :rtype: list
         """
-        sizes = []
-        for d in self:
-            try:
-                sizes.append(d.size)  # Attempt to get the size
-            except ValueError:
-                sizes.append(None)  # Append None if the dimension is unbound
+        sizes = [d.size for d in self]
+        # sizes = []
+        # for d in self:
+        #     try:
+        #         sizes.append(d.size)  # Attempt to get the size
+        #     except ValueError:
+        #         sizes.append(None)  # Append None if the dimension is unbound
         return sizes
     
     @property
@@ -316,6 +513,15 @@ class DimTuple(tuple):
         """
         names = [dim.name for dim in self]
         return names    
+    
+    def build_torchdims(self):
+        """Returns a tuple of functorch torchdims that can be bound and act as
+        tensors allowing access to functorch functionality like implicit batching.
+        :return: Tuple of functorch.dim.Dim objects
+        :rtype: Tuple
+        """
+        torchdim_tuple = TorchdimTuple(tuple([d.build_torchdim() for d in self]), superior_dims = self)
+        return torchdim_tuple
     
     def find_indices(self, dim_names, from_right=True):
         """Returns a list of indices indicating the locations of the dimensions with names 
@@ -549,26 +755,6 @@ class DimTuple(tuple):
         return DimTuple(tuple(d_new_list))
 
 
-# dim_tuple = dim_assignment(dim_names=['batch_dim_1', 'batch_dim_2'], dim_sizes=[5, None])
-# dim_tuple.is_bound
-# dim_tuple.is_unbound
-# dim_tuple.filter_bound()
-# dim_tuple.filter_unbound()
-# dim_tuple.find_indices(['batch_dim_2'])
-# dim_tuple.find_relative_index('batch_dim_1', 'batch_dim_2')
-# bound_tuple = dim_tuple.bind([11, None])
-# unbound_tuple = dim_tuple.unbind(['batch_dim_1'])
-# squeezed_tuple = dim_tuple.squeeze_dims(['batch_dim_2'])
-# reversed_tuple = dim_tuple.reverse()
-# dim_dict = dim_tuple.to_dict()
-
-# dim_tuple_2 = dim_assignment(dim_names=['event_dim'])
-# added_tuple = dim_tuple+dim_tuple_2
-# # raises an exception (as it should): dim_tuple+bound_tuple
-
-# dt_factor_1 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,1,None])
-# dt_factor_2 = dim_assignment(['d1', 'd2', 'd3'], dim_sizes = [5,3,12])
-# multiplied_tuple = dt_factor_1 * dt_factor_2
 
 
 # OLD BEFORE INTRO OF CALIPYDIM
