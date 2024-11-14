@@ -347,6 +347,7 @@ class TorchdimTuple(tuple):
     
     def __new__(cls, input_tuple, superior_dims = None):
         obj = super(TorchdimTuple, cls).__new__(cls, input_tuple)
+        obj.superior_dims = superior_dims
         if superior_dims is not None:
             obj.names = [d.name for d in superior_dims]
             obj_sizes = [d.size for d in superior_dims]
@@ -398,7 +399,8 @@ class TorchdimTuple(tuple):
         elif isinstance(dim_keys, list):
             sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
             subtuple = tuple(sublist)
-            return TorchdimTuple(subtuple)
+            sub_superior_dims = self.superior_dims[dim_keys]
+            return TorchdimTuple(subtuple, sub_superior_dims)
         
         # Case 3: If dim_keys is an instance of DimTuple, look for identically named elements
         elif isinstance(dim_keys, DimTuple):
@@ -754,6 +756,32 @@ class DimTuple(tuple):
             d_new_list.append(CalipyDim(d1.name, d_new_size, d1.description))
         return DimTuple(tuple(d_new_list))
 
+    def __getitem__(self, dim_keys):
+        """ Returns DimTuple based on either integer indices, a list of dim names
+        or the contents of a DimTuple object. 
+        
+        :param dim_keys: Identifier for determining which dimensions to select
+        :type dim_names: Integer, slice, list of strings, DimTuple
+        :return: A DimTuple object with the selected dimensions included
+        :rtype: DimTuple
+        """
+        # Case 1: If dim_keys is an integer or slice, behave like a standard tuple
+        if isinstance(dim_keys, (int, slice)):
+            return super().__getitem__(dim_keys)
+        
+        # Case 2: If dim_keys is a list of names, get identically named elements of DimTuple
+        elif isinstance(dim_keys, list):
+            sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
+            return DimTuple(tuple(sublist))
+        
+        # Case 3: If dim_keys is an instance of DimTuple, look for identically named elements
+        elif isinstance(dim_keys, DimTuple):
+            dim_tuple = self[dim_keys.names]
+            return dim_tuple
+        
+        # Case 4: Raise an error for unsupported types
+        else:
+            raise TypeError(f"Unsupported key type: {type(dim_keys)}")
 
 
 

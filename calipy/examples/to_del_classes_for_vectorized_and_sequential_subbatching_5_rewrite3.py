@@ -168,41 +168,41 @@ class DataTuple:
         return DataTuple(key_list, value_list)
  
     
-    def bind_dims(self, datatuple_dims):
-        """ 
-        Returns a new DataTuple of tensors with dimensions bound to the dims
-        recorded in the DataTuple datatuple_dims.
-        """
+    # def bind_dims(self, datatuple_dims):
+    #     """ 
+    #     Returns a new DataTuple of tensors with dimensions bound to the dims
+    #     recorded in the DataTuple datatuple_dims.
+    #     """
         
-        for key, value in self._data_dict.items():
-            if isinstance(value, torch.Tensor) or value is None:
-                pass
-            else:
-                raise Exception('bind dims only available for tensors or None '\
-                                'but tuple element is {}'.format(value.__class__))
-        new_dict = {}
-        key_list = []
-        value_list = []
+    #     for key, value in self._data_dict.items():
+    #         if isinstance(value, torch.Tensor) or value is None:
+    #             pass
+    #         else:
+    #             raise Exception('bind dims only available for tensors or None '\
+    #                             'but tuple element is {}'.format(value.__class__))
+    #     new_dict = {}
+    #     key_list = []
+    #     value_list = []
         
-        for key, value in self._data_dict.items():
-            new_key = key
-            new_value =  value[datatuple_dims[key]]
+    #     for key, value in self._data_dict.items():
+    #         new_key = key
+    #         new_value =  value[datatuple_dims[key]]
             
-            new_dict[new_key] = new_value
-            key_list.append(new_key)
-            value_list.append(new_value)
+    #         new_dict[new_key] = new_value
+    #         key_list.append(new_key)
+    #         value_list.append(new_value)
             
-        return DataTuple(key_list, value_list)
+    #     return DataTuple(key_list, value_list)
                     
 
-    def get_local_copy(self):
-        """
-        Returns a new DataTuple with local copies of all DimTuple instances.
-        Non-DimTuple items remain unchanged.
-        """
+    # def get_local_copy(self):
+    #     """
+    #     Returns a new DataTuple with local copies of all DimTuple instances.
+    #     Non-DimTuple items remain unchanged.
+    #     """
         
-        return_tuple = self.get_subattributes('get_local_copy')
-        return return_tuple
+    #     return_tuple = self.get_subattributes('get_local_copy')
+    #     return return_tuple
         # local_copy_data = {}
         # key_list = []
         # value_list = []
@@ -397,7 +397,7 @@ class CalipyIndexer:
         self.num_blocks = [(self.block_batch_shape[i] + subsample_sizes[i] - 1) // subsample_sizes[i]
             for i in range(len(subsample_sizes))]
         self.block_identifiers = list(itertools.product(*[range(n) for n in self.num_blocks]))
-        random.shuffle(self.block_identifier)
+        random.shuffle(self.block_identifiers)
 
         block_indices = []
         for block_idx in self.block_identifiers:
@@ -409,7 +409,7 @@ class CalipyIndexer:
     def _get_indextensor_from_block(self, block_index,  batch_tdims, subsample_sizes):
         # Manage dimensions
         # batch_dims = batch_dims.get_local_copy()
-        nonbatch_dims = self.tensor_dims.reduce_dims(batch_dims.names)
+        nonbatch_dims = self.tensor_torchdims.delete_dims(batch_tdims)
         block_index_dims = self.tensor_dims.unbind() + self.index_dims
         
         # Block index is n-dimensional with n = number of dims in batch_dims
@@ -508,17 +508,19 @@ local_index = data_A.calipy_indexer.local_index
 local_index.tensor.shape
 local_index.dims
 assert (data_A[local_index.tuple] == data_A).all()
-
-
-# Check the functionality of this class
-indexer_A = CalipyIndexer(data_A, data_dims_A)
-local_index = indexer_A.local_index
-local_index.tensor.shape
-local_index.named.dims
-assert (data_A[local_index.tuple] == data_A).all()
 block_batch_dims_A = batch_dims_A
 block_subsample_sizes_A = [5,3]
-subsample_indices_block = indexer_A.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
+subsample_indices_block = data_A.calipy_indexer.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
+
+# # Check the functionality of this class
+# indexer_A = CalipyIndexer(data_A, data_dims_A)
+# local_index = indexer_A.local_index
+# local_index.tensor.shape
+
+# assert (data_A[local_index.tuple] == data_A).all()
+# block_batch_dims_A = batch_dims_A
+# block_subsample_sizes_A = [5,3]
+# subsample_indices_block = indexer_A.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
 
 
 
