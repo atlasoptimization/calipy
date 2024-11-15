@@ -554,13 +554,18 @@ class CalipyIndexer:
     
 # # Monkey Patching
 # Define the function that will be monkey-patched onto torch.Tensor
-def indexer_construct(self, tensor_dims, name):
+def indexer_construct(self, tensor_dims, name, silent = False):
     """Constructs a CalipyIndexer for the tensor."""
     self.calipy_indexer = CalipyIndexer(self, tensor_dims, name)
-    return self
+    return self if silent == False else None
+
+def indexer_construct_silent(self, tensor_dims, name):
+    """Constructs a CalipyIndexer for the tensor."""
+    indexer_construct(self, tensor_dims, name, silent = True)
+    return
 
 # Attach the method to torch.Tensor
-torch.Tensor.indexer_construct = indexer_construct
+torch.Tensor.indexer_construct = indexer_construct_silent
 
 # # End Monkey Patching
 
@@ -609,7 +614,7 @@ data_E.indexer_construct(data_dims_C, 'data_E')
 data_E.calipy_indexer.create_global_index(index_tensor_E, 'from_data_E')
 data_E_index_tuple = data_E.calipy_indexer.global_index.tuple
 
-assert data_E == data_C[data_E_index_tuple]
+assert (data_E == data_C[data_E_index_tuple]).all()
 
 
 # Check interaction with DataTuple class
