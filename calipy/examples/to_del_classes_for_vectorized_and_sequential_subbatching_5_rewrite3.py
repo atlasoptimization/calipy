@@ -82,7 +82,75 @@ data_dims_B = batch_dims_B + event_dims_B
 class DataTuple:
     """
     Custom class for holding tuples of various objects with explicit names.
-    Provides easy access to each tensor and related metadata.
+    Provides methods for easily distributing functions over the entries in the
+    tuple and thereby makes modifying collections of objects easier. This is
+    routinely used to perform actions on grouped observation tensors, batch_dims,
+    or event_dims.
+    
+    :param names: A list of names serving as keys for the DataTuple.
+    :type names: list of string
+    :param values: A list of objects serving as values for the DataTuple.
+    :type values: list of obj
+    
+    :return: An instance of DataTuple containing the key, value pairs and additional
+        attributes and methods.
+    :rtype: DataTuple
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Create DataTuple of tensors
+        names = ['tensor_A', 'tensor_B']
+        values = [torch.ones(2, 3), torch.ones(4, 5)]
+        data_tuple = DataTuple(names, values)
+        data_tuple['tensor_A']
+        
+        # Apply functions
+        fun = lambda x: x +1
+        result_tuple_1 = data_tuple.apply_elementwise(fun)
+        print("Result of applying function:", result_tuple_1, result_tuple_1['tensor_A'], result_tuple_1['tensor_B'])
+        fun_dict = {'tensor_A': lambda x: x + 1, 'tensor_B': lambda x: x - 1}
+        result_tuple_2 = data_tuple.apply_from_dict(fun_dict)
+        print("Result of applying function dictionary:", result_tuple_2, result_tuple_2['tensor_A'], result_tuple_2['tensor_B'])
+        
+
+        
+        # Create DataTuple of dimensions
+        batch_dims_A = dim_assignment(dim_names = ['bd_A',])
+        event_dims_A = dim_assignment(dim_names = ['ed_A'])       
+        batch_dims_B = dim_assignment(dim_names = ['bd_B'])
+        event_dims_B = dim_assignment(dim_names = ['ed_B'])
+        
+        batch_dims_tuple = DataTuple(names, [batch_dims_A, batch_dims_B])
+        event_dims_tuple = DataTuple(names, [event_dims_A, event_dims_B])
+        
+        # Add them 
+        added_tensor_tuple = data_tuple + data_tuple
+        full_dims_datatuple = batch_dims_tuple + event_dims_tuple
+        
+        # Construct indexer
+        data_tuple.indexer_construct(full_dims_datatuple)
+        augmented_tensor = data_tuple['tensor_A']
+        augmented_tensor.calipy.indexer.local_index
+        
+        # Access subattributes
+        shapes_tuple = data_tuple.get_subattributes('shape')
+        print("Shapes of each tensor in DataTuple:", shapes_tuple)
+        batch_dims_datatuple.get_subattributes('sizes')
+        batch_dims_datatuple.get_subattributes('build_torchdims')
+        
+        # Apply class over each element
+        class DifferentClass:
+            def __init__(self, tensor):
+                self.tensor = tensor
+        
+            def __repr__(self):
+                return f"DifferentClass(tensor={self.tensor})"
+        
+        different_tuple = data_tuple.apply_class(DifferentClass)
+        print("Result of applying DifferentClass to DataTuple:", different_tuple)
+        
     """
     def __init__(self, names, values):
         if len(names) != len(values):
@@ -91,6 +159,12 @@ class DataTuple:
 
     def __getitem__(self, key):
         return self._data_dict[key]
+
+    def __setitem__(self, key, value):
+        """
+        Allows assignment of new key-value pairs or updating existing ones.
+        """
+        self._data_dict[key] = value
 
     def keys(self):
         return self._data_dict.keys()
@@ -126,7 +200,7 @@ class DataTuple:
         values = function(self._data_dict.values())
         """
         
-        fun_dict = {key: function for key in self.data_dict.keys()}
+        fun_dict = {key: function for key in self._data_dict.keys()}
         return_tuple = self.apply_from_dict(fun_dict)        
             
         return return_tuple
@@ -172,14 +246,14 @@ class DataTuple:
     def indexer_construct(self, dims_datatuple):
         """
         Applies construction of the CalipyIndexer to build for each tensor in self
-        the self.calipy_indexer instance used for indexing. Requires all elements
+        the self.calipy.indexer instance used for indexing. Requires all elements
         of self to be tensors and requires dims_datatuple to be a DataTuple containing
         DimTuples.
 
         :param self: A DataTuple containing indexable tensors to be indexed
         :param dims_datatuple: A DataTuple containing the DimTuples used for indexing
         :type dim_datatuple: DataTuple
-        :return: Nothing returned, calipy_indexer integrated into tensors in self
+        :return: Nothing returned, calipy.indexer integrated into tensors in self
         :rtype: None, CalipyIndexer
         :raises ValueError: If both DataTuples do not have matching keys.
         """
@@ -189,7 +263,7 @@ class DataTuple:
         # Apply indexer_construction
         fun_dict = {}
         for key, value in self.items():
-            fun_dict[key] = lambda tensor: indexer_construct(tensor, dims_datatuple[key], name = key)
+            fun_dict[key] = lambda tensor, key = key: tensor.calipy.indexer_construct(dims_datatuple[key], name = key, silent = False)
         self.apply_from_dict(fun_dict)
         return
     
@@ -493,8 +567,8 @@ class CalipyIndexer:
         block_tensor = self.tensor[block_index.tuple]
         
         # Clarify global index
-        block_tensor.indexer_construct(self.tensor_dims, self.name)
-        block_tensor.calipy_indexer.create_global_index(block_index.tensor, 'from_' + self.name)
+        block_tensor.calipy.indexer_construct(self.tensor_dims, self.name)
+        block_tensor.calipy.indexer.create_global_index(block_index.tensor, 'from_' + self.name)
         
         return block_tensor, block_index   
     
@@ -553,32 +627,79 @@ class CalipyIndexer:
         
     
 # # Monkey Patching
-# Define the function that will be monkey-patched onto torch.Tensor
-def indexer_construct(self, tensor_dims, name, silent = False):
-    """Constructs a CalipyIndexer for the tensor."""
-    self.calipy_indexer = CalipyIndexer(self, tensor_dims, name)
-    return self if silent == False else None
+        
 
-def indexer_construct_silent(self, tensor_dims, name):
-    """Constructs a CalipyIndexer for the tensor."""
-    indexer_construct(self, tensor_dims, name, silent = True)
-    return
+# Set up new propety of tensors with centralized internal name
+INTERNAL_NAME_CALIPY = '_calipy_namespace'
+class CalipyNamespace:
+    def __init__(self, tensor):
+        self.tensor = tensor
+    
+    # Define the function that will be monkey-patched onto torch.Tensor
+    def indexer_construct(self, tensor_dims, name, silent = True):
+        """Constructs a CalipyIndexer for the tensor."""
+        self.indexer = CalipyIndexer(self.tensor, tensor_dims, name)
+        return self if silent == False else None
+    
+    
+    # def indexer_construct_silent(self, tensor_dims, name):
+    #     """Constructs a CalipyIndexer for the tensor."""
+    #     self.indexer_construct(tensor_dims, name, silent = True)
+    #     return
+    
+    def __repr__(self):
+        repr_string = 'CalipyNamespace for methods and attributes in torch.Tensor'
+        return repr_string
+        
+def get_calipy_namespace(self):
+    if not hasattr(self, INTERNAL_NAME_CALIPY):
+        setattr(self, INTERNAL_NAME_CALIPY, CalipyNamespace(self))
+    return getattr(self, INTERNAL_NAME_CALIPY)
 
+torch.Tensor.calipy = property(get_calipy_namespace)
+
+# # Conflict mitigation approaches
+# if hasattr(torch.Tensor, 'calipy'):
+#     print("Warning: 'calipy' attribute already exists on torch.Tensor. Potential conflict.")
+# else:
+#     torch.Tensor.calipy = property(get_calipy_namespace)
+    
+# if hasattr(torch.Tensor, 'calipy'):
+#     # Handle the conflict: choose a different name or raise an error
+#     # For example, use an alternative name
+#     setattr(torch.Tensor, 'calipy_custom', property(get_calipy_namespace))
+#     calipy_attribute_name = 'calipy_custom'
+# else:
+#     # Safe to use 'calipy'
+#     setattr(torch.Tensor, 'calipy', property(get_calipy_namespace))
+#     calipy_attribute_name = 'calipy'
+    
 # Attach the method to torch.Tensor
-torch.Tensor.indexer_construct = indexer_construct_silent
+# # Define the function that will be monkey-patched onto torch.Tensor
+# def indexer_construct(self, tensor_dims, name, silent = False):
+#     """Constructs a CalipyIndexer for the tensor."""
+#     self.calipy_indexer = CalipyIndexer(self.tensor, tensor_dims, name)
+#     return self if silent == False else None
+
+
+# def indexer_construct_silent(self, tensor_dims, name):
+#     """Constructs a CalipyIndexer for the tensor."""
+#     self.indexer_construct(tensor_dims, name, silent = True)
+#     return
+# torch.Tensor.calipy_indexer_construct = indexer_construct_silent
 
 # # End Monkey Patching
 
 
 # Check the functionality of this class with monkeypatch
-data_A.indexer_construct(data_dims_A, 'data_A')
-local_index = data_A.calipy_indexer.local_index
+data_A.calipy.indexer_construct(data_dims_A, 'data_A')
+local_index = data_A.calipy.indexer.local_index
 local_index.tensor.shape
 local_index.dims
 assert (data_A[local_index.tuple] == data_A).all()
 block_batch_dims_A = batch_dims_A
 block_subsample_sizes_A = [5,3]
-subsample_indices_block = data_A.calipy_indexer.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
+subsample_indices_block = data_A.calipy.indexer.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
 
 # Check subsample indexing 
 # Suppose we got data_D as a subset of data_C with derived ssi CalipyIndex and
@@ -588,31 +709,31 @@ batch_dims_C = dim_assignment(['bd_1_C', 'bd_2_C'])
 event_dims_C = dim_assignment(['ed_1_C'])
 data_dims_C = batch_dims_C + event_dims_C
 data_C = torch.normal(0,1,[7,5,2])
-data_C.indexer_construct(data_dims_C, 'data_C')
+data_C.calipy.indexer_construct(data_dims_C, 'data_C')
 
 # Then, subsample data_D from data_C
-block_data_D, block_indices_D = data_C.calipy_indexer.block_subsample(batch_dims_C, [5,3])
+block_data_D, block_indices_D = data_C.calipy.indexer.block_subsample(batch_dims_C, [5,3])
 block_nr = 3
 data_D = block_data_D[block_nr]
 block_index_D = block_indices_D[block_nr]
 
 # Now look at global indices and names; the indexer has been inherited during subsampling
-data_D.calipy_indexer
-data_D.calipy_indexer.local_index
-data_D.calipy_indexer.global_index
-data_D.calipy_indexer.local_index.tensor
-data_D.calipy_indexer.global_index.tensor
-data_D.calipy_indexer.data_source_name
+data_D.calipy.indexer
+data_D.calipy.indexer.local_index
+data_D.calipy.indexer.global_index
+data_D.calipy.indexer.local_index.tensor
+data_D.calipy.indexer.global_index.tensor
+data_D.calipy.indexer.data_source_name
 
 # If data comes out of some external subsampling and only the corresponding indextensors
 # are known, the calipy_indexer can be evoked manually.
 data_E = copy.copy(data_D)
-data_E.calipy_indexer = None
+data_E.calipy.indexer = None
 index_tensor_E = block_index_D.tensor
 
-data_E.indexer_construct(data_dims_C, 'data_E')
-data_E.calipy_indexer.create_global_index(index_tensor_E, 'from_data_E')
-data_E_index_tuple = data_E.calipy_indexer.global_index.tuple
+data_E.calipy.indexer_construct(data_dims_C, 'data_E')
+data_E.calipy.indexer.create_global_index(index_tensor_E, 'from_data_E')
+data_E_index_tuple = data_E.calipy.indexer.global_index.tuple
 
 assert (data_E == data_C[data_E_index_tuple]).all()
 
@@ -658,9 +779,9 @@ class CalipySample:
                  subsample_indices=None, vectorizable=True):
 
         # Metadata: keep it directly tied with observations
-        self.entry_names = [key for key in observations.keys()]
-        self.batch_dims = batch_dims.get_local_copy()
-        self.event_dims = event_dims.get_local_copy()
+        self.entry_names = [key for key in samples_datatuple.keys()]
+        self.batch_dims = batch_dims_datatuple
+        self.event_dims = event_dims_datatuple
         self.obs_dims = self.batch_dims + self.event_dims
         self.index_dims = DataTuple(self.entry_names, [dim_assignment(['id_{}'.format(key)],
                                     [len(self.obs_dims[key])]) for key in self.entry_names])
@@ -678,46 +799,7 @@ class CalipySample:
         self.obs_global_indices = self._initialize_global_indices()
         self.index_to_name_dict = self._generate_index_to_name_dict()
 
-    def _initialize_local_indices(self):
-        # Create local indices based on the current tensor shape
-        key_list = []
-        value_list = []
-        for key, tensor in self.observations.items():
-            key_list.append(key)
-            index_tensor = torch.zeros(self.ssi_dims[key].sizes)
-            index_list = list(itertools.product(*[range(size) for size in tensor.shape]))
-            for index in index_list:
-                index_tensor[index + (...,)] = torch.tensor(index)
-            value_list.append(index_tensor)
-        indices = DataTuple(key_list, value_list)
-        return indices
 
-    def _initialize_global_indices(self):
-        # Initialize global indices based on subsampling, or default to local indices if none provided
-        if self.subsample_indices is None:
-            return self.obs_local_indices
-        else:
-            return self.subsample_indices  # This needs to be a meaningful subsampling view
-
-    def _generate_index_to_name_dict(self):
-        # Map indices to unique names
-        key_list = []
-        value_list = []
-        # cycle through the DataTuple keys
-        for key, indextensor in self.obs_global_indices.items():
-            key_list.append(key)
-            index_to_name_dict = {}
-            indextensor_flat = indextensor.flatten(0,len(self.obs_dims[key])-1)
-            
-            # cycle through the indextensor
-            for k in range(indextensor_flat.shape[0]):
-                idx = indextensor_flat[k,:]
-                dim_name_list = [str(dim) for dim in self.obs_dims[key]]
-                idx_name_list = [str(i.long().item()) for i in idx]
-                idx_str = "{}__sample__{}__{}".format(key, '_'.join(dim_name_list), '_'.join(idx_name_list))
-                index_to_name_dict[(key, idx)] = idx_str
-            value_list.append(index_to_name_dict)
-        return DataTuple(key_list, value_list)
 
     def get_entry(self, **batch_dims_spec):
         # Retrieve an observation by specifying batch dimensions explicitly
