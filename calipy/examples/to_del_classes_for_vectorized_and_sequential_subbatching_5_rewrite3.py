@@ -446,6 +446,7 @@ class CalipyIndex:
         # current_indextensor_dims = self.dims
         expanded_indextensor_dims = expanded_tensor_dims + index_dim
         new_dims = expanded_tensor_dims.delete_dims(current_tensor_dims.names)
+        default_order_dims = current_tensor_dims + new_dims + index_dim
         
         # Build index tensor with default order [current_dims, new_dims, index_dim]
         # i) Set up torchdims
@@ -474,6 +475,10 @@ class CalipyIndex:
         # Order index_tensor to [expanded_tensor_dims, index_dim]
         default_order_indextensor_named = default_order_indextensor[default_order_tdim]  
         expanded_indextensor = default_order_indextensor_named.order(*expanded_order_tdims)
+        # Also reorder in the [..., index_dim] so that indices and entries in index_dim align
+        index_signature = default_order_dims.find_indices(expanded_indextensor_dims.names, from_right = False)
+        expanded_indextensor = expanded_indextensor[..., index_signature[0:-1]]
+        
         
         
         # # Build index tensor
@@ -1103,13 +1108,17 @@ indices_reduced = CalipyIndexer.create_block_subsample_indices(batch_dims_FG, ba
 index_reduced = indices_reduced[0]
 index_expanded_F = index_reduced.expand_to_dims(data_dims_F, [None]*len(batch_dims_FG) + event_dims_F_sizes)
 index_expanded_G = index_reduced.expand_to_dims(data_dims_G, [None]*len(batch_dims_FG) + event_dims_G_sizes)
+assert (data_F[index_expanded_F.tuple] == data_F[index_reduced.tensor[:,:,0], index_reduced.tensor[:,:,1], :,:]).all()
 
 # Reordering is also possible
 data_dims_F_reordered = dim_assignment(['ed_2_F', 'bd_2_FG', 'ed_1_F', 'bd_1_FG'])
 data_dims_F_reordered_sizes = [5, None, 6, None]
 index_expanded_F_reordered = index_reduced.expand_to_dims(data_dims_F_reordered, data_dims_F_reordered_sizes)
-data_F_reordered = data_F.permute([3,1,2,0])
-assert (data_F[index_expanded_F.tuple] - data_F_reordered[index_expanded_F_reordered.tuple]).all()
+data_F_reordered = data_F.calipy.indexer.reorder(data_dims_F_reordered)
+
+data_F_subsampled = data_F[index_expanded_F.tuple]
+data_F_reordered_subsampled = data_F_reordered[index_expanded_F_reordered.tuple]
+assert (data_F_subsampled == data_F_reordered_subsampled.permute([3,1,2,0])).all()
 
 # Alternatively, index expansion can also be performed by the indexer of a tensor
 # this is usually more convenient
