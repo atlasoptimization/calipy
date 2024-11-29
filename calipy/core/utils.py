@@ -403,14 +403,25 @@ class TorchdimTuple(tuple):
         
         # Case 2: If dim_keys is slice, produce a TorchdimTuple
         elif isinstance(dim_keys, slice):
-            return TorchdimTuple(ensure_tuple(super().__getitem__(dim_keys)))
+            return TorchdimTuple(ensure_tuple(super().__getitem__(dim_keys)), ensure_tuple(self.superior_dims[dim_keys]))
         
         # Case 3: If dim_keys is a list of names, get identically named elements of TorchdimTuple
         elif isinstance(dim_keys, list):
-            sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
+            sublist = []
+            for key_dname in dim_keys:
+                for dname, d in zip(self.names, self):
+                    if dname == key_dname:
+                        sublist.append(d) 
             sub_tuple = tuple(sublist)
+            
             sub_superior_dims = self.superior_dims[dim_keys]
             return TorchdimTuple(sub_tuple, sub_superior_dims)
+        
+            
+            # sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
+            # sub_tuple = tuple(sublist)
+            # sub_superior_dims = self.superior_dims[dim_keys]
+            # return TorchdimTuple(sub_tuple, sub_superior_dims)
         
         # Case 4: If dim_keys is an instance of DimTuple, look for identically named elements
         elif isinstance(dim_keys, DimTuple):
@@ -420,7 +431,27 @@ class TorchdimTuple(tuple):
         # Case 5: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported key type: {type(dim_keys)}")
+            
+    def __repr__(self):
+        return f"TorchdimTuple({super().__repr__()})"
+
+    def __add__(self, other):
+        """ Overloads the + operator to return a new TorchdimTuple when adding two 
+        TorchdimTuple objects.
         
+        :param other: The TorchdimTuple to add.
+        :type other: TorchdimTuple
+        :return: A new TorchimTuple with the dimensions from both added tuples.
+        :rtype: TorchdimTuple
+        :raises NotImplemented: If other is not a TorchdimTuple.
+        """
+        # Overriding the + operator to return a TorchdimTuple when adding two 
+        # TorchdimTuple objects
+        if isinstance(other, TorchdimTuple):
+            combined_dims = super().__add__(other)
+            combined_superior_dims = self.superior_dims + other.superior_dims
+            return TorchdimTuple(combined_dims, combined_superior_dims)
+        return NotImplemented
         
 
 class DimTuple(tuple):
@@ -785,7 +816,13 @@ class DimTuple(tuple):
         
         # Case 3: If dim_keys is a list of names, get identically named elements of DimTuple
         elif isinstance(dim_keys, list):
-            sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
+            sublist = []
+            for key_dname in dim_keys:
+                for d in self:
+                    if d.name == key_dname:
+                        sublist.append(d) 
+                
+            # sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
             return DimTuple(tuple(sublist))
         
         # Case 4: If dim_keys is an instance of DimTuple, look for identically named elements

@@ -14,7 +14,7 @@ import itertools
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from functorch.dim import dims
-from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, ensure_tuple
+from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, ensure_tuple, multi_unsqueeze
 
 import numpy as np
 import random
@@ -443,26 +443,55 @@ class CalipyIndex:
         current_tensor_dims = DimTuple(self.dims[0:-1]).bind(self.tensor.shape[0:-1])
         expanded_tensor_dims = dims.bind(dim_sizes)
         
-        current_index_tensor_dims = self.dims
-        expanded_index_tensor_dims = expanded_tensor_dims + index_dim
-        new_tensor_dims = expanded_tensor_dims.delete_dims(current_tensor_dims.names)
+        # current_indextensor_dims = self.dims
+        expanded_indextensor_dims = expanded_tensor_dims + index_dim
+        new_dims = expanded_tensor_dims.delete_dims(current_tensor_dims.names)
         
-        # Build index tensor
-        current_torchdims = current_index_tensor_dims.build_torchdims()
-        current_index_tensor_named = self.tensor[current_torchdims]
-        index_ranges = []
-        for i, d in enumerate(expanded_index_tensor_dims):
-            if d in current_tensor_dims:
-                index_ranges.append(self.tensor)
-            elif d in new_tensor_dims:
-                index_ranges.append(torch.arange(d.size) )
+        # Build index tensor with default order [current_dims, new_dims, index_dim]
+        # i) Set up torchdims
+        current_tdims = current_tensor_dims.build_torchdims()
+        new_tdims = new_dims.build_torchdims()
+        index_tdim = index_dim.build_torchdims()
+        default_order_tdim = current_tdims + new_tdims + index_tdim
+        expanded_order_tdims = default_order_tdim[expanded_indextensor_dims]
         
-        # Iterate through ranges
-        meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
-        expanded_index_tensor = torch.stack(meshgrid, dim=-1)
+        
+        # ii) Build indextensor new_dims
+        new_ranges = []
+        for d in new_dims:
+            new_ranges.append(torch.arange(d.size)) 
+        new_meshgrid = torch.meshgrid(*new_ranges, indexing='ij')
+        new_dims_indextensor = torch.stack(new_meshgrid, dim=-1)
+        current_dims_indextensor = self.tensor
+        
+        # iii) Combine current_dims_indextensor and new_dims_indextensor
+        broadcast_sizes = default_order_tdim.sizes[:-1] + [1]
+        broadcast_tensor = torch.ones(broadcast_sizes).long()
+        current_expanded = multi_unsqueeze(current_dims_indextensor, [-2]*len(new_dims))
+        new_expanded = multi_unsqueeze(new_dims_indextensor, [0]*len(current_tensor_dims))
+        default_order_indextensor = torch.cat((current_expanded*broadcast_tensor, new_expanded*broadcast_tensor), dim = -1)
+        
+        # Order index_tensor to [expanded_tensor_dims, index_dim]
+        default_order_indextensor_named = default_order_indextensor[default_order_tdim]  
+        expanded_indextensor = default_order_indextensor_named.order(*expanded_order_tdims)
+        
+        
+        # # Build index tensor
+        # current_torchdims = current_index_tensor_dims.build_torchdims()
+        # current_index_tensor_named = self.tensor[current_torchdims]
+        # index_ranges = []
+        # for i, d in enumerate(expanded_index_tensor_dims):
+        #     if d in current_tensor_dims:
+        #         index_ranges.append(self.tensor)
+        #     elif d in new_tensor_dims:
+        #         index_ranges.append(torch.arange(d.size) )
+        
+        # # Iterate through ranges
+        # meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
+        # expanded_index_tensor = torch.stack(meshgrid, dim=-1)
         
         # Create new CalipyIndex
-        expanded_index = CalipyIndex(expanded_index_tensor, expanded_index_tensor_dims, name = self.name + '_expanded')
+        expanded_index = CalipyIndex(expanded_indextensor, expanded_indextensor_dims, name = self.name + '_expanded')
 
         return expanded_index
         
@@ -536,6 +565,15 @@ class CalipyIndexer:
         local_index.tensor.shape
         local_index.index_name_dict
         assert (data_A[local_index.tuple] == data_A).all()
+        
+        # Reordering and indexing by DimTuple
+        reordered_dims = DimTuple((data_dims_A[1], data_dims_A[2], data_dims_A[0]))
+        data_A_reordered = data_A.calipy.indexer.reorder(reordered_dims)
+        data_tdims_A = data_dims_A.build_torchdims()
+        data_tdims_A_reordered = data_tdims_A[reordered_dims]
+        data_A_named = data_A[data_tdims_A]
+        data_A_named_reordered = data_A_reordered[data_tdims_A_reordered]
+        assert (data_A_named.order(data_tdims_A) == data_A_named_reordered.order(data_tdims_A)).all()
         
         # Subbatching along one or multiple dims
         subsamples, subsample_indices = data_A.calipy.indexer.simple_subsample(batch_dims_A[0], 5)
@@ -617,6 +655,8 @@ class CalipyIndexer:
         # Create index tensors
         self.local_index = self.create_local_index()
         # self.global_index = self.create_global_index()
+        self.index_to_dim_dict = self._create_index_to_dim_dict(self.tensor_dims)
+        self.dim_to_index_dict = self._create_dim_to_index_dict(self.tensor_dims)
         
     @classmethod
     def create_block_subsample_indices(cls, batch_dims, tensor_shape, subsample_sizes):
@@ -714,7 +754,26 @@ class CalipyIndexer:
         
         return global_index
 
-
+    def _create_index_to_dim_dict(self, dim_tuple):
+        """
+        Creates a dict that contains as key: value pairs the integer indices
+        (keys) and corresponding CalipyDim dimensions (values) of the self.tensor.
+        """
+        index_to_dim_dict = dict()
+        for i, d in enumerate(dim_tuple):
+            index_to_dim_dict[i] = d
+        return index_to_dim_dict
+    
+    def _create_dim_to_index_dict(self, dim_tuple):
+        """
+        Creates a dict that contains as key: value pairs the CalipyDim dimensions
+        (keys) and corresponding integer indices (values) of the self.tensor.
+        """
+        dim_to_index_dict = dict()
+        for i, d in enumerate(dim_tuple):
+            dim_to_index_dict[d] = i
+        return dim_to_index_dict
+    
     def block_subsample(self, batch_dims, subsample_sizes):
         """
         Generate indices for block subbatching across multiple batch dimensions
@@ -797,6 +856,39 @@ class CalipyIndexer:
         subsample_data, subsample_indices = self.block_subsample(DimTuple((batch_dim,)), [subsample_size])
         
         return subsample_data, subsample_indices
+    
+    def reorder(self, order_dimtuple):
+        """
+        Generate out of self.tensor a new tensor that is reordered to align with
+        the order given in the order_dimtuple DimTuple object.
+
+        :param order_dimtuple: DimTuple of CalipyDim objects whose sequence determines
+            permutation and index binding of the produced tensor.
+        :return: A tensor with an calipy.indexer where all ordering is aligned to order_dimtuple
+
+        """
+        # i) Check validity input
+        if not set(order_dimtuple) == set(self.tensor_dims):
+            raise Exception('CalipyDims in order_dimtuple and self.tensor_dims must'\
+                            ' be the same but are CalipyDims of order_dimtuple = {} '
+                            'and CalipyDims of self.tensor_dims = {}'\
+                            .format(set(order_dimtuple), set(self.tensor_dims)))
+        
+        # ii) Set up new tensor
+        # preordered_index_dict = self.index_to_dim_dict
+        preordered_dim_dict = self.dim_to_index_dict
+        # reordered_dim_dict = self._create_dim_to_index_dict(order_dimtuple)
+        reordered_index_dict = self._create_index_to_dim_dict(order_dimtuple)
+        
+        permutation_list = []
+        for k in range(len(reordered_index_dict.keys())):
+            dim_k = reordered_index_dict[k]
+            new_index_dim_k = preordered_dim_dict[dim_k]
+            permutation_list.append(new_index_dim_k) 
+        reordered_tensor = self.tensor.permute(*permutation_list)
+        reordered_tensor.calipy.indexer_construct(order_dimtuple, self.name + '_reordered_({})'.format(order_dimtuple.names))
+        
+        return reordered_tensor
     
     # def indexfun(tuple_of_indices, vectorizable = True):
     #     """ Function to create a multiindex that can handle an arbitrary number of indices 
@@ -917,6 +1009,17 @@ local_index.tensor.shape
 local_index.dims
 assert (data_A[local_index.tuple] == data_A).all()
 
+# Check reordering and torchdims for reordered
+reordered_dims = DimTuple((data_dims_A[1], data_dims_A[2], data_dims_A[0]))
+data_A_reordered = data_A.calipy.indexer.reorder(reordered_dims)
+
+data_tdims_A = data_dims_A.build_torchdims()
+data_tdims_A_reordered = data_tdims_A[reordered_dims]
+data_A_named = data_A[data_tdims_A]
+data_A_named_reordered = data_A_reordered[data_tdims_A_reordered]
+assert (data_A_named.order(data_tdims_A) == data_A_named_reordered.order(data_tdims_A)).all()
+
+# Check simple subsampling
 simple_subsamples, simple_subsample_indices = data_A.calipy.indexer.simple_subsample(batch_dims_A[0], 5)
 block_batch_dims_A = batch_dims_A
 block_subsample_sizes_A = [5,3]
@@ -975,27 +1078,43 @@ data_datatuple.indexer_construct(data_dims_datatuple)
 # Show how to do consistent subbatching in multiple tensors by creating an index
 # with reduced dims and expanding it as needed.
 
-# First, create the dims
-batch_dims_FG = dim_assignment(['bd_1_FG', 'bd_2_FG'], [10,7])
-event_dims_F = dim_assignment(['ed_1_F', 'ed_2_F'], [6,5])
-event_dims_G = dim_assignment(['ed_1_G'], [4])
+# First, create the dims (with unspecified size so no conflict later when subbatching)
+batch_dims_FG = dim_assignment(['bd_1_FG', 'bd_2_FG'])
+event_dims_F = dim_assignment(['ed_1_F', 'ed_2_F'])
+event_dims_G = dim_assignment(['ed_1_G'])
 data_dims_F = batch_dims_FG + event_dims_F
 data_dims_G = batch_dims_FG + event_dims_G
 
+# Sizes
+batch_dims_FG_sizes = [10,7]
+event_dims_F_sizes = [6,5]
+event_dims_G_sizes = [4]
+data_dims_F_sizes = batch_dims_FG_sizes + event_dims_F_sizes
+data_dims_G_sizes = batch_dims_FG_sizes + event_dims_G_sizes
+
 # Then create the data
-data_F = torch.normal(0,1, data_dims_F.sizes)
+data_F = torch.normal(0,1, data_dims_F_sizes)
 data_F.calipy.indexer_construct(data_dims_F, 'data_F')
-data_G = torch.normal(0,1, data_dims_G.sizes)
+data_G = torch.normal(0,1, data_dims_G_sizes)
 data_G.calipy.indexer_construct(data_dims_G, 'data_G')
 
 # Create and expand the reduced_index
-indices_reduced = CalipyIndexer.create_block_subsample_indices(batch_dims_FG, batch_dims_FG.sizes, [9,5])
+indices_reduced = CalipyIndexer.create_block_subsample_indices(batch_dims_FG, batch_dims_FG_sizes, [9,5])
 index_reduced = indices_reduced[0]
-index_expanded_F = index_reduced.expand_to_dims(data_dims_F)
-index_expanded_G = index_reduced.expand_to_dims(data_dims_G)
-# Alternatively, index expansion can also be performed by the indexer
-index_expanded_F_alt = data_F.calipy.expand_index(index_reduced)
-index_expanded_G_alt = data_G.calipy.expand_index(index_reduced)
+index_expanded_F = index_reduced.expand_to_dims(data_dims_F, [None]*len(batch_dims_FG) + event_dims_F_sizes)
+index_expanded_G = index_reduced.expand_to_dims(data_dims_G, [None]*len(batch_dims_FG) + event_dims_G_sizes)
+
+# Reordering is also possible
+data_dims_F_reordered = dim_assignment(['ed_2_F', 'bd_2_FG', 'ed_1_F', 'bd_1_FG'])
+data_dims_F_reordered_sizes = [5, None, 6, None]
+index_expanded_F_reordered = index_reduced.expand_to_dims(data_dims_F_reordered, data_dims_F_reordered_sizes)
+data_F_reordered = data_F.permute([3,1,2,0])
+assert (data_F[index_expanded_F.tuple] - data_F_reordered[index_expanded_F_reordered.tuple]).all()
+
+# Alternatively, index expansion can also be performed by the indexer of a tensor
+# this is usually more convenient
+index_expanded_F_alt = data_F.calipy.indexer.expand_index(index_reduced)
+index_expanded_G_alt = data_G.calipy.indexer.expand_index(index_reduced)
 
 # Index can not be used for consistent subsampling
 data_F_subsample = data_F[index_expanded_F.tuple]
