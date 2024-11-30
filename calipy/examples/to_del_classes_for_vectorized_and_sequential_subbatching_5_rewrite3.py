@@ -17,10 +17,12 @@ from functorch.dim import dims
 from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, ensure_tuple, multi_unsqueeze
 
 import numpy as np
+import pandas as pd
 import random
 import varname
 import copy
 import matplotlib.pyplot as plt
+import warnings
 
 torch.manual_seed(42)
 pyro.set_rng_seed(42)
@@ -423,6 +425,87 @@ class CalipyIndex:
 
         return index_to_name_dict
     
+    def is_reducible(self, dims_to_keep):
+        """
+        Determine if the index is reducible to the specified dimensions without loss.
+    
+        :param dims_to_keep: DimTuple of CalipyDims to keep.
+        :return: True if reducible without loss, False otherwise.
+        """
+    
+        # Extract indices for the dimensions to keep
+        dim_positions_keep = self.dims.find_indices(dims_to_keep.names, from_right = False)
+        dims_to_remove = self.dims.delete_dims(dims_to_keep.names + ['index_dim'])
+        dim_positions_remove = self.dims.find_indices(dims_to_remove.names, from_right = False)
+    
+        # Flatten the index tensor
+        num_elements = self.tensor.shape[:-1].numel()
+        index_tensor_flat = self.tensor.view(num_elements, -1)  # Shape: [N, num_indices]
+    
+        # Extract indices for kept and removed dimensions
+        indices_keep = index_tensor_flat[:, dim_positions_keep]  # Shape: [N, num_dims_keep]
+        indices_remove = index_tensor_flat[:, dim_positions_remove]  # Shape: [N, num_dims_remove]
+        
+        # Convert indices to NumPy arrays
+        indices_keep_np = indices_keep.numpy()
+        indices_remove_np = indices_remove.numpy()
+    
+        # Convert indices to tuples for grouping
+        keep_tuples = [tuple(row) for row in indices_keep_np]
+        remove_tuples = [tuple(row) for row in indices_remove_np]
+    
+        # Create a DataFrame with tupled indices
+        df = pd.DataFrame({'keep': keep_tuples, 'remove': remove_tuples})
+        grouped = df.groupby('keep')['remove'].apply(set)
+    
+        # Convert sets to identify unique ones
+        frozenset_remove_sets = grouped.apply(frozenset)
+        unique_remove_sets = set(frozenset_remove_sets)
+        # Check if all 'remove' sets are identical
+        is_reducible = len(unique_remove_sets) == 1
+    
+        return is_reducible
+    
+    
+    def reduce_to_dims(self, dims_to_keep):
+        """
+        Reduce the current index to cover some subset of dimensions.
+
+        :param dims_to_keep: A DimTuple containing the target dimensions.
+        :return: A new CalipyIndex instance with the reduced index tensor.
+        
+        """
+        
+        # i) Check reducibility
+        
+        if not self.is_reducible(dims_to_keep):
+            warnings.warn("Index tensor cannot be reduced without loss of information.")
+        
+            
+        # ii) Set up dimensions
+        
+        # Extract indices for the dimensions to keep
+        index_dim = DimTuple(self.dims[-1:]).bind([len(dims_to_keep)])
+        dim_positions_keep = self.dims.find_indices(dims_to_keep.names, from_right = False)
+        dims_to_remove = self.dims.delete_dims(dims_to_keep.names + ['index_dim'])
+        dim_positions_remove = self.dims.find_indices(dims_to_remove.names, from_right = False)
+
+
+        # iii) Extract indices
+
+        # Extract indices for dimensions to keep
+        index_slices = [slice(None)] * len(self.dims[0:-1])  # Initialize slices for all dimensions
+        for pos in dim_positions_remove:
+            index_slices[pos] = 0  # Select index 0 along dimensions to remove
+        reduced_tensor = self.tensor[tuple(index_slices + [slice(None)])]
+        reduced_index_tensor = reduced_tensor[..., dim_positions_keep]
+
+        # Create new CalipyIndex
+        reduced_tensor_dims = dims_to_keep + index_dim
+        reduced_index = CalipyIndex(reduced_index_tensor, reduced_tensor_dims, name=self.name + '_reduced')
+
+        return reduced_index
+    
     def expand_to_dims(self, dims, dim_sizes):
         """
         Expand the current index to include additional dimensions.
@@ -431,11 +514,6 @@ class CalipyIndex:
         :param dim_sizes: A list containing sizes for the target dimensions.
         :return: A new CalipyIndex instance with the expanded index tensor.
         
-        index = data_A.calipy.indexer.local_index
-        expanded_tensor_dims = dim_assignment(['bd_1_A', 'bd_2_A', 'ed_1_A', 'ed_2_A'])
-        dim_sizes = [6,4,2,5]
-        self = index
-        dims = expanded_tensor_dims
         """
         
         # Set up current and expanded dimensions
@@ -500,6 +578,8 @@ class CalipyIndex:
 
         return expanded_index
         
+    
+    
 
 
     def __repr__(self):
@@ -646,6 +726,74 @@ class CalipyIndexer:
         
         data_datatuple.indexer_construct(data_dims_datatuple)
         data_datatuple['data_A'].calipy.indexer
+        
+        
+        # Functionality for creating indices with CalipyIndexer class methods
+        # It is possible to create subsample_indices even when no tensor is given
+        # simply by calling the class method CalipyIndexer.create_block_subsample_indices
+        # or CalipyIndexer.create_simple_subsample_indices and providing the 
+        # appropriate size specifications.         
+        # i) Create the dims (with unspecified size so no conflict later when subbatching)
+        batch_dims_FG = dim_assignment(['bd_1_FG', 'bd_2_FG'])
+        event_dims_F = dim_assignment(['ed_1_F', 'ed_2_F'])
+        event_dims_G = dim_assignment(['ed_1_G'])
+        data_dims_F = batch_dims_FG + event_dims_F
+        data_dims_G = batch_dims_FG + event_dims_G
+        
+        # ii) Sizes
+        batch_dims_FG_sizes = [10,7]
+        event_dims_F_sizes = [6,5]
+        event_dims_G_sizes = [4]
+        data_dims_F_sizes = batch_dims_FG_sizes + event_dims_F_sizes
+        data_dims_G_sizes = batch_dims_FG_sizes + event_dims_G_sizes
+        
+        # iii) Then create the data
+        data_F = torch.normal(0,1, data_dims_F_sizes)
+        data_F.calipy.indexer_construct(data_dims_F, 'data_F')
+        data_G = torch.normal(0,1, data_dims_G_sizes)
+        data_G.calipy.indexer_construct(data_dims_G, 'data_G')
+        
+        # iv) Create and expand the reduced_index
+        indices_reduced = CalipyIndexer.create_block_subsample_indices(batch_dims_FG, batch_dims_FG_sizes, [9,5])
+        index_reduced = indices_reduced[0]
+        
+        # Functionality for expanding, reducing, and reordering indices
+        # Indices like the ones above can be used flexibly by expanding them to
+        # fit tensors with various dimensions. They can also be changed w.r.t 
+        # their order.
+        
+        # i) Expand index to fit data_F and data_G
+        index_expanded_F = index_reduced.expand_to_dims(data_dims_F, [None]*len(batch_dims_FG) + event_dims_F_sizes)
+        index_expanded_G = index_reduced.expand_to_dims(data_dims_G, [None]*len(batch_dims_FG) + event_dims_G_sizes)
+        assert (data_F[index_expanded_F.tuple] == data_F[index_reduced.tensor[:,:,0], index_reduced.tensor[:,:,1], :,:]).all()
+        
+        # ii) Reordering is done by passing in a differently ordered DimTuple
+        data_dims_F_reordered = dim_assignment(['ed_2_F', 'bd_2_FG', 'ed_1_F', 'bd_1_FG'])
+        data_dims_F_reordered_sizes = [5, None, 6, None]
+        index_expanded_F_reordered = index_reduced.expand_to_dims(data_dims_F_reordered, data_dims_F_reordered_sizes)
+        data_F_reordered = data_F.calipy.indexer.reorder(data_dims_F_reordered)
+        data_F_subsample = data_F[index_expanded_F.tuple]
+        data_F_reordered_subsample = data_F_reordered[index_expanded_F_reordered.tuple]
+        assert (data_F_subsample == data_F_reordered_subsample.permute([3,1,2,0])).all()
+        
+        # iii) Index expansion can also be performed by the indexer of a tensor;
+        # this is usually more convenient
+        index_expanded_F_alt = data_F.calipy.indexer.expand_index(index_reduced)
+        index_expanded_G_alt = data_G.calipy.indexer.expand_index(index_reduced)
+        data_F_subsample_alt = data_F[index_expanded_F_alt.tuple]
+        data_G_subsample_alt = data_G[index_expanded_G_alt.tuple]
+        assert (data_F_subsample == data_F_subsample_alt).all()
+        
+        # Inverse operation is index_reduction (only possible when index is cartesian product)
+        assert (index_expanded_F.is_reducible(batch_dims_FG))
+        assert (index_reduced.tensor == index_expanded_F.reduce_to_dims(batch_dims_FG).tensor).all()
+        assert (index_reduced.tensor == index_expanded_G.reduce_to_dims(batch_dims_FG).tensor).all()
+        
+        # Illustrate nonseparable case
+        inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F)
+        inseparable_index.is_reducible(batch_dims_FG)
+        inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
+
     """
     
     
@@ -874,8 +1022,8 @@ class CalipyIndexer:
         """
         # i) Check validity input
         if not set(order_dimtuple) == set(self.tensor_dims):
-            raise Exception('CalipyDims in order_dimtuple and self.tensor_dims must'\
-                            ' be the same but are CalipyDims of order_dimtuple = {} '
+            raise Exception('CalipyDims in order_dimtuple and self.tensor_dims must '\
+                            'be the same but are CalipyDims of order_dimtuple = {} '
                             'and CalipyDims of self.tensor_dims = {}'\
                             .format(set(order_dimtuple), set(self.tensor_dims)))
         
@@ -894,6 +1042,30 @@ class CalipyIndexer:
         reordered_tensor.calipy.indexer_construct(order_dimtuple, self.name + '_reordered_({})'.format(order_dimtuple.names))
         
         return reordered_tensor
+    
+    def expand_index(self, index_reduced):
+        """
+        Expand the CalipyIndex index_reduced to align with the dimensions self.dims
+        of the current tensor self.tensor.
+
+        :param index_reduced: A CalipyIndex instance whosed dims are a subset of the
+            dims of the current tensor.
+        :return: A new CalipyIndex instance with the expanded index tensor.
+        
+        """
+        # i) Check validity inpyt
+        if not set(index_reduced.dims[0:-1]).issubset(set(self.tensor_dims)):
+            raise Exception('CalipyDims in index_reduced.dims need to be contained '\
+                            'in self.tensor_dims but are CalipyDims of index_reduced = {} '\
+                            'and CalipyDims of self.tensor_dims = {}'\
+                            .format(set(index_reduced.dims), set(self.tensor_dims)))
+        
+        # ii) Expand to match shape of current tensor
+        expanded_dims = self.tensor_dims
+        expanded_dim_sizes = [size if name not in index_reduced.dims.names else None
+                              for name, size in zip(self.tensor_torchdims.names, self.tensor_torchdims.sizes)]
+        expanded_index = index_reduced.expand_to_dims(expanded_dims, expanded_dim_sizes)
+        return expanded_index
     
     # def indexfun(tuple_of_indices, vectorizable = True):
     #     """ Function to create a multiindex that can handle an arbitrary number of indices 
@@ -1116,22 +1288,29 @@ data_dims_F_reordered_sizes = [5, None, 6, None]
 index_expanded_F_reordered = index_reduced.expand_to_dims(data_dims_F_reordered, data_dims_F_reordered_sizes)
 data_F_reordered = data_F.calipy.indexer.reorder(data_dims_F_reordered)
 
-data_F_subsampled = data_F[index_expanded_F.tuple]
-data_F_reordered_subsampled = data_F_reordered[index_expanded_F_reordered.tuple]
-assert (data_F_subsampled == data_F_reordered_subsampled.permute([3,1,2,0])).all()
+data_F_subsample = data_F[index_expanded_F.tuple]
+data_F_reordered_subsample = data_F_reordered[index_expanded_F_reordered.tuple]
+assert (data_F_subsample == data_F_reordered_subsample.permute([3,1,2,0])).all()
 
 # Alternatively, index expansion can also be performed by the indexer of a tensor
 # this is usually more convenient
 index_expanded_F_alt = data_F.calipy.indexer.expand_index(index_reduced)
 index_expanded_G_alt = data_G.calipy.indexer.expand_index(index_reduced)
 
-# Index can not be used for consistent subsampling
-data_F_subsample = data_F[index_expanded_F.tuple]
-data_G_subsample = data_G[index_expanded_G.tuple]
+# Index can now be used for consistent subsampling
+data_F_subsample_alt = data_F[index_expanded_F_alt.tuple]
+data_G_subsample_alt = data_G[index_expanded_G_alt.tuple]
+assert (data_F_subsample == data_F_subsample_alt).all()
 
 # Inverse operation is index_reduction (only possible when index is cartensian product)
-assert (index_reduced == index_expanded_F.reduce_to_dims(batch_dims_FG)).all()
-assert (index_reduced == index_expanded_G.reduce_to_dims(batch_dims_FG)).all()
+assert (index_expanded_F.is_reducible(batch_dims_FG))
+assert (index_reduced.tensor == index_expanded_F.reduce_to_dims(batch_dims_FG).tensor).all()
+assert (index_reduced.tensor == index_expanded_G.reduce_to_dims(batch_dims_FG).tensor).all()
+
+# Illustrate nonseparable case
+inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F)
+inseparable_index.is_reducible(batch_dims_FG)
+inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
 
 
 # ii) Build dataloader
