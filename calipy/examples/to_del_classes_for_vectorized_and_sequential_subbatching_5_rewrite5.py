@@ -1068,7 +1068,61 @@ class TensorIndexer(CalipyIndexer):
         repr_string = 'TensorIndexer for tensor with dims {} of sizes {}'.format(dim_name_list, dim_sizes_list)
         return repr_string
 
+# Define calipy wrappers for torch functions
+# This should be converted to commands calipy.sum, calipy.mean etc
+# These functions are useful to process CalipyTensors in such a way that the dim
+# argument can be specified as a CalipyDim object; if this is not needed, just apply
+# the torch versions torch.sum, torch.mean etc.
+
+# Preprocessing input arguments
+def preprocess_args(args, kwargs):
+    if kwargs is None:
+            kwargs = {}
+
+    # Unwrap CalipyTensors to get underlying tensors
+    def unwrap(x):
+        return x.tensor if isinstance(x, CalipyTensor) else x
+
+    unwrapped_args = tuple(unwrap(a) for a in args)
+    unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
+    
+        
+    return unwrapped_args, unwrapped_kwargs
+
+
+# Alternative idea here: Build function calipy_op(func, *args, **kwargs) 
+# then inspect and functools wraps
+def calipy_sum(calipy_tensor, dim = None, keepdim = False, dtype = None):
+    """ Wrapper function for torch.sum applying a dimension-aware sum to CalipyTensor
+    objects. Input args are as for torch.sum but accept dim = dims for dims either
+    a DimTuple of a CalipyDim.
+    
+    Notes:
+    - This function acts on CalipyTensor objects
+    - This function acts on dim args of class CalipyDim and DimTuple.
+    - The behavior is equivalent to torch.sum on the CalipyTensor.tensor level
+        but augments the result with dimensions.
+
+    Original torch.sum docstring:
+    """
+    
+    # Compile and unwrap arguments
+    args = (calipy_tensor,)
+    kwargs = {'dim' : dim,
+              'keepdim' : keepdim,
+              'dtype' : dtype}
+        
+    # Convert CalipyDims in 'dim' argument to int indices if present
+    if dim is not None:
+        kwargs['dim'] = tuple(calipy_tensor.dims.find_indices(kwargs['dim'].names))
+    
+    # Call torch function
+    result = torch.sum(*args, **kwargs)
+    return result
+    
+calipy_sum.__doc__ += "\n" + torch.sum.__doc__
    
+
 class CalipyTensor:
     """
     Class that wraps torch.Tensor objects and augments them with indexing operations
@@ -1083,7 +1137,7 @@ class CalipyTensor:
         Default is None.
     :type name: string
 
-    :return: An instance of calipyTensor containing functionality for dimension
+    :return: An instance of CalipyTensor containing functionality for dimension
         upkeep, indexing, and function call referral.
     :rtype: CalipyTensor
 
@@ -1112,32 +1166,28 @@ class CalipyTensor:
         self.name = name
         self.tensor = tensor
         self.dims = dims
-        self.indexer_construct(dims, name)
+        self._indexer_construct(dims, name)
         
-    def indexer_construct(self, tensor_dims, name, silent = True):
+    def _indexer_construct(self, tensor_dims, name, silent = True):
         """Constructs a TensorIndexer for the tensor."""
         self.indexer = TensorIndexer(self.tensor, tensor_dims, name)
         return self if silent == False else None
 
-    def __torch_function__(self, func, types, args=(), kwargs=None):
-        if kwargs is None:
-            kwargs = {}
-
-        # Unwrap CalipyTensors to get underlying tensors
-        def unwrap(x):
-            return x.tensor if isinstance(x, CalipyTensor) else x
-        unwrapped_args = tuple(unwrap(a) for a in args)
-        unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
-
-        # Convert CalipyDims in 'dim' argument to int indices if present
-        if 'dim' in unwrapped_kwargs:
-            unwrapped_kwargs['dim'] = tuple(self.dims.find_indices(unwrapped_kwargs['dim']))
-
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs={}):
+        
+        # Find first CalipyTensor in args
+        self_instance = next((arg for arg in args if isinstance(arg, cls)), None)
+        if self_instance is None:
+            return NotImplemented
+        
+        
         # Call the original PyTorch function
+        unwrapped_args, unwrapped_kwargs = preprocess_args(args, kwargs)
         result = func(*unwrapped_args, **unwrapped_kwargs)
 
         # Compute new dims
-        new_dims = self._compute_new_dims(func, args, kwargs, result)
+        new_dims = self_instance._compute_new_dims(func, args, kwargs, result)
 
         # Wrap result back into CalipyTensor if it's a Tensor
         if isinstance(result, torch.Tensor):
@@ -1148,20 +1198,6 @@ class CalipyTensor:
         else:
             return result
 
-    # def _convert_dim_arg(self, dim_arg):
-    #     # Convert CalipyDim or tuple of CalipyDims into integer indices
-    #     if isinstance(dim_arg, CalipyDim):
-    #         return self._dim_to_int(dim_arg)
-    #     elif isinstance(dim_arg, tuple):
-    #         return tuple(self._dim_to_int(d) if isinstance(d, CalipyDim) else d for d in dim_arg)
-    #     else:
-    #         return dim_arg
-
-    # def _dim_to_int(self, calipydim):
-    #     if self.dims is None:
-    #         raise ValueError("Cannot convert CalipyDim to int when dims are None.")
-    #     # Find index of calipydim in self.dims
-    #     return self.dims.find_indices([calipydim], from_right = False)
 
     def _compute_new_dims(self, func, orig_args, orig_kwargs, result):
         # A placeholder method that decides how dims change after an operation.
@@ -1169,6 +1205,12 @@ class CalipyTensor:
         # - Elementwise ops (torch.add): If broadcast occurred, attempt to broadcast dims.
         # - Reductions (torch.sum): Remove the reduced dimension.
         # - Otherwise: set dims=None by default.
+        
+        # List compatible function cases
+        reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
+        elementwise_fun_list = ['add', 'mul', 'sub', 'div']
+        
+        result_shape = result.shape
 
         if not isinstance(result, torch.Tensor):
             # Non-tensor result doesn't have dims
@@ -1183,35 +1225,30 @@ class CalipyTensor:
 
         # If no input had dims, no dims in output
         if input_dims is None:
-            return None
+            return_dims = dim_assignment(['return_dim'], dim_sizes = result_shape)
 
         # Example rules:
         func_name = func.__name__
 
         # Handle reduction-like ops:
-        if func_name in ['sum', 'mean', 'prod', 'max', 'min']:
+        if func_name in reduction_fun_list:
             # If dim specified and it's a CalipyDim -> int conversion done
             # If dim not specified, all dims reduced -> dims=None
-            dim = orig_kwargs.get('dim', None)
-            if dim is None:
+            dims_reduce_indices = orig_kwargs.get('dim', None)
+            dims_reduce = self.dims[dims_reduce_indices]
+            if dims_reduce is None:
                 # Summation over all dims results in scalar or reduced shape with no dims
-                return None
+                return_dims = dim_assignment(['trivial_dim'], dim_sizes = [0])
             else:
-                # If dim is int, remove that dim from input_dims
-                # If dim is tuple of ints, remove all
-                if isinstance(dim, int):
-                    new_dims = tuple(d for i, d in enumerate(input_dims) if i != dim)
-                else:
-                    # dim is a tuple of ints
-                    remove_set = set(dim)
-                    new_dims = tuple(d for i, d in enumerate(input_dims) if i not in remove_set)
-                # Check if result.ndim matches len(new_dims), else None
-                if len(new_dims) != result.ndim:
-                    return None
-                return DimTuple(new_dims)
+                # If dim is CalipyDim, remove that dim from input_dims
+                # If dim is DimTuple, remove all those dims from input_dims
+                dims_reduce_names = [dims_reduce.name] if isinstance(dims_reduce, CalipyDim) else dims_reduce.names
+                return_dims = input_dims.delete_dims(dims_reduce_names)
+                
+
 
         # Handle elementwise ops like add, mul:
-        if func_name in ['add', 'mul', 'sub', 'div']:
+        elif func_name in elementwise_fun_list:
             # If multiple CalipyTensors involved, attempt to broadcast dims
             # Let's find all CalipyTensors and try broadcasting dims
             calipy_tensors = [a for a in orig_args if isinstance(a, CalipyTensor)]
@@ -1229,8 +1266,9 @@ class CalipyTensor:
                     return None
 
         # By default, return None and possibly warn
-        warnings.warn(f"No dimension logic implemented for {func_name}, setting dims to None.")
-        return None
+        else: 
+            warnings.warn(f"No dimension logic implemented for {func_name}, setting dims to None.")
+        return return_dims
 
     def _broadcast_dims(self, dims1, dims2, result_shape):
         # Attempt to reconcile dims1 and dims2 according to broadcasting
@@ -1276,11 +1314,94 @@ class CalipyTensor:
         
     def __getattr__(self, name):
         # Prevent recursion for special methods
-        if name.startswith('__') and name.endswith('__'):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        # if name.startswith('__') and name.endswith('__'):
+        #     raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
         # Delegate attribute access to underlying tensor if not found
         return getattr(self.tensor, name)
+    
+    def __mul__(self, other):
+        """ 
+        Overloads the * operator to work on CalipyTensor objects.
+        
+        :param other: The CalipyTensor or torch.tensor to multiply.
+        :type other: CalipyTensor or torch.tensor
+        :return: A new Calipytensor with elements from each tensor multiplied elementwise.
+            Operation supports broadcasting.
+        :rtype: CalipyTensor
+        :raises ValueError: If both self and other are not broadcastable.
+        """
+        if not isinstance(other, CalipyTensor):
+            return NotImplemented
+
+        if self.dims != other.dims:
+            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+
+        result = torch.mul(self, other)
+        
+        return result
+    
+    def __div__(self, other):
+        """ 
+        Overloads the / operator to work on CalipyTensor objects.
+        
+        :param other: The CalipyTensor or torch.tensor used to divide self.
+        :type other: CalipyTensor or torch.tensor
+        :return: A new Calipytensor with elements from self divided elementwise by elements from other.
+            Operation supports broadcasting.
+        :rtype: CalipyTensor
+        :raises ValueError: If both self and other are not broadcastable.
+        """
+        if not isinstance(other, CalipyTensor):
+            return NotImplemented
+
+        if self.dims != other.dims:
+            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+
+        result = torch.div(self, other)
+        
+        return result
+    
+    
+    def __add__(self, other):
+        """ 
+        Overloads the + operator to work on CalipyTensor objects.
+        
+        :param other: The CalipyTensor to add.
+        :type other: CalipyTensor
+        :return: A new Calipytensor with elements from each tensor added elementwise.
+        :rtype: CalipyTensor
+        :raises ValueError: If both self and other are not broadcastable.
+        """
+        if not isinstance(other, CalipyTensor):
+            return NotImplemented
+
+        if self.dims != other.dims:
+            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+
+        result = torch.add(self, other)
+
+        return result
+    
+    def __sub__(self, other):
+        """ 
+        Overloads the - operator to work on CalipyTensor objects.
+        
+        :param other: The CalipyTensor to add.
+        :type other: CalipyTensor
+        :return: A new Calipytensor with elements from each tensor added elementwise.
+        :rtype: CalipyTensor
+        :raises ValueError: If both self and other are not broadcastable.
+        """
+        if not isinstance(other, CalipyTensor):
+            return NotImplemented
+
+        if self.dims != other.dims:
+            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+
+        result = torch.sub(self, other)
+
+        return result
         
     def __repr__(self):
         return f"CalipyTensor({repr(self.tensor)}, dims={self.dims})"
@@ -1422,8 +1543,14 @@ assert (index_reduced.tensor == index_expanded_G.reduce_to_dims(batch_dims_FG).t
 # Illustrate nonseparable case
 inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F)
 inseparable_index.is_reducible(batch_dims_FG)
-inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
+# inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
 
+
+# Showcase torch functions acting on CalipyTensor
+# generic_sum = torch.sum(data_A_cp)
+# specific_sum = torch.sum(data_A_cp, dim = batch_dims_A)
+specific_sum = calipy_sum(data_A_cp, dim = batch_dims_A)
+generic_sum = calipy_sum(data_A_cp)
 
 # ii) Build dataloader
 class CalipySample:

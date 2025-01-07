@@ -70,7 +70,7 @@ def multi_unsqueeze(input_tensor, dims):
 
 def ensure_tuple(item):
     """Ensures the input is a tuple. Leaves tuples unchanged."""
-    return item if isinstance(item, tuple) else (item,)
+    return item if isinstance(item, tuple) else tuple(item)
 
 def format_mro(cls):
     # Get the MRO tuple and extract class names
@@ -393,26 +393,35 @@ class TorchdimTuple(tuple):
         or the contents of a DimTuple object. 
         
         :param dim_keys: Identifier for determining which dimensions to select
-        :type dim_names: Integer, slice, list of strings, DimTuple
+        :type dim_names: Integer, tuple of ints, slice, list of strings, DimTuple
         :return: A TorchdimTuple object with the selected dimensions included
         :rtype: TorchdimTuple
         """
         # Case 1: If dim_keys is an integer behave like a standard tuple
-        if isinstance(dim_keys, int):
+        if type(dim_keys) is int:
             return super().__getitem__(dim_keys)
         
         # Case 2: If dim_keys is slice, produce a TorchdimTuple
-        elif isinstance(dim_keys, slice):
+        elif type(dim_keys) is slice:
             return TorchdimTuple(ensure_tuple(super().__getitem__(dim_keys)), ensure_tuple(self.superior_dims[dim_keys]))
         
-        # Case 3: If dim_keys is a list of names, get identically named elements of TorchdimTuple
-        elif isinstance(dim_keys, list):
+        # Case 3: If dim_keys is a tuple of ints, produce a DimTuple
+        elif type(dim_keys) is tuple:
+            sublist = []
+            for dim_key in dim_keys:
+                sublist.append(super().__getitem__(dim_key))
+            sub_tuple = ensure_tuple(sublist)
+            sub_superior_dims = self.superior_dims[dim_keys]
+            return TorchdimTuple(sub_tuple, sub_superior_dims)
+        
+        # Case 4: If dim_keys is a list of names, get identically named elements of TorchdimTuple
+        elif type(dim_keys) is list:
             sublist = []
             for key_dname in dim_keys:
                 for dname, d in zip(self.names, self):
                     if dname == key_dname:
                         sublist.append(d) 
-            sub_tuple = tuple(sublist)
+            sub_tuple = ensure_tuple(sublist)
             
             sub_superior_dims = self.superior_dims[dim_keys]
             return TorchdimTuple(sub_tuple, sub_superior_dims)
@@ -423,12 +432,12 @@ class TorchdimTuple(tuple):
             # sub_superior_dims = self.superior_dims[dim_keys]
             # return TorchdimTuple(sub_tuple, sub_superior_dims)
         
-        # Case 4: If dim_keys is an instance of DimTuple, look for identically named elements
-        elif isinstance(dim_keys, DimTuple):
+        # Case 5: If dim_keys is an instance of DimTuple, look for identically named elements
+        elif type(dim_keys) is DimTuple:
             torchdim_tuple = self[dim_keys.names]
             return torchdim_tuple
         
-        # Case 5: Raise an error for unsupported types
+        # Case 6: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported key type: {type(dim_keys)}")
             
@@ -566,7 +575,7 @@ class DimTuple(tuple):
         torchdim_tuple = TorchdimTuple(tuple([d.build_torchdim() for d in self]), superior_dims = self)
         return torchdim_tuple
     
-    def find_indices(self, dim_names, from_right=True):
+    def find_indices(self, dim_names, from_right=False):
         """Returns a list of indices indicating the locations of the dimensions with names 
         specified in `dim_names` within the DimTuple. Raises an error if any dimension 
         is found multiple times.
@@ -802,20 +811,27 @@ class DimTuple(tuple):
         or the contents of a DimTuple object. 
         
         :param dim_keys: Identifier for determining which dimensions to select
-        :type dim_names: Integer, slice, list of strings, DimTuple
+        :type dim_names: Integer, tuple of ints,  slice, list of strings, DimTuple
         :return: A DimTuple object with the selected dimensions included
         :rtype: DimTuple
         """
         # Case 1: If dim_keys is an integer behave like a standard tuple
-        if isinstance(dim_keys, int):
+        if type(dim_keys) is int:
             return super().__getitem__(dim_keys)
         
         # Case 2: If dim_keys is slice, produce a DimTuple
-        elif isinstance(dim_keys, slice):
+        elif type(dim_keys) is slice:
             return DimTuple(ensure_tuple(super().__getitem__(dim_keys)))
         
-        # Case 3: If dim_keys is a list of names, get identically named elements of DimTuple
-        elif isinstance(dim_keys, list):
+        # Case 3: If dim_keys is a tuple of ints, produce a DimTuple
+        elif type(dim_keys) is tuple:
+            sublist = []
+            for dim_key in dim_keys:
+                sublist.append(super().__getitem__(dim_key))
+            return DimTuple(ensure_tuple(sublist))
+        
+        # Case 4: If dim_keys is a list of names, get identically named elements of DimTuple
+        elif type(dim_keys) is list:
             sublist = []
             for key_dname in dim_keys:
                 for d in self:
@@ -825,12 +841,12 @@ class DimTuple(tuple):
             # sublist = [d for dname, d in zip(self.names, self) if dname in dim_keys]
             return DimTuple(tuple(sublist))
         
-        # Case 4: If dim_keys is an instance of DimTuple, look for identically named elements
-        elif isinstance(dim_keys, DimTuple):
+        # Case 5: If dim_keys is an instance of DimTuple, look for identically named elements
+        elif type(dim_keys) is DimTuple:
             dim_tuple = self[dim_keys.names]
             return dim_tuple
         
-        # Case 5: Raise an error for unsupported types
+        # Case 6: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported key type: {type(dim_keys)}")
 

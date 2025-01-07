@@ -1310,7 +1310,7 @@ assert (index_reduced.tensor == index_expanded_G.reduce_to_dims(batch_dims_FG).t
 # Illustrate nonseparable case
 inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F)
 inseparable_index.is_reducible(batch_dims_FG)
-inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
+# inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
 
 
 # ii) Build dataloader
