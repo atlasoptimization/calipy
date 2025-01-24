@@ -1273,12 +1273,18 @@ class CalipyTensor:
     def _broadcast_dims(self, dims1, dims2, result_shape):
         # Attempt to reconcile dims1 and dims2 according to broadcasting
         # Basic logic:
-        # - If one is None, result dims=None
-        # - If both have same length and each dimension match or one-size dimension, keep dims.
+        # - If one of dim1, dims2 is None, copy the other
+        # - If both have same length and each dimension matches, keep dims.
+        # - If both have some common dims, inject missing dims of size 1.
         # - If shapes differ in ways that can't be mapped to dims easily, dims=None.
-        if dims1 is None or dims2 is None:
-            return None
+        
+        # Case 1: one of dims is unspecified
+        if dims1 is not None and dims2 is None:
+            dims2 = dims1
+        if dims1 is None and dims2 is not None:
+            dims1 = dims2
 
+        # Case 2: dims line up 1 to 1
         # Convert dims to lists
         d1, d2 = list(dims1), list(dims2)
         # Check length differences
