@@ -14,7 +14,7 @@ import itertools
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from functorch.dim import dims
-from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
+from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
 
 import numpy as np
 import pandas as pd
@@ -487,9 +487,9 @@ class CalipyIndex:
         
         # Build index tensor with default order [current_dims, new_dims, index_dim]
         # i) Set up torchdims
-        current_tdims = current_tensor_dims.build_torchdims()
-        new_tdims = new_dims.build_torchdims()
-        index_tdim = index_dim.build_torchdims()
+        current_tdims = current_tensor_dims.build_torchdims(fix_size = True)
+        new_tdims = new_dims.build_torchdims(fix_size = True)
+        index_tdim = index_dim.build_torchdims(fix_size = True)
         default_order_tdim = current_tdims + new_tdims + index_tdim
         expanded_order_tdims = default_order_tdim[expanded_indextensor_dims]
         
@@ -730,16 +730,18 @@ class TensorIndexer(CalipyIndexer):
         local_index.dims
         local_index.tensor.shape
         local_index.index_name_dict
-        assert (data_A[local_index.tuple] == data_A.tensor).all()
+        assert (data_A.tensor[local_index.tuple] == data_A.tensor).all()
+        assert ((data_A[local_index] - data_A).tensor == 0).all()
+
         
         # Reordering and indexing by DimTuple
         reordered_dims = DimTuple((data_dims_A[1], data_dims_A[2], data_dims_A[0]))
         data_A_reordered = data_A.indexer.reorder(reordered_dims)
         data_tdims_A = data_dims_A.build_torchdims()
         data_tdims_A_reordered = data_tdims_A[reordered_dims]
-        data_A_named = data_A[data_tdims_A]
-        data_A_named_reordered = data_A_reordered[data_tdims_A_reordered]
-        assert (data_A_named.order(data_tdims_A) == data_A_named_reordered.order(data_tdims_A)).all()
+        data_A_named_tensor = data_A.tensor[data_tdims_A]
+        data_A_named_tensor_reordered = data_A_reordered.tensor[data_tdims_A_reordered]
+        assert (data_A_named_tensor.order(*data_tdims_A) == data_A_named_tensor_reordered.order(*data_tdims_A)).all()
         
         # Subbatching along one or multiple dims
         subsamples, subsample_indices = data_A.indexer.simple_subsample(batch_dims_A[0], 5)
@@ -776,7 +778,8 @@ class TensorIndexer(CalipyIndexer):
         
         data_C_local_index = data_C.indexer.local_index
         data_C_global_index = data_C.indexer.global_index
-        assert (data_C[data_C_local_index.tuple] == data_B[data_C_global_index.tuple]).all()
+        assert (data_C.tensor[data_C_local_index.tuple] == data_B.tensor[data_C_global_index.tuple]).all()
+        assert ((data_C[data_C_local_index] - data_B[data_C_global_index]).tensor == 0).all()
         
         # Inheritance - by declaration
         # If data comes out of some external subsampling and only the corresponding indextensors
@@ -789,6 +792,7 @@ class TensorIndexer(CalipyIndexer):
         data_D_global_index = data_D.indexer.global_index
         
         assert (data_D.tensor == data_B.tensor[data_D_global_index.tuple]).all()
+        assert ((data_D - data_B[data_D_global_index]).tensor == 0).all()
         
         # Alternative way of calling via DataTuples
         data_E_torch = torch.normal(0,1,[5,3])
@@ -845,16 +849,17 @@ class TensorIndexer(CalipyIndexer):
         # i) Expand index to fit data_F and data_G
         index_expanded_F = index_reduced.expand_to_dims(data_dims_F, [None]*len(batch_dims_FG) + event_dims_F_sizes)
         index_expanded_G = index_reduced.expand_to_dims(data_dims_G, [None]*len(batch_dims_FG) + event_dims_G_sizes)
-        assert (data_F[index_expanded_F.tuple] == data_F[index_reduced.tensor[:,:,0], index_reduced.tensor[:,:,1], :,:]).all()
+        assert (data_F.tensor[index_expanded_F.tuple] == data_F.tensor[index_reduced.tensor[:,:,0], index_reduced.tensor[:,:,1], :,:]).all()
+        assert ((data_F[index_expanded_F] - data_F[index_reduced.tensor[:,:,0], index_reduced.tensor[:,:,1], :,:]).tensor ==0).all()
         
         # ii) Reordering is done by passing in a differently ordered DimTuple
         data_dims_F_reordered = dim_assignment(['ed_2_F', 'bd_2_FG', 'ed_1_F', 'bd_1_FG'])
         data_dims_F_reordered_sizes = [5, None, 6, None]
         index_expanded_F_reordered = index_reduced.expand_to_dims(data_dims_F_reordered, data_dims_F_reordered_sizes)
         data_F_reordered = data_F.indexer.reorder(data_dims_F_reordered)
-        data_F_subsample = data_F[index_expanded_F.tuple]
-        data_F_reordered_subsample = data_F_reordered[index_expanded_F_reordered.tuple]
-        assert (data_F_subsample == data_F_reordered_subsample.permute([3,1,2,0])).all()
+        data_F_subsample = data_F[index_expanded_F]
+        data_F_reordered_subsample = data_F_reordered[index_expanded_F_reordered]
+        assert (data_F_subsample.tensor == data_F_reordered_subsample.tensor.permute([3,1,2,0])).all()
         
         # iii) Index expansion can also be performed by the indexer of a tensor;
         # this is usually more convenient
@@ -862,7 +867,8 @@ class TensorIndexer(CalipyIndexer):
         index_expanded_G_alt = data_G.indexer.expand_index(index_reduced)
         data_F_subsample_alt = data_F[index_expanded_F_alt.tuple]
         data_G_subsample_alt = data_G[index_expanded_G_alt.tuple]
-        assert (data_F_subsample == data_F_subsample_alt).all()
+        assert (data_F_subsample.tensor == data_F_subsample_alt.tensor).all()
+        assert ((data_F_subsample - data_F_subsample_alt).tensor == 0).all()
         
         # Inverse operation is index_reduction (only possible when index is cartesian product)
         assert (index_expanded_F.is_reducible(batch_dims_FG))
@@ -1425,7 +1431,11 @@ class CalipyTensor:
                                           data_source_name = self.name)
             return subtensor_cp
         
-        # Case 3: Raise an error for unsupported types
+        # Case 3: TorchDimTuple based indexing
+        elif type(index) is TorchdimTuple:
+            pass
+        
+        # Case 4: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported index type: {type(index)}")
         
@@ -1540,7 +1550,8 @@ data_A_cp = CalipyTensor(data_A, data_dims_A, 'data_A')
 local_index = data_A_cp.indexer.local_index
 local_index.tensor.shape
 local_index.dims
-assert (data_A_cp[local_index.tuple] == data_A_cp.tensor).all()
+assert (data_A_cp.tensor[local_index.tuple] == data_A_cp.tensor).all()
+assert (((data_A_cp[local_index] - data_A_cp).tensor == 0).all())
 
 # Check reordering and torchdims for reordered
 reordered_dims = DimTuple((data_dims_A[1], data_dims_A[2], data_dims_A[0]))
@@ -1549,8 +1560,8 @@ data_A_reordered = data_A_cp.indexer.reorder(reordered_dims)
 data_tdims_A = data_dims_A.build_torchdims()
 data_tdims_A_reordered = data_tdims_A[reordered_dims]
 data_A_named = data_A[data_tdims_A]
-data_A_named_reordered = data_A_reordered[data_tdims_A_reordered]
-assert (data_A_named.order(data_tdims_A) == data_A_named_reordered.order(data_tdims_A)).all()
+data_A_named_reordered = data_A_reordered.tensor[data_tdims_A_reordered]
+assert (data_A_named.order(*data_tdims_A) == data_A_named_reordered.order(*data_tdims_A)).all()
 
 # Check simple subsampling
 simple_subsamples, simple_subsample_indices = data_A_cp.indexer.simple_subsample(batch_dims_A[0], 5)
@@ -1598,6 +1609,7 @@ data_E_cp.indexer.create_global_index(index_tensor_E, 'from_data_E')
 data_E_index_tuple = data_E_cp.indexer.global_index.tuple
 
 assert (data_E == data_C[data_E_index_tuple]).all()
+assert(((data_E_cp - data_C_cp[data_E_cp.indexer.global_index]).tensor == 0).all())
 
 
 # Check interaction with DataTuple class
@@ -1671,7 +1683,7 @@ assert (index_reduced.tensor == index_expanded_G.reduce_to_dims(batch_dims_FG).t
 # Illustrate nonseparable case
 inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F)
 inseparable_index.is_reducible(batch_dims_FG)
-# inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
+inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
 
 
 # Showcase torch functions acting on CalipyTensor
