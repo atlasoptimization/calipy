@@ -188,10 +188,13 @@ class CalipyDim:
         """
         # Execute dimension initialization
         dims_locals = {}
-        if self.size is not None:
-            exec_string = f"{self.name} = dims(sizes=[{self.size}])"
-        else:
-            exec_string = f"{self.name} = dims()"
+        exec_string = f"{self.name} = dims()"
+        
+        # if self.size is not None:
+        #     exec_string = f"{self.name} = dims(sizes=[{self.size}])"
+        # else:
+        #     exec_string = f"{self.name} = dims()"
+        
         restricted_exec(exec_string, dims_locals)
         
         # Compile return
@@ -549,12 +552,7 @@ class DimTuple(tuple):
         :rtype: list
         """
         sizes = [d.size for d in self]
-        # sizes = []
-        # for d in self:
-        #     try:
-        #         sizes.append(d.size)  # Attempt to get the size
-        #     except ValueError:
-        #         sizes.append(None)  # Append None if the dimension is unbound
+
         return sizes
     
     @property
@@ -811,7 +809,7 @@ class DimTuple(tuple):
         or the contents of a DimTuple object. 
         
         :param dim_keys: Identifier for determining which dimensions to select
-        :type dim_names: Integer, tuple of ints,  slice, list of strings, DimTuple
+        :type dim_keys: Integer, tuple of ints,  slice, list of strings, DimTuple
         :return: A DimTuple object with the selected dimensions included
         :rtype: DimTuple
         """

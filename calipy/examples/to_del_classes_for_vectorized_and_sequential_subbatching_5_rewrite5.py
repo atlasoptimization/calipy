@@ -619,6 +619,52 @@ class CalipyIndexer:
         self.global_index = global_index
         
         return global_index
+    
+    @classmethod
+    def convert_slice_to_indextensor(cls, indexslice_list):
+        """
+        Converts an indexslice_list to an indextensor so that their actions for indexing
+        are equivalent in the sense that sliced tensor has entries from tensor indexed
+        by indextensor values: tensor[indexslice_list]  = tensor[indextensor.unbind(-1)].
+        
+        :param indexslice: An index slice that can be used to index tensors
+        :return: An indextensor containing an index at each location of value
+            in tensor
+        """
+        # Iterate through ranges
+        index_ranges = [torch.arange(indexslice.stop)[indexslice] for indexslice in indexslice_list]
+        meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
+        indextensor = torch.stack(meshgrid, dim=-1)
+        return indextensor
+    
+    @classmethod
+    def convert_tuple_to_indextensor(cls, indextuple):
+        """
+        Converts an indexstuple to an indextensor so that their actions for indexing
+        are equivalent in the sense that indexed tensor has entries from tensor indexed
+        by indextensor values: tensor[indextuple]  = tensor[indextensor.unbind(-1)].
+        
+        :param indextuple: An index tuple that can be used to index tensors
+        :return: An indextensor containing an index at each location of value
+            in tensor
+        """
+        indextensor = torch.stack(indextuple.bind,-1)
+        return indextensor
+    
+    @classmethod
+    def convert_indextensor_to_tuple(cls, indextensor):
+        """
+        Converts an indextensor to an indextuple so that their actions for indexing
+        are equivalent in the sense that indexed tensor has entries from tensor indexed
+        by indextensor values: tensor[indextuple]  = tensor[indextensor.unbind(-1)].
+        
+        :param indextensor: An indextensor containing an index at each location of value
+            in tensor
+        :return: An index tuple that can be used to index tensors
+        """
+        indextuple = index_tensor.unbind(-1)
+        return indextuple
+
 
     def __repr__(self):
         dim_name_list = self.dims.names
@@ -908,7 +954,7 @@ class TensorIndexer(CalipyIndexer):
         indices global_index_tensor are chosen such that they can be used to access the data
         in data_source with name data_source_name via self.tensor  = data_source[global_index_tensor_tuple] 
         
-        :param subsample_index: An index tensor that enumerates for all the entries of
+        :param subsample_indextensor: An index tensor that enumerates for all the entries of
             self.tensor which index needs to be used to access it in some global dataset.
         :param data_source_name: A string serving as info to record which object the global indices are indexing.
         
@@ -1062,6 +1108,7 @@ class TensorIndexer(CalipyIndexer):
         expanded_index = index_reduced.expand_to_dims(expanded_dims, expanded_dim_sizes)
         return expanded_index
     
+    
     def __repr__(self):
         dim_name_list = self.tensor_torchdims.names
         dim_sizes_list = self.tensor_torchdims.sizes
@@ -1127,7 +1174,8 @@ class CalipyTensor:
     """
     Class that wraps torch.Tensor objects and augments them with indexing operations
     and dimension upkeep functionality, while referring most torch functions to
-    its wrapped torch.Tensor object.
+    its wrapped torch.Tensor object. Can be sliced and indexed in the usual ways
+    which produces another CalipyTensor whose indexer is inherited.
     
     :param tensor: The tensor which should be embedded into CalipyTensor
     :type tensor: torch.Tensor
@@ -1150,6 +1198,7 @@ class CalipyTensor:
         batch_dims_A = dim_assignment(dim_names = ['bd_1_A', 'bd_2_A'])
         event_dims_A = dim_assignment(dim_names = ['ed_1_A'])
         data_dims_A = batch_dims_A + event_dims_A
+        data_A_cp = CalipyTensor(data_A_torch, data_dims_A, name = data_A)
     """
     
     __torch_function__ = True  # Not strictly necessary, but clarity
@@ -1313,7 +1362,48 @@ class CalipyTensor:
         return DimTuple(new_dims)
     
     def __getitem__(self, index):
-        return self.tensor[index]
+        """ Returns new CalipyTensor based on either standard indexing quantities
+        like slices or integers or a CalipyIndex. 
+        
+        :param index: Identifier for determining which elements oc self to compile
+            to a new CalipyTensor
+        :type index: Integer, tuple of ints,  slice, CalipyIndex
+        :return: A new tensor with derived dimensions and same functionality as self
+        :rtype: CalipyTensor
+        """
+        
+        
+        # Case 1: Standard indexing
+        if type(index) in (int, tuple, slice):
+            index = ensure_tuple(index)
+            subtensor_cp = CalipyTensor(self.tensor[index], dims = self.dims,
+                                        name = self.name)
+            
+            # Get indices corresponding to index
+            mask = torch.zeros_like(self.tensor, dtype=torch.bool)
+            mask[index] = True  # Apply the given index
+            selected_indices = torch.nonzero(mask)
+            
+            # Reshape to proper indextensor
+            indextensor_shape = list(subtensor_cp.tensor.shape) + [selected_indices.shape[1]]
+            indextensor = selected_indices.view(*indextensor_shape)  
+
+            subtensor_cp.indexer.create_global_index(subsample_indextensor = indextensor, 
+                                                      data_source_name = self.name)
+            return subtensor_cp
+        
+        # Case 2: If index is CalipyIndex, use index.tuple for subsampling
+        elif type(index) is CalipyIndex:
+            subtensor_cp = CalipyTensor(self.tensor[index.tuple], dims = self.dims,
+                                        name = self.name)
+            subtensor_cp.indexer.create_global_index(subsample_indextensor = index.tensor, 
+                                          data_source_name = self.name)
+        
+        # Case 3: Raise an error for unsupported types
+        else:
+            raise TypeError(f"Unsupported index type: {type(index)}")
+        
+        
 
     def __setitem__(self, index, value):
         self.tensor[index] = value    
@@ -1441,6 +1531,12 @@ simple_subsamples, simple_subsample_indices = data_A_cp.indexer.simple_subsample
 block_batch_dims_A = batch_dims_A
 block_subsample_sizes_A = [5,3]
 block_subsamples, block_subsample_indices = data_A_cp.indexer.block_subsample(block_batch_dims_A, block_subsample_sizes_A)
+
+# Subsampling is also possible when dims are bound previously
+data = data_A
+data_dims = dim_assignment(['bd_1', 'bd_2', 'ed_1'], dim_sizes = [6,4,2])
+data_cp = CalipyTensor(data, data_dims, 'data')
+data_cp.indexer.simple_subsample(data_dims[0], 4)
 
 # Check subsample indexing 
 # Suppose we got data_D as a subset of data_C with derived ssi CalipyIndex and
