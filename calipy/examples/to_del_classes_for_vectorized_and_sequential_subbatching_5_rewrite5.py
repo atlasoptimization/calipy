@@ -1198,7 +1198,22 @@ class CalipyTensor:
         batch_dims_A = dim_assignment(dim_names = ['bd_1_A', 'bd_2_A'])
         event_dims_A = dim_assignment(dim_names = ['ed_1_A'])
         data_dims_A = batch_dims_A + event_dims_A
-        data_A_cp = CalipyTensor(data_A_torch, data_dims_A, name = data_A)
+        data_A_cp = CalipyTensor(data_A_torch, data_dims_A, name = 'data_A')
+        
+        # Confirm that subsampling works as intended
+        subtensor_1 = data_A_cp[0:1,0:3,...]
+        subtensor_1.dims == data_A_cp.dims
+        assert((subtensor_1.tensor - data_A_cp.tensor[0:1,0:3,...] == 0).all())
+        # subsample has global_index that can be used for subsampling on tensors
+        # and on CalipyTensors
+        assert((data_A_cp.tensor[subtensor_1.indexer.global_index.tuple] 
+                - data_A_cp.tensor[0:1,0:3,...] == 0).all())
+        assert(((data_A_cp[subtensor_1.indexer.global_index] 
+                - data_A_cp[0:1,0:3,...]).tensor == 0).all())
+        
+        # When using an integer, dims are kept; i.e. singleton dims are not reduced
+        subtensor_2 = data_A_cp[0,0:3,...]
+        assert((subtensor_2.tensor == data_A_cp[0,0:3,...].unsqueeze(0)).all())
     """
     
     __torch_function__ = True  # Not strictly necessary, but clarity
@@ -1375,7 +1390,17 @@ class CalipyTensor:
         
         # Case 1: Standard indexing
         if type(index) in (int, tuple, slice):
-            index = ensure_tuple(index)
+            old_index = ensure_tuple(index)
+            
+            # Preserve singleton dimensions for integer indexing
+            index = []
+            for dim, idx in enumerate(old_index):
+                if isinstance(idx, int):  # Prevent dimension collapse
+                    index.append(torch.tensor([idx]))  # Convert to a tensor list
+                else:
+                    index.append(idx)
+                   
+            # Create new CalipyTensorby subsampling
             subtensor_cp = CalipyTensor(self.tensor[index], dims = self.dims,
                                         name = self.name)
             
@@ -1398,6 +1423,7 @@ class CalipyTensor:
                                         name = self.name)
             subtensor_cp.indexer.create_global_index(subsample_indextensor = index.tensor, 
                                           data_source_name = self.name)
+            return subtensor_cp
         
         # Case 3: Raise an error for unsupported types
         else:
