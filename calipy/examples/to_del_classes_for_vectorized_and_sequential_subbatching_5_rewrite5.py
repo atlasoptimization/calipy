@@ -163,7 +163,11 @@ class DataTuple:
         self._data_dict = {name: value for name, value in zip(names, values)}
 
     def __getitem__(self, key):
-        return self._data_dict[key]
+        if type(key) == int:
+            keyname = list(self._data_dict.keys())
+            return self._data_dict[keyname[key]]
+        if type(key) == str:
+            return self._data_dict[key]
 
     def __setitem__(self, key, value):
         """
@@ -280,6 +284,34 @@ class DataTuple:
         
         return calipytensor_datatuple
     
+    def subsample(self, datatuple_indices):
+        """
+        Subsamples a DataTuple containing CalipyTensors by applying to each of it
+        the corresponding CalipyIndex object from the datatuple_indices.
+        
+        :param datatuple_indices: The DataTuple containing the CalipyIndex objects.
+        :type other: DataTuple
+        :return: A new DataTuple with each CalipyTensor subsampled by the indices.
+        :rtype: DataTuple
+        :raises ValueError: If both DataTuples do not have matching keys.
+        """
+        
+        # Argument checks
+        if self.keys() != datatuple_indices.keys():
+            raise ValueError("Input DataTuple and Index DataTuple must have the same keys for subsampling.")
+        if not all([type(t) == CalipyTensor for t in self]):
+            raise ValueError("Input DataTuple must be of type CalipyTensor")
+        if not all([isinstance(i, CalipyIndex) for i in datatuple_indices]):
+            raise ValueError("elements of datatuple_indices must be of type CalipyIndex or subclass thereof")
+
+        # subsampling
+        list_names = []
+        list_subsamples = []
+        for key in self.keys():
+            list_names.append(key)
+            list_subsamples.append(self[key][datatuple_indices[key]])
+        datatuple_subsampled = DataTuple(list_names, list_subsamples)
+        return datatuple_subsampled
 
     def __add__(self, other):
         """ 
@@ -921,18 +953,18 @@ class TensorIndexer(CalipyIndexer):
         return block_subsample_indices
  
     @classmethod
-    def create_simple_subsample_indices(cls, batch_dim, tensor_shape, subsample_size):
+    def create_simple_subsample_indices(cls, batch_dim, batch_dim_size, subsample_size):
         """
         Create a CalipyIndex that indexes only the specified singular batch_dim.
 
         :param batch_dim: Element of DimTuple (typically CalipyDim) along which
             subbatching happens.
-        :param tensor_shape: List containing the sizes of the unsubsampled tensor
-        :param subsample_size: Single size determining length of batches to create.
+        :param batch_dim_size: The integer size of the unsubsampled tensor
+        :param subsample_size: Single integer size determining length of batches to create.
         :return: A list of CalipyIndex instances indexing the batch_dim.
         """
         
-        _, subsample_indices = cls.block_subsample(DimTuple((batch_dim,)), [subsample_size])
+        subsample_indices = cls.create_block_subsample_indices(DimTuple((batch_dim,)), [batch_dim_size], [subsample_size])
         
         return subsample_indices
                 
@@ -1686,6 +1718,35 @@ inseparable_index = CalipyIndex(torch.randint(10, [10,7,6,5,4]), data_dims_F + i
 inseparable_index.is_reducible(batch_dims_FG)
 inseparable_index.reduce_to_dims(batch_dims_FG) # Produces a warning as it should
 
+
+# Showcase interaction between DataTuple and CalipyTensor
+
+batch_dims = dim_assignment(dim_names = ['bd_1'])
+event_dims_A = dim_assignment(dim_names = ['ed_1_A', 'ed_2_A'])
+data_dims_A = batch_dims + event_dims_A
+event_dims_B = dim_assignment(dim_names = ['ed_1_B'])
+data_dims_B = batch_dims + event_dims_B
+
+data_A_torch = torch.normal(0,1,[6,4,2])
+data_A_cp = CalipyTensor(data_A_torch, data_dims_A, 'data_A')
+data_B_torch = torch.normal(0,1,[6,3])
+data_B_cp = CalipyTensor(data_B_torch, data_dims_B, 'data_B')
+
+data_AB_tuple = DataTuple(['data_A_cp', 'data_B_cp'], [data_A_cp, data_B_cp])
+
+# subsample the data individually
+data_AB_subindices = TensorIndexer.create_simple_subsample_indices(batch_dims[0], data_A_cp.shape[0], 5)
+data_AB_subindex = data_AB_subindices[0]
+data_A_subindex = data_AB_subindex.expand_to_dims(data_dims_A, data_A_cp.shape)
+data_B_subindex = data_AB_subindex.expand_to_dims(data_dims_B, data_B_cp.shape)
+
+data_AB_sub_1 = DataTuple(['data_A_cp_sub', 'data_B_cp_sub'], [data_A_cp[data_A_subindex], data_B_cp[data_B_subindex]])
+# Use subsampling functionality for DataTuples
+data_AB_subindex = DataTuple(['data_A_cp', 'data_B_cp'], [data_A_subindex, data_B_subindex])
+data_AB_sub_2 = data_AB_tuple.subsample(data_AB_subindex)
+# Seems to work correctly. NOW: 1: Correct subattributing so i can access tensors within DataTuple
+# 2: Allow as input a single CalipyIndex that is expanded to match the dims within the subsampled DataTuple
+# This should enable a syntax like data_AB_sub = data_AB_tuple.subsample(data_AB_subindex)
 
 # Showcase torch functions acting on CalipyTensor
 # generic_sum = torch.sum(data_A_cp)
