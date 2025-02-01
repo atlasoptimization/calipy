@@ -135,6 +135,9 @@ class NodeStructure():
         node_structure.set_plate_stack('noise_stack', [('batch_plate', 10, -1, 
                     'plate denoting independent data points')], 'Plate stack for noise ')
         #
+        # Can also be set up by calling the example_node_structure of some node
+        example_node_structure = NodeStructure.from_node_class(NoiseAddition)
+        #
         # iii) Investigate NodeStructure objects
         node_structure.description
         node_structure.print_shapes_and_plates()
@@ -154,12 +157,19 @@ class NodeStructure():
         NoiseAddition.check_node_structure(new_node_structure)
     
     """
+    @classmethod
+    def from_node_class(cls, node_class):
+        if hasattr(node_class, 'example_node_structure'):
+            return copy.deepcopy(node_class.example_node_structure)
+        return cls()
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.description = {}
         self.shapes = {}
         self.plates = {}
         self.plate_stacks = {}
+        
 
     def set_shape(self, shape_name, shape_value, shape_description = None):
         self.shapes[shape_name] = shape_value
