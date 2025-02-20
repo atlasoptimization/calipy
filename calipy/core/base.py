@@ -348,7 +348,7 @@ class CalipyNode(ABC):
     
     
     @abstractmethod
-    def forward(self, input_vars = None, observations = None):
+    def forward(self, input_vars = None, observations = None, subsample_indices = None):
         pass
     
     
@@ -386,6 +386,7 @@ class CalipyNode(ABC):
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
+
 
 
 # Edge class is basis for representation of dependencies between Node objects and

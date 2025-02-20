@@ -20,6 +20,7 @@ from calipy.core.effects import CalipyQuantity
 from calipy.core.base import NodeStructure
 
 import numpy as np
+import einops
 import pandas as pd
 import textwrap
 import inspect
@@ -1407,6 +1408,64 @@ class CalipyTensor:
         else:
             return result
 
+    def expand_to_dims(self, dims):
+        """ Expands the current CalipyTensor to another CalipyTensor with dims
+        specified in argument dims. Returns a CalipyTensor with dims dims that
+        consists of copies of self where expansion is necessary.
+        
+        :param dims: A DimTuple instance that contains the dims of the current
+            CalipyTensor and prescribes the dims of the expanded CalipyTensor
+        :type dims: DimTuple
+    
+        :return: An instance of CalipyTensor expanded to match dims.
+        :rtype: CalipyTensor
+    
+        Example usage:
+    
+        .. code-block:: python
+        
+            # Create DimTuples and tensors
+            data_torch = torch.normal(0,1,[10,3])
+            batch_dims = dim_assignment(dim_names = ['bd_1'], dim_sizes = [10])
+            event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+            data_dims = batch_dims + event_dims
+            data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+            
+            batch_dims_expanded = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+            data_dims_expanded = batch_dims_expanded + event_dims
+            data_expanded_cp = data_cp.expand_to_dims(data_dims_expanded)
+            assert((data_expanded_cp[:,0,:].tensor.squeeze() - data_cp.tensor == 0).all())
+        """
+        
+        # i) Raise error if not all dims have sizes
+        if None in dims.sizes:
+            raise ValueError("All dims need to have integer sizes but sizes are {}"
+                             .format(dims.sizes))
+        
+        # ii) Process dims
+        current_dims = self.dims
+        current_tensor = self.tensor
+        expanded_dims = dims
+        
+        # new_dims = expanded_dims.delete_dims(current_dims.names)
+        expansion_dims = expanded_dims.squeeze_dims(current_dims.names)
+        expansion_tensor = torch.ones(expansion_dims.sizes)
+        
+        # iii) Construct expanded tensor
+        # indices_current_dims = expanded_dims.find_indices(current_dims.names)
+        # indices_new_dims = expanded_dims.find_indices(new_dims.names)
+        
+        input_dim_signature = ' '.join(current_dims.names)
+        unsqueezed_dim_signature = [name if name in current_dims.names else '1' 
+                                    for name in expanded_dims.names]
+        output_dim_signature = ' '.join(unsqueezed_dim_signature)
+        dim_signature = input_dim_signature + ' -> ' + output_dim_signature
+        
+        unsqueezed_tensor = einops.rearrange(current_tensor, dim_signature)
+        expanded_tensor = expansion_tensor * unsqueezed_tensor
+        expanded_tensor_cp = CalipyTensor(expanded_tensor, dims = expanded_dims,
+                                          name = self.name + '_expanded')
+        return expanded_tensor_cp
 
     def _compute_new_dims(self, func, orig_args, orig_kwargs, result):
         # A placeholder method that decides how dims change after an operation.
@@ -1910,6 +1969,7 @@ class NodeStructure():
         event_dims = dim_assignment(['event_dim'], dim_sizes = [3])
         
         # ii) Set up generic node_structure
+        # ... either directly via arguments:
         node_structure = NodeStructure()
         node_structure.set_dims(param_dims = param_dims, 
                                 batch_dims = batch_dims, 
@@ -1917,6 +1977,11 @@ class NodeStructure():
         node_structure.set_dim_descriptions(param_dims = 'parameter dimensions',
                                             batch_dims = 'batch dimensions',
                                             event_dims = 'event_dimensions')
+        # ... or by passing dictionaries
+        node_structure.set_dims(**{'param_dims' : param_dims,
+                                   'batch_dims' : batch_dims})
+        node_structure.set_dim_descriptions(**{'param_dims' : 'parameter dimensions',
+                                               'batch_dims' : 'batch dimensions'})
         
         # iii) Set up node structure tied to specific class
         param_ns_1 = NodeStructure(UnknownParameter)
@@ -2152,6 +2217,11 @@ class NodeStructure():
         return repr_string
 
 
+def param(name, init_tensor, dims, constraint = constraints.real):
+    param_tensor = pyro.param(name, init_tensor = init_tensor, constraint = constraint)
+    
+    param_cp = CalipyTensor(param_tensor, dims =  dims, name = name)
+    return param_cp
 
 class UnknownParameter(CalipyQuantity):
     """ UnknownParameter is a subclass of CalipyQuantity that produces an object whose
@@ -2174,8 +2244,9 @@ class UnknownParameter(CalipyQuantity):
         #
         # i) Imports and definitions
         import calipy
+        from calipy.core.base import NodeStructure
         from calipy.core.effects import UnknownParameter
-        node_structure = UnknownParameter.example_node_structure
+        node_structure = NodeStructure(UnknownParameter)
         bias_object = UnknownParameter(node_structure, name = 'tutorial')
         #
         # ii) Produce bias value
@@ -2184,7 +2255,8 @@ class UnknownParameter(CalipyQuantity):
         # iii) Investigate object
         bias_object.dtype_chain
         bias_object.id
-        bias_object.node_structure.description
+        bias_object.node_structure
+        bias_object.node_structure.dims
         render_1 = bias_object.render()
         render_1
         render_2 = bias_object.render_comp_graph()
@@ -2203,27 +2275,32 @@ class UnknownParameter(CalipyQuantity):
                                     batch_dims = batch_dims)
     default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
                                                 batch_dims = batch_dims_description)
-    # default_nodestructure.set_dims(**{'param_dims' : param_dims,
-    #                                'batch_dims' : batch_dims})
-    # default_nodestructure.set_dim_descriptions(**{'param_dims' : param_dims_description,
-    #                                             'batch_dims' : batch_dims_description})
+
     
     # Class initialization consists in passing args and building shapes
     def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
         super().__init__(**kwargs)
         self.node_structure = node_structure
-        self.batch_shape = self.node_structure.shapes['batch_shape']
-        self.event_shape = self.node_structure.shapes['event_shape']
+        self.batch_dims = self.node_structure.dims['batch_dims']
+        self.param_dims = self.node_structure.dims['param_dims']
         
         self.constraint = constraint
-        self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
-                                                dims = [0 for dim in self.batch_shape])
-        self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
-                                            dims = [len(self.batch_shape) for dim in self.event_shape])
+        self.extension_tensor = multi_unsqueeze(torch.ones(self.batch_dims.sizes),
+                                                dims = [0 for dim in self.param_dims.sizes])
+        self.init_tensor = multi_unsqueeze(torch.ones(self.param_dims.sizes), 
+                                            dims = [len(self.param_dims.sizes) for dim in self.batch_dims.sizes])
+    
+        # self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
+        #                                         dims = [0 for dim in self.batch_shape])
+        # self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
+        #                                     dims = [len(self.batch_shape) for dim in self.event_shape])
     
     # Forward pass is initializing and passing parameter
-    def forward(self, input_vars = None, observations = None):
-        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor, constraint = self.constraint)
+    def forward(self, input_vars = None, observations = None, subsample_indices = None):
+        self.param = param(name = '{}__param_{}'.format(self.id_short, self.name), 
+                           init_tensor = self.init_tensor,
+                           dims = self.param_dims,
+                           constraint = self.constraint)
         self.extended_param = self.extension_tensor * self.param
         return self.extended_param
 
@@ -2253,6 +2330,7 @@ batch_dims = dim_assignment(['batch_dim'], dim_sizes = [20])
 event_dims = dim_assignment(['event_dim'], dim_sizes = [3])
 
 # ii) Set up generic node_structure
+# ... either directly via arguments:
 node_structure = NodeStructure()
 node_structure.set_dims(param_dims = param_dims, 
                         batch_dims = batch_dims, 
@@ -2260,6 +2338,11 @@ node_structure.set_dims(param_dims = param_dims,
 node_structure.set_dim_descriptions(param_dims = 'parameter dimensions',
                                     batch_dims = 'batch dimensions',
                                     event_dims = 'event_dimensions')
+# ... or by passing dictionaries
+node_structure.set_dims(**{'param_dims' : param_dims,
+                           'batch_dims' : batch_dims})
+node_structure.set_dim_descriptions(**{'param_dims' : 'parameter dimensions',
+                                       'batch_dims' : 'batch dimensions'})
 
 # iii) Set up node structure tied to specific class
 param_ns_1 = NodeStructure(UnknownParameter)
@@ -2299,6 +2382,26 @@ param_ns_1.generate_template()
 empty_node_structure = NodeStructure()
 UnknownParameter.check_node_structure(empty_node_structure)
 UnknownParameter.check_node_structure(param_ns_1)
+
+
+# TEST EFFECT CLASS UnknownParameter
+
+
+node_structure = NodeStructure(UnknownParameter)
+bias_object = UnknownParameter(node_structure, name = 'tutorial')
+#
+# ii) Produce bias value
+bias = bias_object.forward()
+#
+# iii) Investigate object
+bias_object.dtype_chain
+bias_object.id
+bias_object.node_structure
+bias_object.node_structure.dims
+render_1 = bias_object.render()
+render_1
+render_2 = bias_object.render_comp_graph()
+render_2
 
 
 
