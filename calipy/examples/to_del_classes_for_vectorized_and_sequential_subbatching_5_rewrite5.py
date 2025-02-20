@@ -1901,41 +1901,67 @@ class NodeStructure():
         # i) Imports and definitions
         import calipy
         from calipy.core.base import NodeStructure
-        from calipy.core.effects import NoiseAddition
-        #
-        # ii) Set up node_structure
+        from calipy.core.effects import UnknownParameter
+        #        
+        # Specify some dimensions: param_dims, batch_dims feature in the template nodestructure
+        # UnknownParameter.default_nodestructure while event_dims does not.
+        param_dims = dim_assignment(['param_dim'], dim_sizes = [5])
+        batch_dims = dim_assignment(['batch_dim'], dim_sizes = [20])
+        event_dims = dim_assignment(['event_dim'], dim_sizes = [3])
+        
+        # ii) Set up generic node_structure
         node_structure = NodeStructure()
-        node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
-        node_structure.set_shape('event_shape', (5, ), 'Event shape description')
-        node_structure.set_plate_stack('noise_stack', [('batch_plate', 10, -1, 
-                    'plate denoting independent data points')], 'Plate stack for noise ')
+        node_structure.set_dims(param_dims = param_dims, 
+                                batch_dims = batch_dims, 
+                                event_dims = event_dims)
+        node_structure.set_dim_descriptions(param_dims = 'parameter dimensions',
+                                            batch_dims = 'batch dimensions',
+                                            event_dims = 'event_dimensions')
+        
+        # iii) Set up node structure tied to specific class
+        param_ns_1 = NodeStructure(UnknownParameter)
+        param_ns_2 = NodeStructure(UnknownParameter)
+        param_ns_3 = NodeStructure(UnknownParameter)
         #
-        # Can also be set up by calling the example_node_structure of some node
-        example_node_structure = NodeStructure.from_node_class(NoiseAddition)
+        # The set_dims method inherits an updated docstring and autocompletion
+        print(param_ns_1)   # Shows the default_nodestructure of UnknownParamter
+        help(param_ns_1.set_dims)   # Shows that param_dims, batch_dims are arguments
+        
+        # The initialized node structure can be updated by inheritance or by directly setting
+        # dimensions. It errors out, if a dimension is specified that is not specified
+        # by the default_nodestructure
         #
-        # iii) Investigate NodeStructure objects
-        node_structure.description
-        node_structure.print_shapes_and_plates()
-        node_structure.generate_template()
+        # Create nodestructure with custom param_dims and batch_dims
+        param_ns_1.inherit_common_dims(node_structure)  
+        print(param_ns_1)
         #
-        # iv) Inherit from prebuilt example_node_structure
-        new_node_structure = NoiseAddition.example_node_structure
-        new_node_structure.print_shapes_and_plates()
-        shape_updates = {'new_shape' : (11,)}
-        plate_stack_updates = {'noise_stack': [('batch_plate_1', 22, -2, 
-                    'plate denoting independent realizations')]}
-        new_node_structure = new_node_structure.update(shape_updates, plate_stack_updates)
-        # 
-        # v) Build and check via class methods
+        # Create nodestructure with custom param_dims and default batch_dims
+        param_ns_2.set_dims(param_dims = param_dims) 
+        print(param_ns_2)   
+        #
+        # This errors out as it should: param_ns_3.set_dims(event_dims = event_dims) 
+        
+        #
+        # iv) Investigate NodeStructure objects
+        param_ns_1.dims
+        param_ns_1.dim_names
+        param_ns_1.dim_descriptions
+        param_ns_1.node_cls
+        #
+        # It is possible to build the code that, if executed, generates the nodestructure
+        param_ns_1.generate_template()
+         
+        # v) Build and check nodestructure via class methods
         empty_node_structure = NodeStructure()
-        NoiseAddition.check_node_structure(empty_node_structure)
-        NoiseAddition.check_node_structure(new_node_structure)
+        UnknownParameter.check_node_structure(empty_node_structure)
+        UnknownParameter.check_node_structure(param_ns_1)
     
     """
     
     
     def __init__(self, node_cls=None):
         self.node_cls = node_cls   # Document if structure inherited from CalipyNode 
+        self.node_cls_name = getattr(self.node_cls, 'name', None)
         self._strict_mode = False  # Whether to enforce template dims
         
         self.dims = {}  # {dim_name: DimTuple instance}
@@ -1995,9 +2021,9 @@ class NodeStructure():
         """
         
         # i) Cycle throgh the dims of other and set self dims.
-        for name, dims in other_nodestructure.dims:
+        for name, dims in other_nodestructure.dims.items():
             if name in self.dims.keys():
-                self.set_dims(name = dims)
+                self.set_dims(**{name : dims})
                 
         
     def set_dim_descriptions(self, **kwargs):
@@ -2028,7 +2054,7 @@ class NodeStructure():
         # i) Initialize doc lines
         doc_lines = [
             textwrap.dedent(f"""\
-            Sets dimensions for node structure of node class {self.node_cls.name} by either:
+            Sets dimensions for node structure of node class {self.node_cls_name} by either:
               - Defining them explicitly via kwargs {{dim_name: dim_tuple}}, or
               - Inheriting dims from another node structure.  
             
@@ -2054,7 +2080,7 @@ class NodeStructure():
                 if key not in self.dims.keys():
                     raise ValueError("Invalid dim '{}' for NodeStructure object "
                                      " with dims {} inherited from class {}."
-                                     .format(key, self.dim_names, self.node_cls.name))
+                                     .format(key, self.dim_names, self.node_cls_name))
                 self.dims[key] = value
 
         # iv) Attach signature and docstring for IDE support
@@ -2112,9 +2138,7 @@ class NodeStructure():
     
     
     def __str__(self):
-        structure_description = super().__str__()
-        meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
-        return f"Structure: {structure_description}\nMetadata: {meta_description}"
+        return self.__repr__()
 
 
     def __repr__(self):
@@ -2124,7 +2148,7 @@ class NodeStructure():
                 name, self.dims[name], self.dims[name].sizes, self.dim_descriptions[name]))
         dim_summary = '\n '.join(dim_summary_list)
         repr_string = "NodeStructure instance for node class {} with dims: \n {}".format(
-            self.node_cls.name, dim_summary)
+            self.node_cls_name, dim_summary)
         return repr_string
 
 
@@ -2215,6 +2239,66 @@ ns_prebuilt = NodeStructure(UnknownParameter)
 ns_prebuilt.dims
 ns_prebuilt.set_dims(batch_dims = (generic_dims[['bd_1']], 'batch dimensions'))
 
+
+# i) Imports and definitions
+# import calipy
+# from calipy.core.base import NodeStructure
+# from calipy.core.effects import UnknownParameter
+#
+
+# Specify some dimensions: param_dims, batch_dims feature in the template nodestructure
+# UnknownParameter.default_nodestructure while event_dims does not.
+param_dims = dim_assignment(['param_dim'], dim_sizes = [5])
+batch_dims = dim_assignment(['batch_dim'], dim_sizes = [20])
+event_dims = dim_assignment(['event_dim'], dim_sizes = [3])
+
+# ii) Set up generic node_structure
+node_structure = NodeStructure()
+node_structure.set_dims(param_dims = param_dims, 
+                        batch_dims = batch_dims, 
+                        event_dims = event_dims)
+node_structure.set_dim_descriptions(param_dims = 'parameter dimensions',
+                                    batch_dims = 'batch dimensions',
+                                    event_dims = 'event_dimensions')
+
+# iii) Set up node structure tied to specific class
+param_ns_1 = NodeStructure(UnknownParameter)
+param_ns_2 = NodeStructure(UnknownParameter)
+param_ns_3 = NodeStructure(UnknownParameter)
+
+# The set_dims method inherits an updated docstring and autocompletion
+print(param_ns_1)   # Shows the default_nodestructure of UnknownParamter
+help(param_ns_1.set_dims)   # Shows that param_dims, batch_dims are arguments
+
+# The initialized node structure can be updated by inheritance or by directly setting
+# dimensions. It errors out, if a dimension is specified that is not specified
+# by the default_nodestructure
+
+# Create nodestructure with custom param_dims and batch_dims
+param_ns_1.inherit_common_dims(node_structure)  
+print(param_ns_1)
+
+# Create nodestructure with custom param_dims and default batch_dims
+param_ns_2.set_dims(param_dims = param_dims) 
+print(param_ns_2)   
+
+# This errors out as it should: param_ns_3.set_dims(event_dims = event_dims) 
+
+#
+# iii) Investigate NodeStructure objects
+param_ns_1.dims
+param_ns_1.dim_names
+param_ns_1.dim_descriptions
+param_ns_1.node_cls
+
+# It is possible to build the code that, if executed, generates the nodestructure
+param_ns_1.generate_template()
+
+ 
+# iv) Build and check nodestructure via class methods
+empty_node_structure = NodeStructure()
+UnknownParameter.check_node_structure(empty_node_structure)
+UnknownParameter.check_node_structure(param_ns_1)
 
 
 
