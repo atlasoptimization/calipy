@@ -48,8 +48,10 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 import copy
+import inspect
+from functools import wraps
 import torchviz
-from calipy.core.utils import format_mro, dim_assignment
+from calipy.core.utils import format_mro, dim_assignment, DimTuple
 from abc import ABC, abstractmethod
 
 
@@ -95,8 +97,57 @@ from abc import ABC, abstractmethod
 #     def __repr__(self):
 #         return "{}(name: {})".format(self.dtype, self.name)
   
-    
 
+
+# class NodeStructure:
+#     def __init__(self, effect_cls=None):
+#         self._strict_mode = False  # Whether to enforce template dims
+#         self.dims = {}  # {dim_name: (value, description)}
+        
+#         if effect_cls is not None:
+#             # Clone the effect's default_nodestructure
+#             self._strict_mode = True
+#             default_ns = effect_cls.default_nodestructure
+#             self.dims = copy.deepcopy(default_ns.dims)
+#             self._generate_set_dims()
+
+#     def set_dims(self, **kwargs):
+#         """Base method (dynamically overridden if initialized from an Effect)"""
+#         if self._strict_mode:
+#             raise RuntimeError("Cannot freely set dims in strict mode (use Effect-bound NodeStructure)")
+#         for name, value in kwargs.items():
+#             self.dims[name] = (value, "User-defined dimension")
+
+#     def _generate_set_dims(self):
+#         # Dynamically create a version of set_dims with parameters
+#         # matching the dims defined in the template
+#         params = []
+#         doc_lines = ["Set dimensions:"]
+        
+#         for name, (default_val, desc) in self.dims.items():
+#             param = inspect.Parameter(
+#                 name,
+#                 inspect.Parameter.KEYWORD_ONLY,
+#                 default=default_val,
+#                 annotation=type(default_val)
+#             )
+#             params.append(param)
+#             doc_lines.append(f"{name}: {desc} (default: {default_val})")
+
+#         # Define the strict set_dims method
+#         def strict_set_dims(**kwargs):
+#             for key, value in kwargs.items():
+#                 if key not in self.dims:
+#                     raise ValueError(f"Invalid dim '{key}' for this NodeStructure")
+#                 self.dims[key] = (value, self.dims[key][1])  # Preserve description
+
+#         # Attach signature and docstring for IDE support
+#         sig = inspect.Signature(params)
+#         strict_set_dims.__signature__ = sig
+#         strict_set_dims.__doc__ = "\n".join(doc_lines)
+        
+#         # Replace the base set_dims with the strict version
+#         self.set_dims = strict_set_dims.__get__(self)
 
 class NodeStructure():
     """ NodeStructure class is basis for defining batch_shapes, event_shapes, and plate

@@ -32,7 +32,7 @@ import pyro
 import torch
 import math
 from calipy.core.base import CalipyNode
-from calipy.core.utils import multi_unsqueeze, context_plate_stack
+from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment
 from calipy.core.base import NodeStructure
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
@@ -64,7 +64,13 @@ class CalipyEffect(CalipyNode):
         self._effect_guide = None
         
 
-    
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # If the subclass hasn't overridden `name` at the class level, set it
+        if 'name' not in cls.__dict__:
+            cls.name = cls.__name__
+            
+            
 
 """
     CalipyQuantity class ----------------------------------------------------
@@ -89,6 +95,11 @@ class CalipyQuantity(CalipyNode):
         super().__init__(node_type = type, node_name = name, info_dict = info)
         
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # If the subclass hasn't overridden `name` at the class level, set it
+        if 'name' not in cls.__dict__:
+            cls.name = cls.__name__
     
 
 
@@ -157,7 +168,7 @@ class UnknownParameter(CalipyQuantity):
     """
     
     
-    # Initialize the class-level NodeStructure
+    # Initialize the class-level NodeStructure    
     example_node_structure = NodeStructure()
     example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
     example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')

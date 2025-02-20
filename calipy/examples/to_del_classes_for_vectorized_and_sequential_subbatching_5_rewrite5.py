@@ -8,6 +8,7 @@
 
 import pyro
 import pyro.distributions as dist
+import pyro.distributions.constraints as constraints
 import torch
 import contextlib
 import itertools
@@ -15,11 +16,13 @@ from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from functorch.dim import dims
 from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
-from calipy.core.effects import UnknownParameter
+from calipy.core.effects import CalipyQuantity
 from calipy.core.base import NodeStructure
 
 import numpy as np
 import pandas as pd
+import textwrap
+import inspect
 import random
 import varname
 import copy
@@ -1861,11 +1864,240 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # data_ABC_tuple = DataTuple(['data_A_cp', 'data_B_cp', 'data_C_cp'], [data_A_cp, data_B_cp, data_C_cp])
 # data_ABC_sub = data_ABC_tuple.subsample(data_AB_subindex)
 
-# Showcase torch functions acting on CalipyTensor
-# generic_sum = torch.sum(data_A_cp)
-# specific_sum = torch.sum(data_A_cp, dim = batch_dims_A)
-specific_sum = calipy_sum(data_A_cp, dim = batch_dims_A)
-generic_sum = calipy_sum(data_A_cp)
+# # Showcase torch functions acting on CalipyTensor
+# specific_sum = calipy_sum(data_A_cp, dim = batch_dims_A)
+# generic_sum = calipy_sum(data_A_cp)
+
+
+
+# BASE CLASS EXPERIMENTATION
+# Base classes
+
+class NodeStructure():
+    def __init__(self, node_cls=None):
+        self.node_cls = node_cls   # Document if structure inherited from CalipyNode 
+        self._strict_mode = False  # Whether to enforce template dims
+        
+        self.dims = {}  # {dim_name: DimTuple instance}
+        self.dim_descriptions = {} # {dim_name : description string}
+        self.dim_names = [] # list of keys to dims and dim_descriptions
+        
+        if node_cls is not None:
+            # Clone the effect's default_nodestructure
+            self._strict_mode = True
+            default_ns = node_cls.default_nodestructure
+            self.dims = copy.deepcopy(default_ns.dims)
+            self.dim_descriptions = copy.deepcopy(default_ns.dim_descriptions)
+            self.dim_names = list(self.dims.keys())
+            
+            # self.dim_sizes = {key: self.dims[key].sizes for key in self.dim_names}
+            # self.dim_descriptions = {key: self.dims[key].descriptions for key in self.dim_names}
+            
+            self._generate_set_dims()
+
+    def set_dims(self, nodestructure = None, **kwargs):
+        """ Base method; is dynamically overridden if initialized from an CalipyNode 
+        subclass, (e.g. CalipyEffect, CalipyQuantity, etc).
+        Sets dimensions of the node structure by either defining them explicitly 
+        via kwargs {dim_name : dim_tuple} or by inheriting dims from a node structure.
+        
+        :param nodestructure: An optional nodestructure to inherit dimensions from
+        :type nodestructure: NodeStructure
+        :param kwargs: Optional keyword arguments declaring the dims manually via
+            dim_name = dim_tuple, where dim_tuple is of DimTuple class
+        :type kwargs: dict
+        :return: None, changes dims directly in self
+        :rtype: None
+        :raises RuntimeError: If dims are set that do not belong to the default
+            NodeStructure of some CalipyNode subclass.
+        """
+        
+        # i) Iterate through kwargs
+        for name, value in kwargs.items():
+            self.dims[name] = value
+        self.dim_names = list(self.dims.keys())
+        
+        # i) Iterate through kwargs, check argument consistency
+        # for name, value in kwargs.items():
+        #     if self._strict_mode:
+        #         if name in self.dim_names:
+        #             self.dims[name] = value
+        #         else:
+        #             raise RuntimeError("Attempting to manually set inexistent dim {} "\
+        #                 " for NodeStructure object with dims {} inherited from class {}."
+        #                 .format(name, self.dim_names, self.node_cls.name))
+        #     else:
+        #         self.dims[name] = value
+        # self.dim_names = list(self.dims.keys())
+          
+        
+    def set_dim_descriptions(self, **kwargs):
+        """ Base method; is dynamically overridden if initialized from an CalipyNode 
+        subclass, (e.g. CalipyEffect, CalipyQuantity, etc).
+        Sets dim_descriptions of the node structure by defining them explicitly 
+        via kwargs {dim_name : dim_description}.
+        
+        :param kwargs: Optional keyword arguments declaring the descriptions manually
+            via dim_name =   description, where description is a string
+        :type kwargs: dict
+        :return: None, changes dims directly in self
+        :rtype: None
+        """
+        
+        # i) Iterate through kwargs, check argument consistency
+        
+        for name, desc in kwargs.items():
+            self.dim_descriptions[name] = desc
+    
+
+    def _generate_set_dims(self):
+        # Dynamically create a version of set_dims with parameters
+        # matching the dims defined in the template
+        params = []
+        names = []
+        predoc_args = ', '.join(self.dims.keys())
+        
+        # i) Initialize doc lines
+        doc_lines = [
+            textwrap.dedent(f"""\
+            Sets dimensions for node structure of node class {self.node_cls.name} by either:
+              - Defining them explicitly via kwargs {{dim_name: dim_tuple}}, or
+              - Inheriting dims from another node structure.  
+            
+            Set dimensions:""")]
+        
+        # ii) Iterate through dims, add them to params
+        for name, default_val in self.dims.items():
+            param = inspect.Parameter(
+                name,
+                inspect.Parameter.KEYWORD_ONLY,
+                default=default_val,
+                annotation=type(default_val)
+            )
+            description = self.dim_descriptions[name]
+            params.append(param)
+            names.append(name)            
+            doc_lines.append(f"\n {name}: {description} \n \t \t (node default: {default_val})")
+        predoc_line = "nodestructure.set_dims({}) ".format(predoc_args)
+        
+        # iii) Define the strict set_dims method
+        def strict_set_dims(self, **kwargs):
+            for key, value in kwargs.items():
+                if key not in self.dims.keys():
+                    raise ValueError("Invalid dim '{}' for NodeStructure object "
+                                     " with dims {} inherited from class {}."
+                                     .format(key, self.dim_names, self.node_cls.name))
+                self.dims[key] = value
+
+        # iv) Attach signature and docstring for IDE support
+        sig = inspect.Signature(params)
+        strict_set_dims.__signature__ = sig
+        strict_set_dims.__doc__ = predoc_line + "\n" + "\n".join(doc_lines)
+        
+        # Replace the base set_dims with the strict version
+        self.set_dims = strict_set_dims.__get__(self)
+    
+    def __str__(self):
+        structure_description = super().__str__()
+        meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
+        return f"Structure: {structure_description}\nMetadata: {meta_description}"
+
+    def __repr__(self):
+        dim_summary_list = []
+        for name, dim in self.dims.items():
+            dim_summary_list.append("name: {}, obj : {}, sizes : {} \n \t description : {}".format(
+                name, self.dims[name], self.dims[name].sizes, self.dim_descriptions[name]))
+        dim_summary = '\n '.join(dim_summary_list)
+        repr_string = "NodeStructure instance for node class {} with dims: \n {}".format(
+            self.node_cls.name, dim_summary)
+        return repr_string
+
+
+
+class UnknownParameter(CalipyQuantity):
+    """ UnknownParameter is a subclass of CalipyQuantity that produces an object whose
+    forward() method produces a parameter that is subject to inference.
+
+    :param node_structure: Instance of NodeStructure that determines the internal
+        structure (shapes, plate_stacks, plates, aux_data) completely.
+    :type node_structure: NodeStructure
+    :param constraint: Pyro constraint that constrains the parameter of a distribution
+        to lie in a pre-defined subspace of R^n like e.g. simplex, positive, ...
+    :type constraint: pyro.distributions.constraints.Constraint
+    :return: Instance of the UnknownParameter class built on the basis of node_structure
+    :rtype: UnknownParameter (subclass of CalipyQuantity subclass of CalipyNode)
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate 2D bias tensor -------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.effects import UnknownParameter
+        node_structure = UnknownParameter.example_node_structure
+        bias_object = UnknownParameter(node_structure, name = 'tutorial')
+        #
+        # ii) Produce bias value
+        bias = bias_object.forward()
+        #
+        # iii) Investigate object
+        bias_object.dtype_chain
+        bias_object.id
+        bias_object.node_structure.description
+        render_1 = bias_object.render()
+        render_1
+        render_2 = bias_object.render_comp_graph()
+        render_2
+    """
+    
+    
+    # Initialize the class-level NodeStructure
+    batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
+    param_dims = dim_assignment(dim_names = ['param_dim'], dim_sizes = [2])
+    batch_dims_description = 'The dims in which the parameter is copied and repeated'
+    param_dims_description = 'The dims of the parameter, in which it can vary'
+    
+    default_nodestructure = NodeStructure()
+    default_nodestructure.set_dims(param_dims = param_dims,
+                                   batch_dims = batch_dims)
+    default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
+                                               batch_dims = batch_dims_description)
+    
+    # Class initialization consists in passing args and building shapes
+    def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
+        super().__init__(**kwargs)
+        self.node_structure = node_structure
+        self.batch_shape = self.node_structure.shapes['batch_shape']
+        self.event_shape = self.node_structure.shapes['event_shape']
+        
+        self.constraint = constraint
+        self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
+                                                dims = [0 for dim in self.batch_shape])
+        self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
+                                            dims = [len(self.batch_shape) for dim in self.event_shape])
+    
+    # Forward pass is initializing and passing parameter
+    def forward(self, input_vars = None, observations = None):
+        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor, constraint = self.constraint)
+        self.extended_param = self.extension_tensor * self.param
+        return self.extended_param
+
+
+
+# TEST BASE CLASSES
+generic_dims = dim_assignment(['bd_1', 'ed_1'], dim_sizes = [10,3], 
+                              dim_descriptions = ['batch_dim_1', 'event_dim_1'])
+ns_empty = NodeStructure()
+ns_empty.set_dims
+
+ns_prebuilt = NodeStructure(UnknownParameter)
+ns_prebuilt.dims
+ns_prebuilt.set_dims(batch_dims = (generic_dims[['bd_1']], 'batch dimensions'))
+
+
+
 
 # ii) Build dataloader
 class CalipySample:

@@ -28,6 +28,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 # base packages
 import torch
 import pyro
+import copy
 import matplotlib.pyplot as plt
 
 # calipy
@@ -70,7 +71,7 @@ data = data_distribution.sample([n_meas])
 """
     3. Load and customize effects
 """
-
+        
 
 # i) Set up dimensions for mean parameter mu
 
