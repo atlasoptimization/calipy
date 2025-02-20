@@ -1874,6 +1874,66 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # Base classes
 
 class NodeStructure():
+    """ NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
+    configurations for a CalipyNode object. Provides functionality for attribute-
+    like access and automated construction. Each object of NodeStructure class has
+    attributes description, shapes, plates, plate_stacks.
+    Methods include set_shape, set_plate_stack, update, print_shapes_and_plates,
+    and generate_template which can be used to either set the properties of a
+    newly instantiated object node_structure = NodeStructure() or to modify an
+    existing object by updating it. NodeStructure objects are central for instantiating
+    CalipyNode objects.
+    
+    :param args: optional arguments (can be None)
+    :type args: list
+    :param kwargs: dictionary containing keyword arguments (can be None)
+    :type kwargs: dict
+    :return: Empty Instance of the NodeStructure class to be populated by info
+        via the set_shape and set_plate_stack methods.
+    :rtype: NodeStructure
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate NodeStructure -------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.base import NodeStructure
+        from calipy.core.effects import NoiseAddition
+        #
+        # ii) Set up node_structure
+        node_structure = NodeStructure()
+        node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
+        node_structure.set_shape('event_shape', (5, ), 'Event shape description')
+        node_structure.set_plate_stack('noise_stack', [('batch_plate', 10, -1, 
+                    'plate denoting independent data points')], 'Plate stack for noise ')
+        #
+        # Can also be set up by calling the example_node_structure of some node
+        example_node_structure = NodeStructure.from_node_class(NoiseAddition)
+        #
+        # iii) Investigate NodeStructure objects
+        node_structure.description
+        node_structure.print_shapes_and_plates()
+        node_structure.generate_template()
+        #
+        # iv) Inherit from prebuilt example_node_structure
+        new_node_structure = NoiseAddition.example_node_structure
+        new_node_structure.print_shapes_and_plates()
+        shape_updates = {'new_shape' : (11,)}
+        plate_stack_updates = {'noise_stack': [('batch_plate_1', 22, -2, 
+                    'plate denoting independent realizations')]}
+        new_node_structure = new_node_structure.update(shape_updates, plate_stack_updates)
+        # 
+        # v) Build and check via class methods
+        empty_node_structure = NodeStructure()
+        NoiseAddition.check_node_structure(empty_node_structure)
+        NoiseAddition.check_node_structure(new_node_structure)
+    
+    """
+    
+    
     def __init__(self, node_cls=None):
         self.node_cls = node_cls   # Document if structure inherited from CalipyNode 
         self._strict_mode = False  # Whether to enforce template dims
@@ -1895,14 +1955,13 @@ class NodeStructure():
             
             self._generate_set_dims()
 
-    def set_dims(self, nodestructure = None, **kwargs):
+
+    def set_dims(self,  **kwargs):
         """ Base method; is dynamically overridden if initialized from an CalipyNode 
         subclass, (e.g. CalipyEffect, CalipyQuantity, etc).
-        Sets dimensions of the node structure by either defining them explicitly 
-        via kwargs {dim_name : dim_tuple} or by inheriting dims from a node structure.
+        Sets dimensions of the node structure by defining them explicitly via
+        kwargs {dim_name : dim_tuple}.
         
-        :param nodestructure: An optional nodestructure to inherit dimensions from
-        :type nodestructure: NodeStructure
         :param kwargs: Optional keyword arguments declaring the dims manually via
             dim_name = dim_tuple, where dim_tuple is of DimTuple class
         :type kwargs: dict
@@ -1917,19 +1976,29 @@ class NodeStructure():
             self.dims[name] = value
         self.dim_names = list(self.dims.keys())
         
-        # i) Iterate through kwargs, check argument consistency
-        # for name, value in kwargs.items():
-        #     if self._strict_mode:
-        #         if name in self.dim_names:
-        #             self.dims[name] = value
-        #         else:
-        #             raise RuntimeError("Attempting to manually set inexistent dim {} "\
-        #                 " for NodeStructure object with dims {} inherited from class {}."
-        #                 .format(name, self.dim_names, self.node_cls.name))
-        #     else:
-        #         self.dims[name] = value
-        # self.dim_names = list(self.dims.keys())
-          
+        
+    def inherit_common_dims(self,  other_nodestructure):
+        """ Inherits dimensions of other_nodestructure; takes only those DimTuple
+        objects of other_nodestructure that are present also in self. Useful for
+        injecting the dims of some prebuilt nodestructure into a default nodestructure.
+        
+        Note: Meant for modifying self with info from other_nodestructure. If you
+        want to copy a default nodestructure, use ns = Nodestructure(NodeClass)
+        instead.
+        
+        :param nodestructure: An optional nodestructure to inherit dimensions from
+        :type nodestructure: NodeStructure
+        :return: None, changes dims directly in self
+        :rtype: None
+        :raises RuntimeError: If dims are set that do not belong to the default
+            NodeStructure of some CalipyNode subclass.
+        """
+        
+        # i) Cycle throgh the dims of other and set self dims.
+        for name, dims in other_nodestructure.dims:
+            if name in self.dims.keys():
+                self.set_dims(name = dims)
+                
         
     def set_dim_descriptions(self, **kwargs):
         """ Base method; is dynamically overridden if initialized from an CalipyNode 
@@ -1944,8 +2013,7 @@ class NodeStructure():
         :rtype: None
         """
         
-        # i) Iterate through kwargs, check argument consistency
-        
+        # i) Iterate through kwargs
         for name, desc in kwargs.items():
             self.dim_descriptions[name] = desc
     
@@ -1996,11 +2064,58 @@ class NodeStructure():
         
         # Replace the base set_dims with the strict version
         self.set_dims = strict_set_dims.__get__(self)
+        
+        
+    # def print_shapes_and_plates(self):
+    #     print('\nShapes :')
+    #     for shape_name, shape in self.shapes.items():
+    #         print(shape_name, '| ', shape, ' |', self.description[shape_name])
+            
+    #     print('\nPlates :')
+    #     for plate_name, plate in self.plates.items():
+    #         print(plate_name, '| size = {} , dim = {} |'.format(plate.size, plate.dim), self.description[plate_name])
+        
+    #     print('\nPlate_stacks :')
+    #     for stack_name, stack in self.plate_stacks.items():
+    #         print(stack_name, '| ', [plate.name for plate in stack], ' |', self.description[stack_name])
+    
+    
+    def generate_template(self):
+        """ Generate code string that produces the current nodestructure and can
+        be used to bake a specific nodestructure into a script.
+        """
+        
+        # i) Initialize the dicts and lists
+        dimset_dict = {}
+        dims_names = []
+        lines_dimgen = []
+        lines_dimset = ["dimset_dict = {}"]
+        lines = ["node_structure = NodeStructure({})\n".format(self.node_cls.name)]
+        
+        # ii) Cycle through the dims, extract generation code and setter code
+        for dims_name, dims in self.dims.items():
+            names = self.dims[dims_name].names
+            sizes = self.dims[dims_name].sizes
+            descriptions = self.dims[dims_name].descriptions
+            
+            dims_names.append(dims_name)
+            lines_dimgen.append("{} = dim_assignment({}, dim_sizes = {}, dim_descriptions = {})"
+                                .format(dims_name, names, sizes, descriptions))
+            # dimset_dict[dims_name] = dims_name  
+            lines_dimset.append("dimset_dict['{}'] = {}".format(dims_name, dims_name))
+            
+        # iii) Assemble strings and join commands
+        lines_dimdesc = ["node_structure.set_dim_descriptions(**{})".format(self.dim_descriptions)]
+        lines = lines + lines_dimgen + lines_dimset + lines_dimdesc
+        lines.append("node_structure.set_dims(**dimset_dict)")
+        return print("\n".join(lines))
+    
     
     def __str__(self):
         structure_description = super().__str__()
         meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
         return f"Structure: {structure_description}\nMetadata: {meta_description}"
+
 
     def __repr__(self):
         dim_summary_list = []
@@ -2061,9 +2176,13 @@ class UnknownParameter(CalipyQuantity):
     
     default_nodestructure = NodeStructure()
     default_nodestructure.set_dims(param_dims = param_dims,
-                                   batch_dims = batch_dims)
+                                    batch_dims = batch_dims)
     default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
-                                               batch_dims = batch_dims_description)
+                                                batch_dims = batch_dims_description)
+    # default_nodestructure.set_dims(**{'param_dims' : param_dims,
+    #                                'batch_dims' : batch_dims})
+    # default_nodestructure.set_dim_descriptions(**{'param_dims' : param_dims_description,
+    #                                             'batch_dims' : batch_dims_description})
     
     # Class initialization consists in passing args and building shapes
     def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
