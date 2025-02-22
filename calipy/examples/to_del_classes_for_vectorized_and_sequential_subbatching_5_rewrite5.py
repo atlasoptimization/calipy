@@ -1304,7 +1304,9 @@ class CalipyTensor:
     Example usage:
 
     .. code-block:: python
-    
+        
+        # Create CalipyTensors -----------------------------------------------
+        #
         # Create DimTuples and tensors
         data_A_torch = torch.normal(0,1,[6,4,2])
         batch_dims_A = dim_assignment(dim_names = ['bd_1_A', 'bd_2_A'])
@@ -1327,6 +1329,17 @@ class CalipyTensor:
         subtensor_2 = data_A_cp[0,0:3,...]
         assert((subtensor_2.tensor == data_A_cp[0,0:3,...].unsqueeze(0)).all())
         
+        # Indexing of CalipyTensors via int, tuple, slice, and CalipyIndex
+        data_A_cp[0,:]
+        data_A_cp[local_index]
+        # During addressing, appropriate indexers are built
+        data_A_cp[0,:].indexer.global_index
+        data_A_cp[local_index].indexer.global_index
+        
+        
+        
+        # CalipyTensor / DataTuple interaction ---------------------------------
+        #
         # DataTuple and CalipyTensor interact well: In the following we showcase
         # that a DataTuple of CalipyTensors can be subsampled by providing a
         # DataTuple of CalipyIndexes or a single CalipyIndex that is automatically
@@ -1345,6 +1358,9 @@ class CalipyTensor:
         
         data_AB_tuple = DataTuple(['data_A_cp', 'data_B_cp'], [data_A_cp, data_B_cp])
         
+        
+        # Subsampling functionality -------------------------------------------
+        #
         # subsample the data individually
         data_AB_subindices = TensorIndexer.create_simple_subsample_indices(batch_dims[0], data_A_cp.shape[0], 5)
         data_AB_subindex = data_AB_subindices[0]
@@ -1360,6 +1376,9 @@ class CalipyTensor:
         assert ((data_AB_sub_1[0] - data_AB_sub_2[0]).tensor == 0).all()
         assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
         
+        
+        # Expansion and reordering -------------------------------------------
+        #
         # Expand a tensor by copying it among some dimensions.
         data_dims_A = data_dims_A.bind([6,4,2])
         data_dims_B = data_dims_B.bind([6,3])
@@ -1815,6 +1834,14 @@ local_index.dims
 assert (data_A_cp.tensor[local_index.tuple] == data_A_cp.tensor).all()
 assert (((data_A_cp[local_index] - data_A_cp).tensor == 0).all())
 
+# Indexing of CalipyTensors via int, tuple, slice, and CalipyIndex
+data_A_cp[0,:]
+data_A_cp[local_index]
+
+# During addressing, appropriate indexers are built
+data_A_cp[0,:].indexer.global_index
+data_A_cp[local_index].indexer.global_index
+
 # Check reordering and torchdims for reordered
 reordered_dims = DimTuple((data_dims_A[1], data_dims_A[2], data_dims_A[0]))
 data_A_reordered = data_A_cp.indexer.reorder(reordered_dims)
@@ -1992,6 +2019,25 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # generic_sum = calipy_sum(data_A_cp)
 
 
+# Expand a tensor by copying it among some dimensions.
+data_dims_A = data_dims_A.bind([6,4,2])
+data_dims_B = data_dims_B.bind([6,3])
+data_dims_expanded = data_dims_A + data_dims_B[1:]
+data_A_expanded_cp = data_A_cp.expand_to_dims(data_dims_expanded)
+assert((data_A_expanded_cp[:,:,:,0].tensor.squeeze() - data_A_cp.tensor == 0).all())
+# Ordering of dims is also ordering of result
+data_dims_expanded_reordered = data_dims_A[1:] + data_dims_A[0:1] + data_dims_B[1:]
+data_A_expanded_reordered_cp = data_A_cp.expand_to_dims(data_dims_expanded_reordered)
+assert((data_A_expanded_reordered_cp.tensor -
+        data_A_expanded_cp.tensor.permute([1,2,0,3]) == 0).all())
+
+# There also exists a CalipyTensor.reorder(dims) method
+data_dims_A_reordered = event_dims_A + batch_dims
+data_A_reordered_cp = data_A_cp.reorder(data_dims_A_reordered)
+assert((data_A_reordered_cp.tensor - data_A_cp.tensor.permute([1,2,0]) == 0).all())
+assert(data_A_reordered_cp.dims == data_dims_A_reordered)
+
+
 
 # BASE CLASS EXPERIMENTATION
 # Base classes
@@ -2019,7 +2065,7 @@ class NodeStructure():
         
     .. code-block:: python
     
-        # Investigate NodeStructure -------------------------------------------
+        # Set up NodeStructure -----------------------------------------------
         #
         # i) Imports and definitions
         import calipy
@@ -2051,6 +2097,9 @@ class NodeStructure():
         param_ns_1 = NodeStructure(UnknownParameter)
         param_ns_2 = NodeStructure(UnknownParameter)
         param_ns_3 = NodeStructure(UnknownParameter)
+        
+        
+        # Investigate NodeStructure -------------------------------------------
         #
         # The set_dims method inherits an updated docstring and autocompletion
         print(param_ns_1)   # Shows the default_nodestructure of UnknownParamter
@@ -2068,8 +2117,7 @@ class NodeStructure():
         param_ns_2.set_dims(param_dims = param_dims) 
         print(param_ns_2)   
         #
-        # This errors out as it should: param_ns_3.set_dims(event_dims = event_dims) 
-        
+        # This errors out as it should: param_ns_3.set_dims(event_dims = event_dims)         
         #
         # iv) Investigate NodeStructure objects
         param_ns_1.dims
@@ -2281,11 +2329,104 @@ class NodeStructure():
         return repr_string
 
 
-def param(name, init_tensor, dims, constraint = constraints.real):
-    param_tensor = pyro.param(name, init_tensor = init_tensor, constraint = constraint)
+def param(name, init_tensor, dims, constraint = constraints.real, subsample_index = None):
+    """ Wrapper function for pyro.param producing a CalipyTensor valued parameter.
+    The tensor is inialized once, then placed in the param store and can be used
+    like a regular CalipyTensor.
     
+    :param name: Unique name of the parameter
+    :type name: string
+    :param init_tensor: The initial value of the parameter tensor, adjusted later
+        on by optimization
+    :type init_tensor: torch.tensor
+    :param dims: A tuple of dimensions indicating the dims of the CalipyTensor
+        created by param()
+    :type dims: DimTuple
+    :param constraint: Pyro constraint that constrains the parameter of a distribution
+        to lie in a pre-defined subspace of R^n like e.g. simplex, positive, ...
+    :type constraint: pyro.distributions.constraints.Constraint
+    :param subsample_index: The subsampling index indicating how subsampling
+        of the parameter is to be performed
+    :type subsample_index: CalipyIndex
+    :return: A CalipyTensor parameter being tracked by gradient tape and marked for 
+        optimization. Starts as init_tensor, has dims and constraints as specified
+        and is automatically subsampled by subsampling_index.
+    :rtype: CalipyTensor
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Create parameter ---------------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.base import param
+        
+        batch_dims = dim_assignment(dim_names = ['bd_1_A'], dim_sizes = [4])
+        event_dims = dim_assignment(dim_names = ['ed_1_A'], dim_sizes = [2])
+        param_dims = batch_dims + event_dims
+        init_tensor = torch.ones(param_dims.sizes) + torch.normal(0,0.01, param_dims.sizes)
+        parameter = param('generic_param', init_tensor, param_dims)
+        
+        # Create constrained, subsampled parameter ---------------------------
+        #
+        param_constraint = pyro.distributions.constraints.positive
+        subsample_indices = TensorIndexer.create_simple_subsample_indices(batch_dims[0],
+                                                                batch_dims.sizes[0], 3)
+        ssi = subsample_indices[1]
+        ssi_expanded = ssi.expand_to_dims(param_dims, param_dims.sizes)
+        parameter_subsampled = param('param_subsampled', init_tensor, param_dims,
+                                     constraint = param_constraint, subsample_index = ssi_expanded)
+        print(parameter_subsampled)
+        assert((parameter_subsampled.tensor - parameter.tensor[ssi_expanded.tuple] == 0).all())
+        
+    
+        # Investigate parameter ----------------------------------------------
+        #
+        
+        # Parameters are CalipyTensors with names, dims, and populated indexers
+        parameter.name
+        parameter.dims
+        parameter.indexer
+        parameter.indexer.global_index
+        parameter.indexer.global_index.tensor
+        
+        parameter_subsampled.name
+        parameter_subsampled.dims
+        parameter_subsampled.indexer
+        parameter_subsampled.indexer.global_index
+        parameter_subsampled.indexer.global_index.tensor
+        
+        # The underlying tensors are also saved in pyro's param store
+        pyro_param = pyro.get_param_store()['generic_param']
+        assert (pyro_param - parameter.tensor == 0).all()
+
+        
+        # Optimize parameter -------------------------------------------------
+        #
+        data_torch = torch.normal(0,1,[4,2])
+        data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+        
+
+    pyro.param doc: 
+        
+    """
+    
+    # TODO Check event_dim argument
+    param_tensor = pyro.param(name, init_tensor = init_tensor, constraint = constraint)
     param_cp = CalipyTensor(param_tensor, dims =  dims, name = name)
-    return param_cp
+    
+    # Subsample the CalipyTensor
+    if subsample_index == None:
+        subsample_index = param_cp.indexer.local_index
+        
+    param_subsampled_cp = param_cp[subsample_index]
+    
+
+    return param_subsampled_cp
+
+param.__doc__ = param.__doc__ + pyro.param.__doc__
 
 class UnknownParameter(CalipyQuantity):
     """ UnknownParameter is a subclass of CalipyQuantity that produces an object whose
@@ -2347,25 +2488,19 @@ class UnknownParameter(CalipyQuantity):
         self.node_structure = node_structure
         self.batch_dims = self.node_structure.dims['batch_dims']
         self.param_dims = self.node_structure.dims['param_dims']
+        self.dims = self.batch_dims + self.param_dims
         
         self.constraint = constraint
-        self.extension_tensor = multi_unsqueeze(torch.ones(self.batch_dims.sizes),
-                                                dims = [0 for dim in self.param_dims.sizes])
-        self.init_tensor = multi_unsqueeze(torch.ones(self.param_dims.sizes), 
-                                            dims = [len(self.param_dims.sizes) for dim in self.batch_dims.sizes])
-    
-        # self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
-        #                                         dims = [0 for dim in self.batch_shape])
-        # self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
-        #                                     dims = [len(self.batch_shape) for dim in self.event_shape])
-    
+        self.init_tensor = torch.ones(self.param_dims.sizes)
+        
     # Forward pass is initializing and passing parameter
-    def forward(self, input_vars = None, observations = None, subsample_indices = None):
+    def forward(self, input_vars = None, observations = None, subsample_index = None):
         self.param = param(name = '{}__param_{}'.format(self.id_short, self.name), 
                            init_tensor = self.init_tensor,
                            dims = self.param_dims,
-                           constraint = self.constraint)
-        self.extended_param = self.extension_tensor * self.param
+                           constraint = self.constraint,
+                           subsample_index = subsample_index)
+        self.extended_param = self.param.expand_to_dims(self.dims)
         return self.extended_param
 
 
@@ -2448,9 +2583,64 @@ UnknownParameter.check_node_structure(empty_node_structure)
 UnknownParameter.check_node_structure(param_ns_1)
 
 
+# TEST PARAM FUNCTION
+
+# Create parameter ---------------------------------------------------
+#
+# i) Imports and definitions
+
+
+batch_dims = dim_assignment(dim_names = ['bd_1_A'], dim_sizes = [4])
+event_dims = dim_assignment(dim_names = ['ed_1_A'], dim_sizes = [2])
+param_dims = batch_dims + event_dims
+init_tensor = torch.ones(param_dims.sizes) + torch.normal(0,0.01, param_dims.sizes)
+
+parameter = param('generic_param', init_tensor, param_dims)
+print(parameter)
+
+# Create constrained, subsampled parameter ---------------------------
+#
+param_constraint = pyro.distributions.constraints.positive
+subsample_indices = TensorIndexer.create_simple_subsample_indices(batch_dims[0], batch_dims.sizes[0], 3)
+ssi = subsample_indices[1]
+ssi_expanded = ssi.expand_to_dims(param_dims, param_dims.sizes)
+parameter_subsampled = param('positive_param_subsampled', init_tensor, param_dims,
+                             constraint = param_constraint, subsample_index = ssi_expanded)
+print(parameter_subsampled)
+assert((parameter_subsampled.tensor - parameter.tensor[ssi_expanded.tuple] == 0).all())
+
+# Investigate parameter ----------------------------------------------
+#
+
+# Parameters are CalipyTensors with names, dims, and populated indexers
+parameter.name
+parameter.dims
+parameter.indexer
+parameter.indexer.global_index
+parameter.indexer.global_index.tensor
+
+parameter_subsampled.name
+parameter_subsampled.dims
+parameter_subsampled.indexer
+parameter_subsampled.indexer.global_index
+parameter_subsampled.indexer.global_index.tensor
+
+# The underlying tensors are also saved in pyro's param store
+pyro_param = pyro.get_param_store()['generic_param']
+assert (pyro_param - parameter.tensor == 0).all()
+
+
+# Optimize parameter -------------------------------------------------
+#
+# data_torch = torch.normal(0,1,[4,2])
+# data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+
+
+
+
 # TEST EFFECT CLASS UnknownParameter
 
-
+# i) Invoke instance
 node_structure = NodeStructure(UnknownParameter)
 bias_object = UnknownParameter(node_structure, name = 'tutorial')
 #
