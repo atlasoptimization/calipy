@@ -1360,6 +1360,24 @@ class CalipyTensor:
         assert ((data_AB_sub_1[0] - data_AB_sub_2[0]).tensor == 0).all()
         assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
         
+        # Expand a tensor by copying it among some dimensions.
+        data_dims_A = data_dims_A.bind([6,4,2])
+        data_dims_B = data_dims_B.bind([6,3])
+        data_dims_expanded = data_dims_A + data_dims_B[1:]
+        data_A_expanded_cp = data_A_cp.expand_to_dims(data_dims_expanded)
+        assert((data_A_expanded_cp[:,:,:,0].tensor.squeeze() - data_A_cp.tensor == 0).all())
+        # Ordering of dims is also ordering of result
+        data_dims_expanded_reordered = data_dims_A[1:] + data_dims_A[0:1] + data_dims_B[1:]
+        data_A_expanded_reordered_cp = data_A_cp.expand_to_dims(data_dims_expanded_reordered)
+        assert((data_A_expanded_reordered_cp.tensor -
+                data_A_expanded_cp.tensor.permute([1,2,0,3]) == 0).all())
+        
+        # There also exists a CalipyTensor.reorder(dims) method
+        data_dims_A_reordered = event_dims_A + batch_dims
+        data_A_reordered_cp = data_A_cp.reorder(data_dims_A_reordered)
+        assert((data_A_reordered_cp.tensor - data_A_cp.tensor.permute([1,2,0]) == 0).all())
+        assert(data_A_reordered_cp.dims == data_dims_A_reordered)
+        
     """
     
     __torch_function__ = True  # Not strictly necessary, but clarity
@@ -1407,6 +1425,52 @@ class CalipyTensor:
             return tuple(CalipyTensor(r, new_dims) if isinstance(r, torch.Tensor) else r for r in result)
         else:
             return result
+
+    def reorder(self, dims):
+        """ Reorders the current CalipyTensor to another CalipyTensor with dims
+        ordered as specified in argument dims.
+        
+        :param dims: A DimTuple instance that contains the dims of the current
+            CalipyTensor and prescribes the dims of the reordered CalipyTensor
+        :type dims: DimTuple
+    
+        :return: An instance of CalipyTensor reordered to match dims.
+        :rtype: CalipyTensor
+    
+        Example usage:
+    
+        .. code-block:: python
+        
+            # Create DimTuples and tensors
+            data_torch = torch.normal(0,1,[10,5,3])
+            batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+            event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+            data_dims = batch_dims + event_dims
+            data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+            
+            data_dims_reordered = event_dims + batch_dims
+            data_reordered_cp = data_cp.reorder(data_dims_reordered)
+            assert((data_reordered_cp.tensor - data_cp.tensor.permute([2,0,1]) == 0).all())
+            assert(data_reordered_cp.dims == data_dims_reordered)
+        """
+        
+        # Raise error if dims are mismatched
+        if not set(dims.names) == set(self.dims.names):
+            raise ValueError("Argument dims needs to be in bijection to self.dims " \
+                             "but they are dims = {} and self.dims = {}"
+                             .format(dims, self.dims))
+        
+        # Set up dims and indices
+        current_tensor = self.tensor
+        order_list = self.dims.find_indices(dims.names)
+        
+        # Reorder and package
+        reordered_tensor = current_tensor.permute(order_list)
+        reordered_tensor_cp = CalipyTensor(reordered_tensor, dims, name = self.name + '_reordered')
+        return reordered_tensor_cp
+        
+        
+        
 
     def expand_to_dims(self, dims):
         """ Expands the current CalipyTensor to another CalipyTensor with dims
