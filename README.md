@@ -1,4 +1,3 @@
-```markdown
 # CaliPy: Calibration Library in Python
 > **Pre-Alpha**: In active development — not yet production-ready
 
@@ -217,5 +216,5 @@ The project is currently **Pre-Alpha**, so expect changes. We welcome bug report
 3. **Open a pull request** to discuss your contribution.
 
 Thank you for your interest in CaliPy! We hope it accelerates your research or engineering in advanced instrument calibration and beyond.
-```
+
 
