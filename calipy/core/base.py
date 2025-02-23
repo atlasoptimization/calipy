@@ -37,7 +37,7 @@ documentation entries the CalipyProbModel class, for the subobjects, or the tuto
         
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -49,6 +49,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import copy
 import inspect
+import textwrap
 from functools import wraps
 import torchviz
 from calipy.core.utils import format_mro, dim_assignment, DimTuple
@@ -95,59 +96,7 @@ from abc import ABC, abstractmethod
 #         pass
     
 #     def __repr__(self):
-#         return "{}(name: {})".format(self.dtype, self.name)
-  
-
-
-# class NodeStructure:
-#     def __init__(self, effect_cls=None):
-#         self._strict_mode = False  # Whether to enforce template dims
-#         self.dims = {}  # {dim_name: (value, description)}
-        
-#         if effect_cls is not None:
-#             # Clone the effect's default_nodestructure
-#             self._strict_mode = True
-#             default_ns = effect_cls.default_nodestructure
-#             self.dims = copy.deepcopy(default_ns.dims)
-#             self._generate_set_dims()
-
-#     def set_dims(self, **kwargs):
-#         """Base method (dynamically overridden if initialized from an Effect)"""
-#         if self._strict_mode:
-#             raise RuntimeError("Cannot freely set dims in strict mode (use Effect-bound NodeStructure)")
-#         for name, value in kwargs.items():
-#             self.dims[name] = (value, "User-defined dimension")
-
-#     def _generate_set_dims(self):
-#         # Dynamically create a version of set_dims with parameters
-#         # matching the dims defined in the template
-#         params = []
-#         doc_lines = ["Set dimensions:"]
-        
-#         for name, (default_val, desc) in self.dims.items():
-#             param = inspect.Parameter(
-#                 name,
-#                 inspect.Parameter.KEYWORD_ONLY,
-#                 default=default_val,
-#                 annotation=type(default_val)
-#             )
-#             params.append(param)
-#             doc_lines.append(f"{name}: {desc} (default: {default_val})")
-
-#         # Define the strict set_dims method
-#         def strict_set_dims(**kwargs):
-#             for key, value in kwargs.items():
-#                 if key not in self.dims:
-#                     raise ValueError(f"Invalid dim '{key}' for this NodeStructure")
-#                 self.dims[key] = (value, self.dims[key][1])  # Preserve description
-
-#         # Attach signature and docstring for IDE support
-#         sig = inspect.Signature(params)
-#         strict_set_dims.__signature__ = sig
-#         strict_set_dims.__doc__ = "\n".join(doc_lines)
-        
-#         # Replace the base set_dims with the strict version
-#         self.set_dims = strict_set_dims.__get__(self)
+#       
 
 class NodeStructure():
     """ NodeStructure class is basis for defining batch_shapes, event_shapes, and plate
@@ -172,122 +121,268 @@ class NodeStructure():
         
     .. code-block:: python
     
-        # Investigate NodeStructure -------------------------------------------
+        # Set up NodeStructure -----------------------------------------------
         #
         # i) Imports and definitions
         import calipy
         from calipy.core.base import NodeStructure
-        from calipy.core.effects import NoiseAddition
-        #
-        # ii) Set up node_structure
+        from calipy.core.effects import UnknownParameter
+        #        
+        # Specify some dimensions: param_dims, batch_dims feature in the template nodestructure
+        # UnknownParameter.default_nodestructure while event_dims does not.
+        param_dims = dim_assignment(['param_dim'], dim_sizes = [5])
+        batch_dims = dim_assignment(['batch_dim'], dim_sizes = [20])
+        event_dims = dim_assignment(['event_dim'], dim_sizes = [3])
+        
+        # ii) Set up generic node_structure
+        # ... either directly via arguments:
         node_structure = NodeStructure()
-        node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
-        node_structure.set_shape('event_shape', (5, ), 'Event shape description')
-        node_structure.set_plate_stack('noise_stack', [('batch_plate', 10, -1, 
-                    'plate denoting independent data points')], 'Plate stack for noise ')
+        node_structure.set_dims(param_dims = param_dims, 
+                                batch_dims = batch_dims, 
+                                event_dims = event_dims)
+        node_structure.set_dim_descriptions(param_dims = 'parameter dimensions',
+                                            batch_dims = 'batch dimensions',
+                                            event_dims = 'event_dimensions')
+        # ... or by passing dictionaries
+        node_structure.set_dims(**{'param_dims' : param_dims,
+                                   'batch_dims' : batch_dims})
+        node_structure.set_dim_descriptions(**{'param_dims' : 'parameter dimensions',
+                                               'batch_dims' : 'batch dimensions'})
+        
+        # iii) Set up node structure tied to specific class
+        param_ns_1 = NodeStructure(UnknownParameter)
+        param_ns_2 = NodeStructure(UnknownParameter)
+        param_ns_3 = NodeStructure(UnknownParameter)
+        
+        
+        # Investigate NodeStructure -------------------------------------------
         #
-        # Can also be set up by calling the example_node_structure of some node
-        example_node_structure = NodeStructure.from_node_class(NoiseAddition)
+        # The set_dims method inherits an updated docstring and autocompletion
+        print(param_ns_1)   # Shows the default_nodestructure of UnknownParamter
+        help(param_ns_1.set_dims)   # Shows that param_dims, batch_dims are arguments
+        
+        # The initialized node structure can be updated by inheritance or by directly setting
+        # dimensions. It errors out, if a dimension is specified that is not specified
+        # by the default_nodestructure
         #
-        # iii) Investigate NodeStructure objects
-        node_structure.description
-        node_structure.print_shapes_and_plates()
-        node_structure.generate_template()
+        # Create nodestructure with custom param_dims and batch_dims
+        param_ns_1.inherit_common_dims(node_structure)  
+        print(param_ns_1)
         #
-        # iv) Inherit from prebuilt example_node_structure
-        new_node_structure = NoiseAddition.example_node_structure
-        new_node_structure.print_shapes_and_plates()
-        shape_updates = {'new_shape' : (11,)}
-        plate_stack_updates = {'noise_stack': [('batch_plate_1', 22, -2, 
-                    'plate denoting independent realizations')]}
-        new_node_structure = new_node_structure.update(shape_updates, plate_stack_updates)
-        # 
-        # v) Build and check via class methods
+        # Create nodestructure with custom param_dims and default batch_dims
+        param_ns_2.set_dims(param_dims = param_dims) 
+        print(param_ns_2)   
+        #
+        # This errors out as it should: param_ns_3.set_dims(event_dims = event_dims)         
+        #
+        # iv) Investigate NodeStructure objects
+        param_ns_1.dims
+        param_ns_1.dim_names
+        param_ns_1.dim_descriptions
+        param_ns_1.node_cls
+        #
+        # It is possible to build the code that, if executed, generates the nodestructure
+        param_ns_1.generate_template()
+         
+        # v) Build and check nodestructure via class methods
         empty_node_structure = NodeStructure()
-        NoiseAddition.check_node_structure(empty_node_structure)
-        NoiseAddition.check_node_structure(new_node_structure)
+        UnknownParameter.check_node_structure(empty_node_structure)
+        UnknownParameter.check_node_structure(param_ns_1)
     
     """
-    @classmethod
-    def from_node_class(cls, node_class):
-        if hasattr(node_class, 'example_node_structure'):
-            return copy.deepcopy(node_class.example_node_structure)
-        return cls()
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.description = {}
-        self.shapes = {}
-        self.plates = {}
-        self.plate_stacks = {}
+    
+    def __init__(self, node_cls=None):
+        self.node_cls = node_cls   # Document if structure inherited from CalipyNode 
+        self.node_cls_name = getattr(self.node_cls, 'name', None)
+        self._strict_mode = False  # Whether to enforce template dims
         
+        self.dims = {}  # {dim_name: DimTuple instance}
+        self.dim_descriptions = {} # {dim_name : description string}
+        self.dim_names = [] # list of keys to dims and dim_descriptions
+        
+        if node_cls is not None:
+            # Clone the effect's default_nodestructure
+            self._strict_mode = True
+            default_ns = node_cls.default_nodestructure
+            self.dims = copy.deepcopy(default_ns.dims)
+            self.dim_descriptions = copy.deepcopy(default_ns.dim_descriptions)
+            self.dim_names = list(self.dims.keys())
+            
+            # self.dim_sizes = {key: self.dims[key].sizes for key in self.dim_names}
+            # self.dim_descriptions = {key: self.dims[key].descriptions for key in self.dim_names}
+            
+            self._generate_set_dims()
 
-    def set_shape(self, shape_name, shape_value, shape_description = None):
-        self.shapes[shape_name] = shape_value
-        if shape_description is not None or shape_name not in self.description.keys():
-            self.description[shape_name] = shape_description
-        # self.shape_example[shape_name] = shape_value
 
-    def set_plate_stack(self, stack_name, plate_data_list, stack_description = None):
+    def set_dims(self,  **kwargs):
+        """ Base method; is dynamically overridden if initialized from an CalipyNode 
+        subclass, (e.g. CalipyEffect, CalipyQuantity, etc).
+        Sets dimensions of the node structure by defining them explicitly via
+        kwargs {dim_name : dim_tuple}.
+        
+        :param kwargs: Optional keyword arguments declaring the dims manually via
+            dim_name = dim_tuple, where dim_tuple is of DimTuple class
+        :type kwargs: dict
+        :return: None, changes dims directly in self
+        :rtype: None
+        :raises RuntimeError: If dims are set that do not belong to the default
+            NodeStructure of some CalipyNode subclass.
         """
-        Set stack of plate configurations from a list of tuples and a name.
-        Each tuple should contain (plate_name, plate_size, plate_dim, plate_description).
         
-        :param stack_name: String, represents the name of the stack of plates.
-        :param plate_data_list: List of tuples, each representing plate data.
+        # i) Iterate through kwargs
+        for name, value in kwargs.items():
+            self.dims[name] = value
+        self.dim_names = list(self.dims.keys())
+        
+        
+    def inherit_common_dims(self,  other_nodestructure):
+        """ Inherits dimensions of other_nodestructure; takes only those DimTuple
+        objects of other_nodestructure that are present also in self. Useful for
+        injecting the dims of some prebuilt nodestructure into a default nodestructure.
+        
+        Note: Meant for modifying self with info from other_nodestructure. If you
+        want to copy a default nodestructure, use ns = Nodestructure(NodeClass)
+        instead.
+        
+        :param nodestructure: An optional nodestructure to inherit dimensions from
+        :type nodestructure: NodeStructure
+        :return: None, changes dims directly in self
+        :rtype: None
+        :raises RuntimeError: If dims are set that do not belong to the default
+            NodeStructure of some CalipyNode subclass.
         """
         
-        if stack_description is not None or stack_name not in self.description.keys():
-            self.description[stack_name] = stack_description
-            
-        self.plate_stacks[stack_name] = []
-        for plate_name, plate_size, plate_dim, plate_description in plate_data_list:
-            self.plates[plate_name] = pyro.plate(plate_name, size = plate_size, dim = plate_dim)
-            self.plate_stacks[stack_name].append(self.plates[plate_name])
-            self.description[plate_name] = plate_description
-            
-    def update(self, shape_updates, plate_stack_updates):
-        new_node_structure = copy.deepcopy(self)
-        for shape_name, shape_value in  shape_updates.items():
-            new_node_structure.set_shape(shape_name, shape_value)
-        for stack_name, plate_data_list in plate_stack_updates.items():
-            new_node_structure.set_plate_stack(stack_name, plate_data_list)
-            
-        return new_node_structure
+        # i) Cycle throgh the dims of other and set self dims.
+        for name, dims in other_nodestructure.dims.items():
+            if name in self.dims.keys():
+                self.set_dims(**{name : dims})
+                
         
-            
-    def print_shapes_and_plates(self):
-        print('\nShapes :')
-        for shape_name, shape in self.shapes.items():
-            print(shape_name, '| ', shape, ' |', self.description[shape_name])
-            
-        print('\nPlates :')
-        for plate_name, plate in self.plates.items():
-            print(plate_name, '| size = {} , dim = {} |'.format(plate.size, plate.dim), self.description[plate_name])
+    def set_dim_descriptions(self, **kwargs):
+        """ Base method; is dynamically overridden if initialized from an CalipyNode 
+        subclass, (e.g. CalipyEffect, CalipyQuantity, etc).
+        Sets dim_descriptions of the node structure by defining them explicitly 
+        via kwargs {dim_name : dim_description}.
         
-        print('\nPlate_stacks :')
-        for stack_name, stack in self.plate_stacks.items():
-            print(stack_name, '| ', [plate.name for plate in stack], ' |', self.description[stack_name])
+        :param kwargs: Optional keyword arguments declaring the descriptions manually
+            via dim_name =   description, where description is a string
+        :type kwargs: dict
+        :return: None, changes dims directly in self
+        :rtype: None
+        """
+        
+        # i) Iterate through kwargs
+        for name, desc in kwargs.items():
+            self.dim_descriptions[name] = desc
+    
+
+    def _generate_set_dims(self):
+        # Dynamically create a version of set_dims with parameters
+        # matching the dims defined in the template
+        params = []
+        names = []
+        predoc_args = ', '.join(self.dims.keys())
+        
+        # i) Initialize doc lines
+        doc_lines = [
+            textwrap.dedent(f"""\
+            Sets dimensions for node structure of node class {self.node_cls_name} by either:
+              - Defining them explicitly via kwargs {{dim_name: dim_tuple}}, or
+              - Inheriting dims from another node structure.  
+            
+            Set dimensions:""")]
+        
+        # ii) Iterate through dims, add them to params
+        for name, default_val in self.dims.items():
+            param = inspect.Parameter(
+                name,
+                inspect.Parameter.KEYWORD_ONLY,
+                default=default_val,
+                annotation=type(default_val)
+            )
+            description = self.dim_descriptions[name]
+            params.append(param)
+            names.append(name)            
+            doc_lines.append(f"\n {name}: {description} \n \t \t (node default: {default_val})")
+        predoc_line = "nodestructure.set_dims({}) ".format(predoc_args)
+        
+        # iii) Define the strict set_dims method
+        def strict_set_dims(self, **kwargs):
+            for key, value in kwargs.items():
+                if key not in self.dims.keys():
+                    raise ValueError("Invalid dim '{}' for NodeStructure object "
+                                     " with dims {} inherited from class {}."
+                                     .format(key, self.dim_names, self.node_cls_name))
+                self.dims[key] = value
+
+        # iv) Attach signature and docstring for IDE support
+        sig = inspect.Signature(params)
+        strict_set_dims.__signature__ = sig
+        strict_set_dims.__doc__ = predoc_line + "\n" + "\n".join(doc_lines)
+        
+        # Replace the base set_dims with the strict version
+        self.set_dims = strict_set_dims.__get__(self)
+        
+        
+    # def print_shapes_and_plates(self):
+    #     print('\nShapes :')
+    #     for shape_name, shape in self.shapes.items():
+    #         print(shape_name, '| ', shape, ' |', self.description[shape_name])
+            
+    #     print('\nPlates :')
+    #     for plate_name, plate in self.plates.items():
+    #         print(plate_name, '| size = {} , dim = {} |'.format(plate.size, plate.dim), self.description[plate_name])
+        
+    #     print('\nPlate_stacks :')
+    #     for stack_name, stack in self.plate_stacks.items():
+    #         print(stack_name, '| ', [plate.name for plate in stack], ' |', self.description[stack_name])
+    
     
     def generate_template(self):
-        lines = ["node_structure = NodeStructure()"]
-        for shape_name, shape in self.shapes.items():
-            line = "node_structure.set_shape('{}', {}, 'Shape description')".format(shape_name, shape)
-            lines.append(line)
-        for stack_name, stack in self.plate_stacks.items():
-            line = "node_structure.set_plate_stack('{}', [".format(stack_name)
-            for plate in stack:
-                line += "('{}', {}, {}, 'Plate description'),".format(plate.name, plate.size, plate.dim)
-            line = line[:-1]
-            line += ("], 'Plate stack description')")
-            lines.append(line)
+        """ Generate code string that produces the current nodestructure and can
+        be used to bake a specific nodestructure into a script.
+        """
+        
+        # i) Initialize the dicts and lists
+        dimset_dict = {}
+        dims_names = []
+        lines_dimgen = []
+        lines_dimset = ["dimset_dict = {}"]
+        lines = ["node_structure = NodeStructure({})\n".format(self.node_cls.name)]
+        
+        # ii) Cycle through the dims, extract generation code and setter code
+        for dims_name, dims in self.dims.items():
+            names = self.dims[dims_name].names
+            sizes = self.dims[dims_name].sizes
+            descriptions = self.dims[dims_name].descriptions
+            
+            dims_names.append(dims_name)
+            lines_dimgen.append("{} = dim_assignment({}, dim_sizes = {}, dim_descriptions = {})"
+                                .format(dims_name, names, sizes, descriptions))
+            # dimset_dict[dims_name] = dims_name  
+            lines_dimset.append("dimset_dict['{}'] = {}".format(dims_name, dims_name))
+            
+        # iii) Assemble strings and join commands
+        lines_dimdesc = ["node_structure.set_dim_descriptions(**{})".format(self.dim_descriptions)]
+        lines = lines + lines_dimgen + lines_dimset + lines_dimdesc
+        lines.append("node_structure.set_dims(**dimset_dict)")
         return print("\n".join(lines))
     
     
     def __str__(self):
-        structure_description = super().__str__()
-        meta_description = {k: f"{v} (Description: {self.description.get(k, 'No description')})" for k, v in self.items()}
-        return f"Structure: {structure_description}\nMetadata: {meta_description}"
+        return self.__repr__()
+
+
+    def __repr__(self):
+        dim_summary_list = []
+        for name, dim in self.dims.items():
+            dim_summary_list.append("name: {}, obj : {}, sizes : {} \n \t description : {}".format(
+                name, self.dims[name], self.dims[name].sizes, self.dim_descriptions[name]))
+        dim_summary = '\n '.join(dim_summary_list)
+        repr_string = "NodeStructure instance for node class {} with dims: \n {}".format(
+            self.node_cls_name, dim_summary)
+        return repr_string
 
 
 

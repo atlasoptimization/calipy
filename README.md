@@ -179,25 +179,19 @@ This snippet shows how you might define a node-based approach to an unknown para
 
 ## References
 
-- **Bayesian & Probabilistic Programming**  
+- **Probabilistic Programming**  
   - Bingham, E., et al. (2018). *Pyro: Deep Universal Probabilistic Programming*. arXiv e-prints, 1810.09538.  
   - Blei, D. M., Kucukelbir, A., & McAuliffe, J. D. (2017). *Variational Inference: A Review for Statisticians*. JASA, 112(518), 859–877.  
   - Gelman, A., et al. (2020). *Bayesian Workflow*. arXiv:2011.01808.  
   - Paszke, A., et al. (2019). *PyTorch: an imperative style, high-performance deep learning library*. NeurIPS.  
 
-- **Geodesy & LS**  
+- **Calibration, Geodesy & LS**  
   - Ghilani, C. D., & Wolf, P. R. (2006). *Adjustment Computations - Spatial Data Analysis*. Wiley.  
   - Uren, J. & Price, W. F. (2006). *Surveying for Engineers*. Palgrave Macmillan.  
+  - Phillips, S. D. et al. (2001). *A Careful Consideration of the Calibration Concept*. J. Res. NIST.  
   - Deumlich, F. (1980). *Instrumentenkunde der Vermessungstechnik*. VEB Verlag fuer Bauwesen.  
   - Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The Elements of Statistical Learning*. Springer.  
   - Boyd, S. & Vandenberghe, L. (2004). *Convex Optimization*. Cambridge University Press.
-
-- **Additional**  
-  - Cressie, N. (1993). *Statistics for Spatial Data*. Wiley.  
-  - Foster, A., Jankowiak, M., et al. (2019). *Variational Bayesian Optimal Experimental Design*. arXiv:1903.05480.  
-  - Phillips, S. D. et al. (2001). *A Careful Consideration of the Calibration Concept*. J. Res. NIST.  
-  - Ronquist, F. et al. (2021). *Universal probabilistic programming offers a powerful approach to statistical phylogenetics*. Communications Biology.  
-  - Carter, J. et al. (2024). *Bayesian hierarchical model for bias-correcting climate models*. Geoscientific Model Development.
 
 ---
 

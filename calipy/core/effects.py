@@ -31,6 +31,7 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import torch
 import math
+from calipy.core.primitives import param
 from calipy.core.base import CalipyNode
 from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment
 from calipy.core.base import NodeStructure
@@ -129,6 +130,7 @@ class KnownParam(CalipyQuantity):
 # e.g. construct a tensor mu to be passed into a distribution that represents 5
 # different mean values that have been sampled 20 times each. 
 
+
 class UnknownParameter(CalipyQuantity):
     """ UnknownParameter is a subclass of CalipyQuantity that produces an object whose
     forward() method produces a parameter that is subject to inference.
@@ -150,8 +152,9 @@ class UnknownParameter(CalipyQuantity):
         #
         # i) Imports and definitions
         import calipy
+        from calipy.core.base import NodeStructure
         from calipy.core.effects import UnknownParameter
-        node_structure = UnknownParameter.example_node_structure
+        node_structure = NodeStructure(UnknownParameter)
         bias_object = UnknownParameter(node_structure, name = 'tutorial')
         #
         # ii) Produce bias value
@@ -160,7 +163,8 @@ class UnknownParameter(CalipyQuantity):
         # iii) Investigate object
         bias_object.dtype_chain
         bias_object.id
-        bias_object.node_structure.description
+        bias_object.node_structure
+        bias_object.node_structure.dims
         render_1 = bias_object.render()
         render_1
         render_2 = bias_object.render_comp_graph()
@@ -168,29 +172,40 @@ class UnknownParameter(CalipyQuantity):
     """
     
     
-    # Initialize the class-level NodeStructure    
-    example_node_structure = NodeStructure()
-    example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
-    example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
+    # Initialize the class-level NodeStructure
+    batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
+    param_dims = dim_assignment(dim_names = ['param_dim'], dim_sizes = [2])
+    batch_dims_description = 'The dims in which the parameter is copied and repeated'
+    param_dims_description = 'The dims of the parameter, in which it can vary'
+    
+    default_nodestructure = NodeStructure()
+    default_nodestructure.set_dims(param_dims = param_dims,
+                                    batch_dims = batch_dims)
+    default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
+                                                batch_dims = batch_dims_description)
 
-    # Class initialization consists in passing args and building shapes
+    
+    # Class initialization consists in passing args and building dims
     def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
         super().__init__(**kwargs)
         self.node_structure = node_structure
-        self.batch_shape = self.node_structure.shapes['batch_shape']
-        self.event_shape = self.node_structure.shapes['event_shape']
+        self.batch_dims = self.node_structure.dims['batch_dims']
+        self.param_dims = self.node_structure.dims['param_dims']
+        self.dims = self.batch_dims + self.param_dims
         
         self.constraint = constraint
-        self.extension_tensor = multi_unsqueeze(torch.ones(self.event_shape), 
-                                                dims = [0 for dim in self.batch_shape])
-        self.init_tensor = multi_unsqueeze(torch.ones(self.batch_shape), 
-                                            dims = [len(self.batch_shape) for dim in self.event_shape])
-    
+        self.init_tensor = torch.ones(self.param_dims.sizes)
+        
     # Forward pass is initializing and passing parameter
-    def forward(self, input_vars = None, observations = None):
-        self.param = pyro.param('{}__param_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor, constraint = self.constraint)
-        self.extended_param = self.extension_tensor * self.param
+    def forward(self, input_vars = None, observations = None, subsample_index = None):
+        self.param = param(name = '{}__param_{}'.format(self.id_short, self.name), 
+                           init_tensor = self.init_tensor,
+                           dims = self.param_dims,
+                           constraint = self.constraint,
+                           subsample_index = subsample_index)
+        self.extended_param = self.param.expand_to_dims(self.dims)
         return self.extended_param
+
 
 
 # ii) - a) Subclass of UnknownParameter for variances (featuring positivity constraint)
@@ -242,283 +257,283 @@ class UnknownVariance(UnknownParameter):
 
 
 
-# ii) Addition of noise
+# # ii) Addition of noise
 
-# Define a class of effects that consist in a noise distribution that can be 
-# sampled to serve as observations used for inference. This means that invocation of 
-# the class produces objects that are interpretable as noisy observations of scalars,
-# vectors, or matrices. Neither the mean nor the standard deviation for the noise
-# distribution need to be constant.
-# The node_structure passed upon instantiation determines the shape of the noise
-# being added to the mean. E.g batch_plate_1 with size 5, batch_plate_2 with 
-# size 20 produces (5,20) tensors of independent noise when using the function
-# call forward(input_vars = (mean, standard_deviation)).
+# # Define a class of effects that consist in a noise distribution that can be 
+# # sampled to serve as observations used for inference. This means that invocation of 
+# # the class produces objects that are interpretable as noisy observations of scalars,
+# # vectors, or matrices. Neither the mean nor the standard deviation for the noise
+# # distribution need to be constant.
+# # The node_structure passed upon instantiation determines the shape of the noise
+# # being added to the mean. E.g batch_plate_1 with size 5, batch_plate_2 with 
+# # size 20 produces (5,20) tensors of independent noise when using the function
+# # call forward(input_vars = (mean, standard_deviation)).
 
 
-class NoiseAddition(CalipyEffect):
-    """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
-    forward() method emulates uncorrelated noise being added to an input. 
+# class NoiseAddition(CalipyEffect):
+#     """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
+#     forward() method emulates uncorrelated noise being added to an input. 
 
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
+#     :param node_structure: Instance of NodeStructure that determines the internal
+#         structure (shapes, plate_stacks, plates, aux_data) completely.
+#     :type node_structure: NodeStructure
+#     :return: Instance of the NoiseAddition class built on the basis of node_structure
+#     :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
     
-    Example usage: Run line by line to investigate Class
+#     Example usage: Run line by line to investigate Class
         
-    .. code-block:: python
+#     .. code-block:: python
     
-        # Investigate 2D noise ------------------------------------------------
-        #
-        # i) Imports and definitions
-        import calipy
-        from calipy.core.effects import NoiseAddition
-        node_structure = NoiseAddition.example_node_structure
-        noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
-        #
-        # ii) Sample noise
-        mean = torch.zeros([10,5])
-        std = torch.ones([10,5])
-        noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
-        #
-        # iii) Investigate object
-        noisy_meas_object.dtype_chain
-        noisy_meas_object.id
-        noisy_meas_object.noise_dist
-        noisy_meas_object.node_structure.description
-        noisy_meas_object.plate_stack
-        render_1 = noisy_meas_object.render((mean, std))
-        render_1
-        render_2 = noisy_meas_object.render_comp_graph((mean, std))
-        render_2
-    """
-    
-    
-    # Initialize the class-level NodeStructure
-    example_node_structure = NodeStructure()
-    example_node_structure.set_plate_stack('noise_stack', [('batch_plate_1', 5, -2, 'plate denoting independence in row dim'),
-                                                              ('batch_plate_2', 10, -1, 'plate denoting independence in col dim')],
-                                           'Plate stack for noise ')
-
-    # Class initialization consists in passing args and building shapes
-    def __init__(self, node_structure, **kwargs):
-        super().__init__(**kwargs)
-        self.node_structure = node_structure
-        self.plate_stack = self.node_structure.plate_stacks['noise_stack']
-        
-    # Forward pass is passing input_vars and sampling from noise_dist
-    def forward(self, input_vars, observations = None):
-        """
-        Create noisy samples using input_vars = (mean, standard_deviation) with
-        shapes as indicated in the node_structures' plate_stack 'noise_stack' used
-        for noisy_meas_object = NoiseAddition(node_structure).
-        
-        :param input vars: 2-tuple (mean, standard_deviation) of tensors with 
-            equal (or at least broadcastable) shapes. 
-        :type input_vars: 2-tuple of instances of torch.Tensor
-        :return: Tensor representing simulation of a noisy measurement of the mean.
-        :rtype: torch.Tensor
-        """
-        
-        self.noise_dist = pyro.distributions.Normal(loc = input_vars[0], scale = input_vars[1])
-        
-        # Sample within independence context
-        with context_plate_stack(self.plate_stack):
-            output = pyro.sample('{}__noise_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
-        return output
+#         # Investigate 2D noise ------------------------------------------------
+#         #
+#         # i) Imports and definitions
+#         import calipy
+#         from calipy.core.effects import NoiseAddition
+#         node_structure = NoiseAddition.example_node_structure
+#         noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
+#         #
+#         # ii) Sample noise
+#         mean = torch.zeros([10,5])
+#         std = torch.ones([10,5])
+#         noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
+#         #
+#         # iii) Investigate object
+#         noisy_meas_object.dtype_chain
+#         noisy_meas_object.id
+#         noisy_meas_object.noise_dist
+#         noisy_meas_object.node_structure.description
+#         noisy_meas_object.plate_stack
+#         render_1 = noisy_meas_object.render((mean, std))
+#         render_1
+#         render_2 = noisy_meas_object.render_comp_graph((mean, std))
+#         render_2
+#     """
     
     
-# iii) Polynomial trend
+#     # Initialize the class-level NodeStructure
+#     example_node_structure = NodeStructure()
+#     example_node_structure.set_plate_stack('noise_stack', [('batch_plate_1', 5, -2, 'plate denoting independence in row dim'),
+#                                                               ('batch_plate_2', 10, -1, 'plate denoting independence in col dim')],
+#                                            'Plate stack for noise ')
 
-# Define a class of effects that consist in a (potentially multidimensional) 
-# polynomial trend that can be evaluated on some input_vars to produce trend values.
-# Invocation of the class produces objects that contain the monomial trend 
-# functions encoded in a design matrix and corresponding coefficients as parameters.
-# The node_structure passed upon instantiation determines the shape of the trend.\
-# E.g a batch_shape of (3,) and event_shape of (100,) produces 3 different trends
-# each with a length of 100 interpretable as 3 trends generating 3 timeseries.
-# Producing the actual trend values requires input_vars to be passed to the forward
-# call via e.g. forward(input_vars = (t,)) (where (t,) here is a tuple containing
-# copies of a 1D tensor time but might also be (x,y) or any other tuple of identically 
-# shaped tensors).
-
-class PolynomialTrend(CalipyEffect):
-    """ PolynomialTrend is a subclass of CalipyEffect that produces an object whose
-    forward() method computes polynomial trends based on input_vars.
-
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :param degrees: Instance of Tuple that contains the degree of the polynomial
-        trend in different dimensions.
-    :type degrees: Tuple of Int
-    :return: Instance of the PolynomialTrend class built on the basis of node_structure
-    :rtype: PolynomialTrend (subclass of CalipyEffect subclass of CalipyNode)
+#     # Class initialization consists in passing args and building shapes
+#     def __init__(self, node_structure, **kwargs):
+#         super().__init__(**kwargs)
+#         self.node_structure = node_structure
+#         self.plate_stack = self.node_structure.plate_stacks['noise_stack']
+        
+#     # Forward pass is passing input_vars and sampling from noise_dist
+#     def forward(self, input_vars, observations = None):
+#         """
+#         Create noisy samples using input_vars = (mean, standard_deviation) with
+#         shapes as indicated in the node_structures' plate_stack 'noise_stack' used
+#         for noisy_meas_object = NoiseAddition(node_structure).
+        
+#         :param input vars: 2-tuple (mean, standard_deviation) of tensors with 
+#             equal (or at least broadcastable) shapes. 
+#         :type input_vars: 2-tuple of instances of torch.Tensor
+#         :return: Tensor representing simulation of a noisy measurement of the mean.
+#         :rtype: torch.Tensor
+#         """
+        
+#         self.noise_dist = pyro.distributions.Normal(loc = input_vars[0], scale = input_vars[1])
+        
+#         # Sample within independence context
+#         with context_plate_stack(self.plate_stack):
+#             output = pyro.sample('{}__noise_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
+#         return output
     
-    Example usage: Run line by line to investigate Class
-        
-    .. code-block:: python
     
-        # Investigate 1D trend ------------------------------------------------
-        #
-        # i) Imports and definitions
-        import calipy
-        from calipy.core.effects import PolynomialTrend
-        node_structure = PolynomialTrend.example_node_structure
-        trend_object = PolynomialTrend(node_structure, name = 'tutorial')
-        #
-        # ii) Compute trend
-        time = torch.linspace(0,1,100)
-        trend = trend_object.forward(input_vars = (time,))
-        #
-        # iii) Investigate object
-        trend_object.dtype_chain
-        trend_object.id
-        trend_object.noise_dist
-        trend_object.node_structure.description
-        trend_object.plate_stack
-        render_1 = trend_object.render((time,))
-        render_1
-        render_2 = trend_object.render_comp_graph((time,))
-        render_2
-    """
+# # iii) Polynomial trend
+
+# # Define a class of effects that consist in a (potentially multidimensional) 
+# # polynomial trend that can be evaluated on some input_vars to produce trend values.
+# # Invocation of the class produces objects that contain the monomial trend 
+# # functions encoded in a design matrix and corresponding coefficients as parameters.
+# # The node_structure passed upon instantiation determines the shape of the trend.\
+# # E.g a batch_shape of (3,) and event_shape of (100,) produces 3 different trends
+# # each with a length of 100 interpretable as 3 trends generating 3 timeseries.
+# # Producing the actual trend values requires input_vars to be passed to the forward
+# # call via e.g. forward(input_vars = (t,)) (where (t,) here is a tuple containing
+# # copies of a 1D tensor time but might also be (x,y) or any other tuple of identically 
+# # shaped tensors).
+
+# class PolynomialTrend(CalipyEffect):
+#     """ PolynomialTrend is a subclass of CalipyEffect that produces an object whose
+#     forward() method computes polynomial trends based on input_vars.
+
+#     :param node_structure: Instance of NodeStructure that determines the internal
+#         structure (shapes, plate_stacks, plates, aux_data) completely.
+#     :type node_structure: NodeStructure
+#     :param degrees: Instance of Tuple that contains the degree of the polynomial
+#         trend in different dimensions.
+#     :type degrees: Tuple of Int
+#     :return: Instance of the PolynomialTrend class built on the basis of node_structure
+#     :rtype: PolynomialTrend (subclass of CalipyEffect subclass of CalipyNode)
     
-    # Initialize the class-level NodeStructure
-    example_node_structure = NodeStructure()
-    example_node_structure.set_shape('batch_shape', (3, ), 'Batch shape description')
-    example_node_structure.set_shape('event_shape', (100,), 'Event shape description')
+#     Example usage: Run line by line to investigate Class
+        
+#     .. code-block:: python
+    
+#         # Investigate 1D trend ------------------------------------------------
+#         #
+#         # i) Imports and definitions
+#         import calipy
+#         from calipy.core.effects import PolynomialTrend
+#         node_structure = PolynomialTrend.example_node_structure
+#         trend_object = PolynomialTrend(node_structure, name = 'tutorial')
+#         #
+#         # ii) Compute trend
+#         time = torch.linspace(0,1,100)
+#         trend = trend_object.forward(input_vars = (time,))
+#         #
+#         # iii) Investigate object
+#         trend_object.dtype_chain
+#         trend_object.id
+#         trend_object.noise_dist
+#         trend_object.node_structure.description
+#         trend_object.plate_stack
+#         render_1 = trend_object.render((time,))
+#         render_1
+#         render_2 = trend_object.render_comp_graph((time,))
+#         render_2
+#     """
+    
+#     # Initialize the class-level NodeStructure
+#     example_node_structure = NodeStructure()
+#     example_node_structure.set_shape('batch_shape', (3, ), 'Batch shape description')
+#     example_node_structure.set_shape('event_shape', (100,), 'Event shape description')
 
-    # Class initialization consists in passing args and building shapes
-    def __init__(self, node_structure, degrees = (2,), **kwargs):  
-        super().__init__(**kwargs)
-        self.node_structure = node_structure
-        self.batch_shape = self.node_structure.shapes['batch_shape']
-        self.event_shape = self.node_structure.shapes['event_shape']
+#     # Class initialization consists in passing args and building shapes
+#     def __init__(self, node_structure, degrees = (2,), **kwargs):  
+#         super().__init__(**kwargs)
+#         self.node_structure = node_structure
+#         self.batch_shape = self.node_structure.shapes['batch_shape']
+#         self.event_shape = self.node_structure.shapes['event_shape']
         
-        self.n_vars =len(self.batch_shape)
-        self.n_coeffs = tuple([degree + 1 for degree in degrees])
-        # self.n_coeffs_total = math.comb(self.n_vars + self.)
-        self.init_tensor = torch.ones(self.batch_shape + (self.n_coeffs,))
+#         self.n_vars =len(self.batch_shape)
+#         self.n_coeffs = tuple([degree + 1 for degree in degrees])
+#         # self.n_coeffs_total = math.comb(self.n_vars + self.)
+#         self.init_tensor = torch.ones(self.batch_shape + (self.n_coeffs,))
         
-    # Forward pass produces trend values
-    def forward(self, input_vars, observations = None):
-        """
-        Create samples of the polynomial trend function using as input vars the
-        tensors var_1, var_2, ... that encode the value of some explanatory variable
-        for each point of interest; input_vars = (var_1, var_2, ..). The shape
-        of the resultant samples is as indicated in the node_structures' batch_shape,
-        event_shape.
+#     # Forward pass produces trend values
+#     def forward(self, input_vars, observations = None):
+#         """
+#         Create samples of the polynomial trend function using as input vars the
+#         tensors var_1, var_2, ... that encode the value of some explanatory variable
+#         for each point of interest; input_vars = (var_1, var_2, ..). The shape
+#         of the resultant samples is as indicated in the node_structures' batch_shape,
+#         event_shape.
         
-        :param input vars: Tuple (var_1, var_2, ...) of identically shaped tensors with 
-            equal (or at least broadcastable) shapes. 
-        :type input_vars: Tuple of instances of torch.Tensor
-        :return: Tensor representing polynomial trend evaluated at the values of input_var.
-        :rtype: torch.Tensor
-        """
+#         :param input vars: Tuple (var_1, var_2, ...) of identically shaped tensors with 
+#             equal (or at least broadcastable) shapes. 
+#         :type input_vars: Tuple of instances of torch.Tensor
+#         :return: Tensor representing polynomial trend evaluated at the values of input_var.
+#         :rtype: torch.Tensor
+#         """
         
-        self.coeffs = pyro.param('{}__coeffs_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor)
-        self.A_mat = torch.cat([input_vars.unsqueeze(-1)**k for k in range(self.n_coeffs)], dim = -1)
+#         self.coeffs = pyro.param('{}__coeffs_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor)
+#         self.A_mat = torch.cat([input_vars.unsqueeze(-1)**k for k in range(self.n_coeffs)], dim = -1)
 
-        output = torch.einsum('bjk, bk -> bj' , self.A_mat, self.coeffs )
-        return output
+#         output = torch.einsum('bjk, bk -> bj' , self.A_mat, self.coeffs )
+#         return output
     
     
 
  
-# iii) Cyclical trend
+# # iii) Cyclical trend
 
-# Define a class of effects that consist in a (potentially multidimensional) 
-# cyclical trend that can be evaluated on some input_vars to produce trend values.
-# Invocation of the class produces objects that contain the monomial trend 
-# functions encoded in a design matrix and corresponding coefficients as parameters.
-# The node_structure passed upon instantiation determines the shape of the trend.
-# E.g a batch_shape of (3,) and event_shape of (100,) produces 3 different trends
-# each with a length of 100 interpretable as 3 trends generating 3 timeseries.
-# Producing the actual trend values requires input_vars to be passed to the forward
-# call via e.g. forward(input_vars = (t,)) (where (t,) here is a tuple containing
-# copies of a 1D tensor time but might also be (x,y) or any other tuple of identically 
-# shaped tensors).
+# # Define a class of effects that consist in a (potentially multidimensional) 
+# # cyclical trend that can be evaluated on some input_vars to produce trend values.
+# # Invocation of the class produces objects that contain the monomial trend 
+# # functions encoded in a design matrix and corresponding coefficients as parameters.
+# # The node_structure passed upon instantiation determines the shape of the trend.
+# # E.g a batch_shape of (3,) and event_shape of (100,) produces 3 different trends
+# # each with a length of 100 interpretable as 3 trends generating 3 timeseries.
+# # Producing the actual trend values requires input_vars to be passed to the forward
+# # call via e.g. forward(input_vars = (t,)) (where (t,) here is a tuple containing
+# # copies of a 1D tensor time but might also be (x,y) or any other tuple of identically 
+# # shaped tensors).
 
-class CyclicalTrend(CalipyEffect):
-    """ CyclicalTrend is a subclass of CalipyEffect that produces an object whose
-    forward() method computes cyclical trends based on input_vars.
+# class CyclicalTrend(CalipyEffect):
+#     """ CyclicalTrend is a subclass of CalipyEffect that produces an object whose
+#     forward() method computes cyclical trends based on input_vars.
 
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :param freq_shape: Instance of Tuple that contains the number of the frequencies
-        for different dimensions n_dim.
-    :type degrees: Tuple of Int
-    :return: Instance of the CyclicalTrend class built on the basis of node_structure
-    :rtype: CyclicalTrend (subclass of CalipyEffect subclass of CalipyNode)
+#     :param node_structure: Instance of NodeStructure that determines the internal
+#         structure (shapes, plate_stacks, plates, aux_data) completely.
+#     :type node_structure: NodeStructure
+#     :param freq_shape: Instance of Tuple that contains the number of the frequencies
+#         for different dimensions n_dim.
+#     :type degrees: Tuple of Int
+#     :return: Instance of the CyclicalTrend class built on the basis of node_structure
+#     :rtype: CyclicalTrend (subclass of CalipyEffect subclass of CalipyNode)
     
-    Example usage: Run line by line to investigate Class
+#     Example usage: Run line by line to investigate Class
         
-    .. code-block:: python
+#     .. code-block:: python
     
-        # Investigate 1D trend ------------------------------------------------
-        #
-        # i) Imports and definitions
-        import calipy
-        from calipy.core.effects import PolynomialTrend
-        node_structure = PolynomialTrend.example_node_structure
-        trend_object = PolynomialTrend(node_structure, name = 'tutorial')
-        #
-        # ii) Compute trend
-        time = torch.linspace(0,1,100)
-        trend = trend_object.forward(input_vars = (time,))
-        #
-        # iii) Investigate object
-        trend_object.dtype_chain
-        trend_object.id
-        trend_object.noise_dist
-        trend_object.node_structure.description
-        trend_object.plate_stack
-        render_1 = trend_object.render((time,))
-        render_1
-        render_2 = trend_object.render_comp_graph((time,))
-        render_2
-    """
+#         # Investigate 1D trend ------------------------------------------------
+#         #
+#         # i) Imports and definitions
+#         import calipy
+#         from calipy.core.effects import PolynomialTrend
+#         node_structure = PolynomialTrend.example_node_structure
+#         trend_object = PolynomialTrend(node_structure, name = 'tutorial')
+#         #
+#         # ii) Compute trend
+#         time = torch.linspace(0,1,100)
+#         trend = trend_object.forward(input_vars = (time,))
+#         #
+#         # iii) Investigate object
+#         trend_object.dtype_chain
+#         trend_object.id
+#         trend_object.noise_dist
+#         trend_object.node_structure.description
+#         trend_object.plate_stack
+#         render_1 = trend_object.render((time,))
+#         render_1
+#         render_2 = trend_object.render_comp_graph((time,))
+#         render_2
+#     """
     
-    # Initialize the class-level NodeStructure
-    example_node_structure = NodeStructure()
-    example_node_structure.set_shape('batch_shape', (3, ), 'Batch shape description')
-    example_node_structure.set_shape('event_shape', (100,), 'Event shape description')
+#     # Initialize the class-level NodeStructure
+#     example_node_structure = NodeStructure()
+#     example_node_structure.set_shape('batch_shape', (3, ), 'Batch shape description')
+#     example_node_structure.set_shape('event_shape', (100,), 'Event shape description')
 
-    # Class initialization consists in passing args and building shapes
-    def __init__(self, node_structure, degrees = (2,), **kwargs):  
-        super().__init__(**kwargs)
-        self.node_structure = node_structure
-        self.batch_shape = self.node_structure.shapes['batch_shape']
-        self.event_shape = self.node_structure.shapes['event_shape']
+#     # Class initialization consists in passing args and building shapes
+#     def __init__(self, node_structure, degrees = (2,), **kwargs):  
+#         super().__init__(**kwargs)
+#         self.node_structure = node_structure
+#         self.batch_shape = self.node_structure.shapes['batch_shape']
+#         self.event_shape = self.node_structure.shapes['event_shape']
         
-        self.n_vars =len(self.batch_shape)
-        self.n_coeffs = tuple([degree + 1 for degree in degrees])
-        # self.n_coeffs_total = math.comb(self.n_vars + self.)
-        self.init_tensor = torch.ones(self.batch_shape + (self.n_coeffs,))
+#         self.n_vars =len(self.batch_shape)
+#         self.n_coeffs = tuple([degree + 1 for degree in degrees])
+#         # self.n_coeffs_total = math.comb(self.n_vars + self.)
+#         self.init_tensor = torch.ones(self.batch_shape + (self.n_coeffs,))
         
-    # Forward pass produces trend values
-    def forward(self, input_vars, observations = None):
-        """
-        Create samples of the polynomial trend function using as input vars the
-        tensors var_1, var_2, ... that encode the value of some explanatory variable
-        for each point of interest; input_vars = (var_1, var_2, ..). The shape
-        of the resultant samples is as indicated in the node_structures' batch_shape,
-        event_shape.
+#     # Forward pass produces trend values
+#     def forward(self, input_vars, observations = None):
+#         """
+#         Create samples of the polynomial trend function using as input vars the
+#         tensors var_1, var_2, ... that encode the value of some explanatory variable
+#         for each point of interest; input_vars = (var_1, var_2, ..). The shape
+#         of the resultant samples is as indicated in the node_structures' batch_shape,
+#         event_shape.
         
-        :param input vars: Tuple (var_1, var_2, ...) of identically shaped tensors with 
-            equal (or at least broadcastable) shapes. 
-        :type input_vars: Tuple of instances of torch.Tensor
-        :return: Tensor representing polynomial trend evaluated at the values of input_var.
-        :rtype: torch.Tensor
-        """
+#         :param input vars: Tuple (var_1, var_2, ...) of identically shaped tensors with 
+#             equal (or at least broadcastable) shapes. 
+#         :type input_vars: Tuple of instances of torch.Tensor
+#         :return: Tensor representing polynomial trend evaluated at the values of input_var.
+#         :rtype: torch.Tensor
+#         """
         
-        self.coeffs = pyro.param('{}__coeffs_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor)
-        self.A_mat = torch.cat([input_vars.unsqueeze(-1)**k for k in range(self.n_coeffs)], dim = -1)
+#         self.coeffs = pyro.param('{}__coeffs_{}'.format(self.id_short, self.name), init_tensor = self.init_tensor)
+#         self.A_mat = torch.cat([input_vars.unsqueeze(-1)**k for k in range(self.n_coeffs)], dim = -1)
 
-        output = torch.einsum('bjk, bk -> bj' , self.A_mat, self.coeffs )
-        return output
+#         output = torch.einsum('bjk, bk -> bj' , self.A_mat, self.coeffs )
+#         return output
     
 
 

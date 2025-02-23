@@ -15,9 +15,8 @@ import itertools
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from functorch.dim import dims
-from calipy.core.utils import dim_assignment, generate_trivial_dims, context_plate_stack, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
+from calipy.core.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
 from calipy.core.effects import CalipyQuantity, CalipyEffect
-from calipy.core.base import NodeStructure
 
 import numpy as np
 import einops
@@ -2647,7 +2646,6 @@ render_2
 
 
 # Introduce distributions as nodes with forward method and dims
-
 
 # Introduce sample function
 

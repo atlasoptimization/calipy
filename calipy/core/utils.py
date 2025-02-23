@@ -9,9 +9,10 @@ The classes are
         and uniqueness of objects created during a run and outputs warnings.
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
+import torch
 import pyro
 import fnmatch
 import contextlib
@@ -21,6 +22,7 @@ import copy
 import re
 from functorch.dim import dims
 import varname
+
 
 
 """
@@ -882,5 +884,6 @@ class DimTuple(tuple):
         # Case 6: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported key type: {type(dim_keys)}")
+
 
 

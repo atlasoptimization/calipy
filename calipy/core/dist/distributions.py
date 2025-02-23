@@ -1,5 +1,9 @@
 # file: calipy/core/dist/distributions.py
 
+from calipy.core.base import NodeStructure
+
+dist_default_ns = NodeStructure()
+
 
 class CalipyDistribution:
     """
@@ -17,6 +21,7 @@ class CalipyDistribution:
         self.pyro_dist_cls = pyro_dist_cls
         self.node_structure = node_structure
         self.dist_params = dist_params
+
 
     def create_pyro_dist(self):
         """
