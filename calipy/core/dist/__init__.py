@@ -5,8 +5,8 @@
 import sys
 import inspect
 import pyro.distributions as pyro_dists
-from .distributions import CalipyDistribution
-from .distributions import generate_init_for_distribution
+from calipy.core.dist.distributions import CalipyDistribution
+from calipy.core.dist.distributions import generate_init_for_distribution
 
 __all__ = []
 

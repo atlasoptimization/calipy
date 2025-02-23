@@ -1,13 +1,13 @@
 Metadata-Version: 2.1
 Name: calipy
 Version: 0.1.0
-Summary: A description of your package.
-Home-page: http://github.com/yourusername/calipy
-Author: Your Name
-Author-email: your.email@example.com
+Summary: CaliPy, the calibration library python. A library for building and solving probabilistic instrument models.
+Home-page: http://github.com/atlasoptimization/calipy
+Author: Dr. Jemil Avers Butt
+Author-email: jemil.butt.@atlasoptimization.com
 Classifier: Development Status :: 3 - Alpha
-Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: MIT License
+Classifier: Intended Audience :: Scientists, Developers
+Classifier: License :: Prosperity Public License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python :: 3.8

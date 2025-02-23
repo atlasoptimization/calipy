@@ -30,91 +30,20 @@ class CalipyDistribution:
                 f"node_structure={self.node_structure} "
                 f"params={self.dist_params}>")
 
-
-
-
-
-# import inspect
-
-# def generate_init_for_distribution(dist_cls, base_cls):
-#     """
-#     Dynamically create an __init__ method that:
-#       1) Matches the signature of dist_cls.__init__.
-#       2) Adds a 'node_structure=None' parameter (keyword-only).
-#       3) Calls the base class's __init__ with the resolved parameters.
-#     """
-
-#     # Original signature of the Pyro dist constructor
-#     original_sig = inspect.signature(dist_cls.__init__)
-#     original_params = list(original_sig.parameters.values())
-
-#     # Remove 'self' if present
-#     if original_params and original_params[0].name == 'self':
-#         original_params = original_params[1:]
-
-#     # Insert our extra param for node_structure (keyword-only with default=None)
-#     node_param = inspect.Parameter(
-#         name='node_structure',
-#         kind=inspect.Parameter.KEYWORD_ONLY,
-#         default=None
-#     )
-    
-#     # Insert node_param before a **kwargs param if it exists:
-#     for i, param in enumerate(original_params):
-#         if param.kind == inspect.Parameter.VAR_KEYWORD:
-#             original_params.insert(i, node_param)
-#             break
-#     else:
-#         original_params.append(node_param)
-
-#     # Build the new signature
-#     new_sig = inspect.Signature(parameters=original_params)
-
-#     def __init__(self, *args, **kwargs):
-#         # Bind arguments to the new signature
-#         bound_args = new_sig.bind(self, *args, **kwargs)
-#         bound_args.apply_defaults()
-        
-#         # Extract node_structure, if present
-#         node_structure = bound_args.arguments.pop('node_structure', None)
-
-#         # Remove 'self'
-#         bound_args.arguments.pop('self', None)
-
-#         # Everything else is part of dist_params
-#         dist_params = dict(bound_args.arguments)
-
-#         # Call the base class __init__
-#         super(self.__class__, self).__init__(
-#             pyro_dist_cls=dist_cls,
-#             node_structure=node_structure,
-#             **dist_params
-#         )
-
-#     # Attach the newly created signature and docstring for IDE/tooltips
-#     __init__.__signature__ = new_sig
-#     # Optionally copy the docstring from the original Pyro distribution
-#     doc = (dist_cls.__doc__ or "") + "\n\nOriginal __init__ doc:\n"
-#     doc += (dist_cls.__init__.__doc__ or "")
-#     __init__.__doc__ = doc
-
-#     return __init__
-
 import inspect
 
 def generate_init_for_distribution(dist_cls, base_cls):
     original_sig = inspect.signature(dist_cls.__init__)
     original_params = list(original_sig.parameters.values())
 
-    # Keep 'self' in the parameter list (don't remove it)
-    # Inject node_structure as keyword-only after positional params
+    # Inject node_structure as keyword-only
     node_param = inspect.Parameter(
-        "node_structure", 
-        inspect.Parameter.KEYWORD_ONLY, 
+        "node_structure",
+        inspect.Parameter.KEYWORD_ONLY,
         default=None
     )
 
-    # Find the first keyword-only or var-kwarg to insert after
+    # Find insertion point after positional parameters
     insert_pos = len(original_params)
     for i, param in enumerate(original_params):
         if param.kind in (param.KEYWORD_ONLY, param.VAR_KEYWORD):
@@ -125,15 +54,18 @@ def generate_init_for_distribution(dist_cls, base_cls):
     new_sig = original_sig.replace(parameters=original_params)
 
     def __init__(self, *args, **kwargs):
-        bound_args = new_sig.bind(*args, **kwargs)  # No explicit 'self' here
+        bound_args = new_sig.bind(self, *args, **kwargs)
         bound_args.apply_defaults()
+
         node_structure = bound_args.arguments.pop("node_structure", None)
-        dist_params = bound_args.arguments
-        
-        super(base_cls, self).__init__(
+        bound_args.arguments.pop("self", None)  # Remove self from params
+
+        # EXPLICITLY CALL BASE CLASS INIT (NO AMBIGUOUS super())
+        base_cls.__init__(
+            self,
             pyro_dist_cls=dist_cls,
             node_structure=node_structure,
-            **dist_params
+            **bound_args.arguments
         )
 
     __init__.__signature__ = new_sig
