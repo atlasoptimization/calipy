@@ -183,6 +183,7 @@ class UnknownParameter(CalipyQuantity):
                                     batch_dims = batch_dims)
     default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
                                                 batch_dims = batch_dims_description)
+    default_nodestructure.set_name("UnknownParameter")
 
     
     # Class initialization consists in passing args and building dims

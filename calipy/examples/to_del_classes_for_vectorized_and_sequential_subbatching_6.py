@@ -560,6 +560,19 @@ render_2
 
 # Introduce distributions as nodes with forward method and dims
 
+CalipyNormal = calipy.core.dist.Normal
+CalipyNormal.dists
+CalipyNormal.input_vars
+normal_ns = NodeStructure(CalipyNormal)
+calipy_normal = CalipyNormal(node_structure = normal_ns)
+
+calipy_normal.id
+calipy_normal.node_structure
+CalipyNormal.default_nodestructure
+
+
+
+
 # Introduce sample function
 
 def sample(name, dist, dist_dims, batch_dims, vectorizable=True, observations=None, subsample_index=None):

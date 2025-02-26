@@ -164,6 +164,10 @@ class DataTuple:
     def __len__(self):
         return len(list(self.keys()))
     
+    def as_dict(self):
+        """ Returns the underlying dictionary linking names and values """
+        self_dict = self._data_dict
+        return self_dict
     
     def apply_from_dict(self, fun_dict):
         """

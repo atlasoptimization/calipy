@@ -52,7 +52,7 @@ import inspect
 import textwrap
 from functools import wraps
 import torchviz
-from calipy.core.utils import format_mro, dim_assignment, DimTuple
+from calipy.core.utils import format_mro
 from abc import ABC, abstractmethod
 
 
@@ -214,6 +214,10 @@ class NodeStructure():
             
             self._generate_set_dims()
 
+    def set_name(self, name):
+        """ Sets name of the node_structure. Needed when defining node_structures
+        from scratch, otherwise name is inherited."""
+        self.node_cls_name = name
 
     def set_dims(self,  **kwargs):
         """ Base method; is dynamically overridden if initialized from an CalipyNode 
@@ -472,11 +476,11 @@ class CalipyNode(ABC):
             raise NotImplementedError("This class does not define an example_node_structure.")
 
 
-    @classmethod
-    def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
-        """ Create a new NodeStructure based on basic_node_structure but with updated values """
-        new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
-        return new_node_structure
+    # @classmethod
+    # def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
+    #     """ Create a new NodeStructure based on basic_node_structure but with updated values """
+    #     new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
+    #     return new_node_structure
     
     
     def __repr__(self):
