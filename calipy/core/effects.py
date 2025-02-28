@@ -189,7 +189,6 @@ class UnknownParameter(CalipyQuantity):
     
     # Define the input schema for the forward method
     input_vars_schema = InputSchema(required_keys=[])
-
     observation_schema = InputSchema(required_keys=["value"],
                                      key_types={"value": CalipyTensor})
 

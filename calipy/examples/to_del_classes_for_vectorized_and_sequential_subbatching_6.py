@@ -576,7 +576,13 @@ input_vars_normal = DataTuple(['loc', 'scale'], [torch.zeros(normal_ns_sizes),
                                                   torch.ones(normal_ns_sizes)])
 samples_normal = calipy_normal.forward(input_vars_normal)
 
-
+# A more convenient way of creating the input_vars and observations data or
+# at least getting the infor on the input signatures
+create_input_vars = CalipyNormal.create_input_vars
+help(create_input_vars)
+input_vars_normal_2 = create_input_vars(loc = torch.zeros(normal_ns_sizes), 
+                                        scale = torch.ones(normal_ns_sizes) )
+samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
     
 
 # sample_name = 'normal_sample'
@@ -611,9 +617,6 @@ sample_dist_dims_bigger = sample_ns_bigger.dims
 calipy_sample_bigger = sample(sample_name_bigger, sample_pyro_dist_bigger, sample_dist_dims_bigger, 
                        observations = None, subsample_index = None, vectorizable = True)
 
-
-create_input_vars = UnknownParameter.create_input_vars
-create_observations = UnknownParameter.create_observations
 
 
 # Subsample indices (if any)

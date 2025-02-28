@@ -1,9 +1,12 @@
 # file: calipy/core/dist/distributions.py
 
 import inspect
+from inspect import Parameter, signature
+from typing import Optional, Dict, Any, List
 
+from calipy.core.tensor import CalipyTensor
 from calipy.core.base import NodeStructure, CalipyNode
-from calipy.core.utils import dim_assignment
+from calipy.core.utils import dim_assignment, InputSchema
 from calipy.core.primitives import sample
 
 
@@ -24,102 +27,6 @@ def build_default_nodestructure(class_name):
     return default_nodestructure
 
 
-# class CalipyDistribution(CalipyNode):
-#     """
-#     Base class for all auto-generated Calipy distributions.
-#     It wraps a Pyro distribution class and associates a NodeStructure
-#     (or any additional dimension-aware info).
-#     """
-    
-#     # _registry = {}  # Track subclasses like Normal, Poisson
-#     default_nodestructure = default_nodestructure
-
-#     def __init__(self, pyro_dist_cls, node_structure=None, **dist_params):
-#         """
-#         :param pyro_dist_cls: The Pyro distribution class being wrapped.
-#         :param node_structure: A NodeStructure for dimension logic.
-#         :param dist_params: All other distribution parameters (e.g., loc, scale for Normal).
-#         """
-#         self.pyro_dist_cls = pyro_dist_cls
-#         self.node_structure = node_structure
-#         self.dist_params = dist_params
-#         self.dist_pyro = self.create_pyro_dist()
-        
-#     @classmethod
-#     def register_subclass(cls, name, subclass):
-#         # cls._registry[name] = subclass
-#         setattr(cls, name, subclass)  # Class-level attribute
-
-#     # Forward pass is generating samples
-#     def forward(self, input_vars, observations = None, subsample_index = None):
-#         # thoughts: interaction forward, sampling?
-#         # Different flow needed
-#         #   CalipyNormal = calipy.core.dist.Normal should be of type abc.CalipyDistribution
-#         #   calipy_normal = CalipyNormal(node_structure) should be of type abc.CalipyDistribution.Normal
-#         #   calipy_normal.forward() should produce some numbers and should effectively be the sampling.
-#         # Does it make sense to separate Distributions and DistributionNodes?
-#         #   thoughs: 
-            
-#         # forward should build the distribution (i.e. the pyro distribution by integrating
-#         # loc and scale and then produce some numbers by calling calipy_sample
-#         pass
-
-#     def create_pyro_dist(self):
-#         """
-#         Instantiate the underlying Pyro distribution with stored parameters.
-#         (Sampling or dimension logic can be added later.)
-#         """
-#         return self.pyro_dist_cls(**self.dist_params)
-
-#     # def __repr__(self):
-#     #     return (f"<CalipyDistribution({self.pyro_dist_cls.__name__}) "
-#     #             f"node_structure={self.node_structure} "
-#     #             f"params={self.dist_params}>")
-    
-#     def __repr__(self):
-#         return f"<{self.__class__.__qualname__}(node_structure={self.node_structure}, params={self.dist_params})>"
-
-# class CalipyDistribution(CalipyNode):
-#     """Base distribution class. Subclasses will be dynamically generated."""
-
-#     def __init__(self, node_structure=None):
-#         super().__init__()
-#         self.node_structure = node_structure
-
-#     @classmethod
-#     def create_distribution_class(cls, pyro_dist_cls):
-#         """Dynamically creates a subclass for a Pyro distribution."""
-#         dist_name = pyro_dist_cls.__name__
-        
-#         # Create subclass with proper inheritance
-#         class Subclass(cls):
-#             _pyro_dist_cls = pyro_dist_cls
-#             input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
-
-#             def __init__(self, node_structure=None):
-#                 super().__init__(node_structure=node_structure)
-
-#             def forward(self, **input_vars):
-#                 # Validate input vars match the Pyro distribution's __init__ signature
-#                 bound_args = inspect.signature(self._pyro_dist_cls.__init__).bind(
-#                     None,  # Skip 'self'
-#                     **input_vars
-#                 )
-#                 bound_args.apply_defaults()
-                
-#                 # Create and sample from Pyro distribution
-#                 pyro_dist = self._pyro_dist_cls(**bound_args.arguments)
-#                 return pyro_dist.sample()
-
-#         # Set class metadata
-#         Subclass.__name__ = dist_name
-#         Subclass.__qualname__ = f"CalipyDistribution.{dist_name}"
-#         Subclass.__module__ = __name__
-        
-#         return Subclass
-
-
-
 
 class CalipyDistribution(CalipyNode):
     """
@@ -128,8 +35,11 @@ class CalipyDistribution(CalipyNode):
     (or any additional dimension-aware info).
     """
     
-    
+    # Default empty schemas (will be overridden)
+    input_vars_schema = None
+    observation_schema = None
     dists = {}  # Maps distribution names to subclasses   
+    
     
 
     def __init__(self, node_structure=None):
@@ -140,9 +50,12 @@ class CalipyDistribution(CalipyNode):
     def create_distribution_class(cls, pyro_dist_cls):
         """Dynamically creates a subclass for a Pyro distribution."""
         dist_name = pyro_dist_cls.__name__
+        input_schema, obs_schema = generate_schemas_from_pyro(pyro_dist_cls)
         
         # Create subclass with proper inheritance
         class Subclass(cls):
+            input_vars_schema = input_schema
+            observation_schema = obs_schema
             _pyro_dist_cls = pyro_dist_cls
             cls.input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
 
@@ -240,3 +153,44 @@ def generate_init_for_distribution(dist_cls, base_cls):
     __init__.__doc__ = f"{dist_cls.__doc__}\n\nnode_structure: Optional[NodeStructure] = None"
 
     return __init__
+
+
+def generate_schemas_from_pyro(pyro_dist_cls: type) -> tuple:
+    """Generates input_vars and observation schemas from a Pyro distribution class."""
+    # Get __init__ parameters (skip 'self')
+    init_params = list(signature(pyro_dist_cls.__init__).parameters.values())[1:]  
+
+    # Extract parameters for input_vars_schema
+    required_keys = []
+    optional_keys = []
+    defaults = {}
+    key_types = {}
+    
+    for param in init_params:
+        if param.name == "validate_args":
+            continue  # Skip common Pyro parameter
+        
+        if param.default == Parameter.empty:
+            required_keys.append(param.name)
+        else:
+            optional_keys.append(param.name)
+            defaults[param.name] = param.default
+        
+        # Get type annotation or fallback to CalipyTensor
+        key_types[param.name] = param.annotation if param.annotation != Parameter.empty else CalipyTensor
+
+    # Input vars schema (distribution parameters)
+    input_vars_schema = InputSchema(
+        required_keys=required_keys,
+        optional_keys=optional_keys,
+        defaults=defaults,
+        key_types=key_types
+    )
+
+    # Observation schema (standardized to value/key)
+    observation_schema = InputSchema(
+        required_keys=["value"],
+        key_types={"value": Any}  # Can specialize based on distribution
+    )
+
+    return input_vars_schema, observation_schema
