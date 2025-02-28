@@ -22,7 +22,7 @@ from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter
 from calipy.core.data import DataTuple
 from calipy.core.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
 from calipy.core.base import NodeStructure
-from calipy.core.primitives import param
+from calipy.core.primitives import param, sample
 
 import numpy as np
 import einops
@@ -570,142 +570,51 @@ calipy_normal.id
 calipy_normal.node_structure
 CalipyNormal.default_nodestructure
 
+# Calling the forward method
+normal_ns_sizes = normal_ns.dims['batch_dims'].sizes + normal_ns.dims['event_dims'].sizes
+input_vars_normal = DataTuple(['loc', 'scale'], [torch.zeros(normal_ns_sizes),
+                                                  torch.ones(normal_ns_sizes)])
+samples_normal = calipy_normal.forward(input_vars_normal)
 
-
-
-# Introduce sample function
-
-def sample(name, dist, dist_dims, batch_dims, vectorizable=True, observations=None, subsample_index=None):
-    """
-    Flexible sampling function handling multiple plates and four cases based on obs and subsample_indices.
-
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
-    
-    Example usage: Run line by line to investigate Class
-        
-    .. code-block:: python
-    
-        # Investigate 2D noise ------------------------------------------------
-        #
-        # i) Imports and definitions
-        
-        
-    Parameters:
-    -----------
-    name : str
-        Base name for the sample site.
-    dist : pyro.distributions.Distribution
-        The distribution to sample from.
-    dist_dims : list of CalipyDim objects
-        The dimensions of the sample from the distribution; need to contain batch_dims as subset.
-    batch_dims : list of CalipyDim objects
-        The dimensions that act as batch dimensions and over which independence is assumed.
-    vectorizable : bool, optional
-        If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.
-    obs : CalipyObservation or None, optional
-        Observations wrapped in CalipyObservation. If provided, sampling is conditioned on these observations.
-    subsample_index : list of torch.Tensor or None, optional
-        Subsample indices for each plate dimension. If provided, sampling is performed over these indices.
-
-    Returns:
-    --------
-    CalipyTensor
-        The sampled data, preserving batch and event dimensions.
-    """
-    
-    # Basic rename
-    obs = observations
-    ssi = subsample_indices
-    vec = vectorizable
-    
-    # Set up dimensions
-    event_dims = dist_dims.delete_dims(batch_dims.names)
-    dist_dim_sizes = dist_dims.sizes
-    batch_dim_sizes = batch_dims.sizes
-    event_dim_sizes = event_dims.sizes
-    batch_dim_positions = dist_dims.find_indices(batch_dims.names)
-    
-    # Plate setup
-    plate_names = [name + '_plate' for name in batch_dims.names]
-    plate_sizes = [size if size is not None else 1 for size in batch_dims.sizes]
-
-
-    # cases [1,x,x] vectorizable
-    if vectorizable == True:
-        # Vectorized sampling using pyro.plate
-        with contextlib.ExitStack() as stack:
-            # Determine dimensions for plates
-
-            
-            # case [0,0] (obs, ssi)
-            if obs == None and ssi == None:
-                pass
-            
-            # case [0,1] (obs, ssi)
-            if obs == None and ssi is not None:
-                pass
-            
-            
-            # case [1,0] (obs, ssi)
-            if obs is not None and ssi == None:
-                pass
-            
-            # case [1,1] (obs, ssi)
-            if obs is not None and ssi is not None:
-                pass
-            
-            # Handle multiple plates
-            for i, (plate_name, plate_size, dim) in enumerate(zip(plate_names, plate_sizes, batch_dim_positions)):
-                subsample = subsample_indices if subsample_indices is not None else None
-                size = plate_size
-                stack.enter_context(pyro.plate(plate_name, size=size, subsample=subsample, dim=dim))
-
-            # Sample data
-            data = pyro.sample(name, dist, obs=current_obs)
-            batch_shape = data.shape[:n_plates]
-            return CalipySample(data, batch_shape, event_shape, vectorizable=True)
-
-        
-    # cases [0,x,x] nonvectorizable
-    elif vectorizable == False:
-            
-            # case [0,0] (obs, ssi)
-            if obs == None and ssi == None:
-                # Create new observations of shape batch_shape_default with ssi
-                # a flattened list of product(range(n_default))
-                sample_names = a
-                pass
-            
-            # case [0,1] (obs, ssi)
-            if obs == None and ssi is not None:
-                # Create len(ssi) new observations with given ssi's
-                pass
-            
-            # case [1,0] (obs, ssi)
-            if obs is not None and ssi == None:
-                #  Create obs with standard ssi derived from obs batch_shape
-                pass
-            
-            # case [1,1] (obs, ssi)
-            if obs is not None and ssi is not None:
-                # Create obs associated to given ssi's
-                pass
 
     
-            # Construct tensor from samples
-            # Need to sort samples based on indices to ensure correct tensor shape
-            sample_value = pyro.sample(sample_name, dist, obs=obs_value)
-            
-    return CalipySample(data, batch_shape, event_shape, vectorizable=vectorizable)
-    
-    
-# iv) Test the classes
 
-obs_object = CalipyObservation(data, plate_names, batch_shape=[n_data_1], event_shape=[2])
+# sample_name = 'normal_sample'
+# sample_dist = calipy_normal
+# sample_ns = calipy_normal.node_structure
+# sample_ns_sizes = sample_ns.dims['batch_dims'].sizes + sample_ns.dims['event_dims'].sizes
+# sample_input_vars = DataTuple(['loc', 'scale'], [torch.zeros(sample_ns_sizes),
+#                                                  torch.ones(sample_ns_sizes)])
+# n_event = len(sample_ns.dims['event_dims'].sizes)
+# sample_pyro_dist = calipy_normal.create_pyro_dist(sample_input_vars).to_event(n_event)
+# sample_dist_dims = sample_ns.dims
+
+
+# calipy_sample = sample(sample_name, sample_pyro_dist, sample_dist_dims, 
+#                        observations = None, subsample_index = None, vectorizable = True)
+
+
+sample_name_bigger = 'normal_sample_bigger'
+sample_dist_bigger = calipy_normal
+sample_ns_bigger = calipy_normal.node_structure
+bigger_batch_dims = dim_assignment(['bd_1', 'bd_2'], dim_sizes = [10,6])
+bigger_event_dims = dim_assignment(['ed_1', 'ed_2'], dim_sizes = [4,2])
+sample_ns_bigger.set_dims(batch_dims = bigger_batch_dims, event_dims = bigger_event_dims)
+sample_ns_bigger_sizes = sample_ns_bigger.dims['batch_dims'].sizes + sample_ns_bigger.dims['event_dims'].sizes
+sample_input_vars_bigger = DataTuple(['loc', 'scale'], [torch.zeros(sample_ns_bigger_sizes),
+                                                 torch.ones(sample_ns_bigger_sizes)])
+n_event_bigger = len(sample_ns_bigger.dims['event_dims'].sizes)
+sample_pyro_dist_bigger = calipy_normal.create_pyro_dist(sample_input_vars_bigger).to_event(n_event_bigger)
+sample_dist_dims_bigger = sample_ns_bigger.dims
+
+
+calipy_sample_bigger = sample(sample_name_bigger, sample_pyro_dist_bigger, sample_dist_dims_bigger, 
+                       observations = None, subsample_index = None, vectorizable = True)
+
+
+create_input_vars = UnknownParameter.create_input_vars
+create_observations = UnknownParameter.create_observations
+
 
 # Subsample indices (if any)
 subsample_indices = index_list[0]

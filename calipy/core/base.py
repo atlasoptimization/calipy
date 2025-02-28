@@ -52,8 +52,14 @@ import inspect
 import textwrap
 from functools import wraps
 import torchviz
-from calipy.core.utils import format_mro
-from abc import ABC, abstractmethod
+from calipy.core.utils import format_mro, InputSchema
+from calipy.core.data import DataTuple
+from abc import ABC, ABCMeta, abstractmethod
+
+from types import MethodType
+from typing import get_type_hints
+from typing import Dict, Any, Optional, List, Type
+from inspect import Parameter, Signature
 
 
 
@@ -391,6 +397,73 @@ class NodeStructure():
 
 
 
+# # NodeMeta class is for having a MetaClass for CalipyNode that modifies class 
+# # construction thereby allowing automatic inclusion of create_input_args, 
+# # create_observation factory methods based in input_schema
+
+# class NodeMeta(ABCMeta):
+#     def __new__(cls, name, bases, attrs):
+#         # Create the class first
+#         new_cls = super().__new__(cls, name, bases, attrs)
+
+#         # Generate create_input_args if input_schema exists
+#         if hasattr(new_cls, 'input_schema'):
+#             new_cls.create_input_args = cls._create_factory_method('input_schema')
+
+#         # Generate create_observations if observation_schema exists
+#         if hasattr(new_cls, 'observation_schema'):
+#             new_cls.create_observations = cls._create_factory_method('observation_schema')
+
+#         return new_cls
+
+#     @classmethod
+#     def _create_factory_method(cls, schema_attr):
+#         def factory_method(self, **kwargs):
+#             schema = getattr(self, schema_attr)
+#             data = {}
+            
+#             # Validate required keys
+#             for key in schema.required_keys:
+#                 if key not in kwargs:
+#                     raise ValueError(f"Missing required key: {key}")
+#                 data[key] = kwargs[key]
+            
+#             # Add optional keys with defaults
+#             for key in schema.optional_keys:
+#                 data[key] = kwargs.get(key, schema.defaults.get(key))
+            
+#             return DataTuple(schema, data)
+
+#         # Add parameter annotations for IDE autocompletion
+#         schema = getattr(factory_method, '_schema', None)
+#         if schema:
+#             annotations = {key: schema.key_types.get(key, Any) for key in schema.required_keys + schema.optional_keys}
+#             annotations['return'] = DataTuple
+#             factory_method.__annotations__ = annotations
+
+#         return factory_method
+
+# class CalipyNode(ABC, metaclass = NodeMeta):
+    
+
+
+# class CustomClassMethod(classmethod):
+#     """A classmethod that preserves __doc__, __annotations__, and __signature__."""
+#     def __init__(self, func):
+#         super().__init__(func)
+#         self.__doc__ = func.__doc__
+#         self.__annotations__ = func.__annotations__
+#         self.__signature__ = inspect.signature(func)
+
+#     def __get__(self, instance, owner):
+#         # Bind the method and attach metadata
+#         bound_method = super().__get__(instance, owner)
+#         bound_method.__doc__ = self.__doc__
+#         bound_method.__annotations__ = self.__annotations__
+#         bound_method.__signature__ = self.__signature__
+#         return bound_method
+
+
 # Node class is basis for data, instruments, effects, and quantities of calipy.
 # Method and attributes are used mostly for abstract operations like DAG construction
 # and execution
@@ -404,11 +477,13 @@ class CalipyNode(ABC):
     
     _instance_count = {}  # Class-level dictionary to keep count of instances per subclass
     
+    # Optional: Define default schemes (subclasses can override)
+    input_args_schema: Optional[InputSchema] = None
+    observation_schema: Optional[InputSchema] = None
     
     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
                 
         # Basic infos
-        # self.dtype_chain = [classname for classname in self.__class__.__mro__]
         self.dtype_chain = format_mro(self.__class__)
         self.dtype = self.__class__.__name__
         self.type = node_type
@@ -485,34 +560,82 @@ class CalipyNode(ABC):
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
-
-
-
-# Edge class is basis for representation of dependencies between Node objects and
-# is used mostly for abstract operations related to DAG construction.
-
-# class CalipyEdge(dict):
-#     """
-#     The CalipyEdge class provides a comprehensive representation of relationas
-#     between entities like data, instrument, effect, or quantity. They help forming
-#     a graph that describes dependence and relationships among the entities. In
-#     particular it records the dimensionality of the flow of information between
-#     the nodes that form the DAG that underlies the embedding procedure into pyro.
-#     """
     
-        
-#     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
-        
-#         # Basic infos
-#         self.dtype = self.__class__.__name__
-#         self.type = node_type
-#         self.name = node_name
-#         self.info = info_dict
-        
-
     
-#     def __repr__(self):
-#         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
+    
+    
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        
+        # Generate create_input_args if input_schema exists
+        if hasattr(cls, 'input_vars_schema') and cls.input_vars_schema is not None:
+            cls.create_input_vars = cls._create_factory_method('input_vars_schema', 
+                        'create_input_vars', 'Create a DataTuple for input_vars.')
+            
+        # Generate create_observations if observation_schema exists
+        if hasattr(cls, 'observation_schema') and cls.observation_schema is not None:
+            cls.create_observations = cls._create_factory_method('observation_schema', 
+                            'create_observations', 'Create a DataTuple for observations.')
+    
+    @classmethod
+    def _create_factory_method(cls, schema_attr: str, method_name: str, description: str):
+        """Generates a factory method with documentation and type hints."""
+        schema = getattr(cls, schema_attr)
+        
+        # Generate parameters for the function signature
+        parameters = []
+        for key in schema.required_keys:
+            parameters.append(Parameter(
+                name=key,
+                kind=Parameter.KEYWORD_ONLY,
+                default=Parameter.empty,
+                annotation=schema.key_types.get(key, Any)
+            ))
+        for key in schema.optional_keys:
+            parameters.append(Parameter(
+                name=key,
+                kind=Parameter.KEYWORD_ONLY,
+                default=schema.defaults.get(key, Parameter.empty),
+                annotation=schema.key_types.get(key, Any)
+            ))
+        signature = Signature(parameters)
+        
+        # Define the function
+        def factory_func(_cls, **kwargs):
+            key_list = []
+            data_list = []
+            for key in schema.required_keys:
+                if key not in kwargs:
+                    raise ValueError(f"Missing required key: {key}")
+                key_list.append(key)
+                data_list.append(kwargs[key])
+            for key in schema.optional_keys:
+                key_list.append(key)
+                data_list.append(kwargs.get(key, schema.defaults.get(key)))
+            return DataTuple(key_list, data_list)
+        
+        # Attach metadata
+        factory_func.__name__ = method_name
+        factory_func.__doc__ = (
+            f"{method_name}{signature} -> DataTuple \n"
+            f"Creates a DataTuple for {schema_attr}.\n\n"
+            f"Parameters:\n"
+            + "\n".join(
+                f"{key} ({schema.key_types.get(key, 'Any')}): {'Required' if key in schema.required_keys else 'Optional'}"
+                for key in (schema.required_keys + schema.optional_keys)
+            )
+            + "\n\nReturns:\n    DataTuple: The constructed DataTuple instance."
+        )
+        factory_func.__signature__ = signature
+        factory_func.__annotations__ = {
+            key: schema.key_types.get(key, Any)
+            for key in (schema.required_keys + schema.optional_keys)
+        }
+        factory_func.__annotations__["return"] = DataTuple
+        
+        # Convert to classmethod and return
+        return classmethod(factory_func)
+        
 
 
 

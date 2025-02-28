@@ -23,6 +23,9 @@ import re
 from functorch.dim import dims
 import varname
 
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, List, Type
+
 
 
 """
@@ -126,6 +129,22 @@ def safe_eval(expr, allowed_globals=None, allowed_locals=None):
     if allowed_locals is None:
         allowed_locals = {}
     return eval(expr, {"__builtins__": None, **allowed_globals}, allowed_locals)
+
+
+
+# Classes for function documentation and type hinting
+
+@dataclass
+class InputSchema:
+    required_keys: List[str]
+    optional_keys: List[str] = None
+    defaults: Dict[str, Any] = None
+    key_types: Dict[str, Type] = None  # Maps keys to their types
+
+    def __post_init__(self):
+        self.optional_keys = self.optional_keys or []
+        self.defaults = self.defaults or {}
+        self.key_types = self.key_types or {}
 
 
 # CalipyDim and Dimension management

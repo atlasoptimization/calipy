@@ -115,3 +115,143 @@ def param(name, init_tensor, dims, constraint = constraints.real, subsample_inde
     return param_subsampled_cp
 
 param.__doc__ = param.__doc__ + pyro.param.__doc__
+
+
+
+
+import contextlib
+
+# Introduce sample function
+
+def sample(name, dist, dist_dims, observations=None, subsample_index=None, vectorizable=True):
+    """
+    Flexible sampling function handling multiple plates and four cases based on obs and subsample_indices.
+
+    :param node_structure: Instance of NodeStructure that determines the internal
+        structure (shapes, plate_stacks, plates, aux_data) completely.
+    :type node_structure: NodeStructure
+    :return: Instance of the NoiseAddition class built on the basis of node_structure
+    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate 2D noise ------------------------------------------------
+        #
+        # i) Imports and definitions
+        
+        
+    Parameters:
+    -----------
+    name : str
+        Base name for the sample site.
+    dist : pyro.distributions.Distribution
+        The distribution to sample from.
+    dist_dims : list of CalipyDim objects
+        The dimensions of the sample from the distribution; need to contain batch_dims as subset.
+    batch_dims : list of CalipyDim objects
+        The dimensions that act as batch dimensions and over which independence is assumed.
+    vectorizable : bool, optional
+        If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.
+    obs : CalipyObservation or None, optional
+        Observations wrapped in CalipyObservation. If provided, sampling is conditioned on these observations.
+    subsample_index : list of torch.Tensor or None, optional
+        Subsample indices for each plate dimension. If provided, sampling is performed over these indices.
+
+    Returns:
+    --------
+    CalipyTensor
+        The sampled data, preserving batch and event dimensions.
+    """
+    
+    # Basic rename
+    obs = observations
+    ssi = subsample_index
+    vec = vectorizable
+    
+    # Set up dimensions
+    batch_dims = dist_dims['batch_dims']
+    event_dims = dist_dims['event_dims']
+    batch_dim_sizes = batch_dims.sizes
+    event_dim_sizes = event_dims.sizes
+    dist_dims = batch_dims + event_dims
+    dist_dims_sizes = dist_dims.sizes
+    
+    # Compute plate dim arguments as counted from right from leftmost event dim
+    batch_dim_positions_from_right = dist_dims.find_indices(batch_dims.names, from_right = True) 
+    batch_dim_positions = [dim_pos + + len(event_dim_sizes) for dim_pos in batch_dim_positions_from_right]
+    
+    
+    # Plate setup
+    plate_names = [name + '_plate' for name in batch_dims.names]
+    plate_sizes = [size if size is not None else 1 for size in batch_dims.sizes]
+
+
+    # cases [1,x,x] vectorizable
+    if vectorizable == True:
+        # Vectorized sampling using pyro.plate
+        with contextlib.ExitStack() as stack:
+            # Determine dimensions for plates
+
+            
+            # case [0,0] (obs, ssi)
+            if obs == None and ssi == None:
+                current_obs = None
+            
+            # case [0,1] (obs, ssi)
+            if obs == None and ssi is not None:
+                pass
+            
+            
+            # case [1,0] (obs, ssi)
+            if obs is not None and ssi == None:
+                pass
+            
+            # case [1,1] (obs, ssi)
+            if obs is not None and ssi is not None:
+                pass
+            
+            # Handle multiple plates
+            for i, (plate_name, plate_size, dim) in enumerate(zip(plate_names, plate_sizes, batch_dim_positions)):
+                subsample = subsample_index if subsample_index is not None else None
+                size = plate_size
+                stack.enter_context(pyro.plate(plate_name, size=size, subsample=subsample, dim=dim))
+
+            # Sample data
+            sample_vals = pyro.sample(name, dist, obs=current_obs)
+            sample_vals_cp = CalipyTensor(sample_vals, dist_dims, name = name)
+            
+
+        
+    # cases [0,x,x] nonvectorizable
+    elif vectorizable == False:
+            
+            # case [0,0] (obs, ssi)
+            if obs == None and ssi == None:
+                # Create new observations of shape batch_shape_default with ssi
+                # a flattened list of product(range(n_default))
+                
+                pass
+            
+            # case [0,1] (obs, ssi)
+            if obs == None and ssi is not None:
+                # Create len(ssi) new observations with given ssi's
+                pass
+            
+            # case [1,0] (obs, ssi)
+            if obs is not None and ssi == None:
+                #  Create obs with standard ssi derived from obs batch_shape
+                pass
+            
+            # case [1,1] (obs, ssi)
+            if obs is not None and ssi is not None:
+                # Create obs associated to given ssi's
+                pass
+
+    
+            # Construct tensor from samples
+            # Need to sort samples based on indices to ensure correct tensor shape
+            # sample_value = pyro.sample(sample_name, dist, obs=obs_value)
+            
+    return sample_vals_cp

@@ -33,10 +33,12 @@ import torch
 import math
 from calipy.core.primitives import param
 from calipy.core.base import CalipyNode
-from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment
+from calipy.core.tensor import CalipyTensor
+from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
 from calipy.core.base import NodeStructure
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional, List, Type
 
 
 # ii) Definitions
@@ -184,6 +186,12 @@ class UnknownParameter(CalipyQuantity):
     default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
                                                 batch_dims = batch_dims_description)
     default_nodestructure.set_name("UnknownParameter")
+    
+    # Define the input schema for the forward method
+    input_vars_schema = InputSchema(required_keys=[])
+
+    observation_schema = InputSchema(required_keys=["value"],
+                                     key_types={"value": CalipyTensor})
 
     
     # Class initialization consists in passing args and building dims
@@ -315,7 +323,16 @@ class UnknownVariance(UnknownParameter):
 #     example_node_structure = NodeStructure()
 #     example_node_structure.set_plate_stack('noise_stack', [('batch_plate_1', 5, -2, 'plate denoting independence in row dim'),
 #                                                               ('batch_plate_2', 10, -1, 'plate denoting independence in col dim')],
-#                                            'Plate stack for noise ')
+#                                             'Plate stack for noise ')
+    
+#     input_vars_schema = InputSchema(required_keys=["loc", "scale"],
+#                                optional_keys=["validate_args"],
+#                                defaults={"validate_args": None},
+#                                key_types={"loc": CalipyTensor, "scale": CalipyTensor, 
+#                                           "validate_args": Optional[bool]})
+
+#     observation_schema = InputSchema(required_keys=["value"],
+#                                      key_types={"value": CalipyTensor})
 
 #     # Class initialization consists in passing args and building shapes
 #     def __init__(self, node_structure, **kwargs):

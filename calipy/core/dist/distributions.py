@@ -4,18 +4,8 @@ import inspect
 
 from calipy.core.base import NodeStructure, CalipyNode
 from calipy.core.utils import dim_assignment
+from calipy.core.primitives import sample
 
-
-# # Initialize CalipyDistribution wide default NodeStructure
-# batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
-# event_dims = dim_assignment(dim_names = ['event_dim'], dim_sizes = [2])
-# batch_dims_description = 'The batch dimension, in which realizations are independent'
-# event_dims_description = 'The event dimension, in which a realization is dependent'
-
-# default_nodestructure = NodeStructure()
-# default_nodestructure.set_dims(batch_dims = batch_dims, event_dims = event_dims)
-# default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
-#                                            event_dims = event_dims_description)
 
 def build_default_nodestructure(class_name):
 
@@ -139,9 +129,7 @@ class CalipyDistribution(CalipyNode):
     """
     
     
-    dists = {}  # Maps distribution names to subclasses
-    # default_nodestructure = build_default_nodestructure()
-    
+    dists = {}  # Maps distribution names to subclasses   
     
 
     def __init__(self, node_structure=None):
@@ -156,15 +144,38 @@ class CalipyDistribution(CalipyNode):
         # Create subclass with proper inheritance
         class Subclass(cls):
             _pyro_dist_cls = pyro_dist_cls
-            input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
-            cls.input_vars = input_vars
+            cls.input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
 
             def __init__(self, node_structure=None):
                 super().__init__(node_structure=node_structure)
+                
+            def create_pyro_dist(self, input_vars):
+                """
+                Instantiate the underlying Pyro distribution with input vars as
+                parameters. Sampling as dimension handled by sample function.
+                """
+                
+                return pyro_dist_cls(**input_vars.as_dict())
 
-            def forward(self, input_vars, observations = None, subsample_index = None):
+
+            def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
                 # input vars should be
-                pass
+                
+                # Formatting arguments
+                vec = kwargs.get('vectorizable', True)
+                ssi = subsample_index
+                obs = observations
+                name = self.id + '_sample'
+                dims = self.node_structure.dims
+                
+                # Building pyro distribution
+                n_event_dims = len(self.node_structure.dims['event_dims'].sizes)
+                pyro_dist = self.create_pyro_dist(input_vars).to_event(n_event_dims)
+ 
+                # Sampling and compiling
+                calipy_sample = sample(name, pyro_dist, dims, observations = obs,
+                                       subsample_index = ssi, vectorizable = vec)
+                return calipy_sample
 
         # Set class metadata
         Subclass.__name__ = dist_name
