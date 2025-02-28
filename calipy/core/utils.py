@@ -145,6 +145,23 @@ class InputSchema:
         self.optional_keys = self.optional_keys or []
         self.defaults = self.defaults or {}
         self.key_types = self.key_types or {}
+        
+    def __repr__(self):
+        indent = "    "  # 4 spaces for clean indentation
+
+        required_keys_str = "\n".join(f"{indent}- {key}" for key in self.required_keys) if self.required_keys else f"{indent}None"
+        optional_keys_str = "\n".join(f"{indent}- {key}" for key in self.optional_keys) if self.optional_keys else f"{indent}None"
+        defaults_str = "\n".join(f"{indent}- {k}: {v}" for k, v in self.defaults.items()) if self.defaults else f"{indent}None"
+        key_types_str = "\n".join(f"{indent}- {k}: {v}" for k, v in self.key_types.items()) if self.key_types else f"{indent}None"
+
+        return (
+            f"InputSchema:\n"
+            f"  Required Keys:\n{required_keys_str}\n"
+            f"  Optional Keys:\n{optional_keys_str}\n"
+            f"  Defaults:\n{defaults_str}\n"
+            f"  Key Types:\n{key_types_str}"
+        )
+        
 
 
 # CalipyDim and Dimension management

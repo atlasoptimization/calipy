@@ -128,7 +128,7 @@ class CalipyDistribution(CalipyNode):
                 parameters. Sampling as dimension handled by sample function.
                 """
                 
-                input_vars_tensors = input_vars.get_subattributes('tensor')
+                input_vars_tensors = input_vars.get_tensors()
                 return pyro_dist_cls(**input_vars_tensors.as_dict())
 
 

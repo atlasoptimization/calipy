@@ -218,6 +218,26 @@ class DataTuple:
         key_list, value_list = zip(*new_dict.items())
         return DataTuple(key_list, value_list)
     
+    def get_tensors(self):
+        """ 
+        Allows to extract .tensor attribute out of a DataTuple that contains
+        CalipyTensors leaving other objects in the tuple unperturbed.
+        
+        :return: DataTuple containing for each key, value pair either the tensor
+            subattribute value.tensor or the original value.        
+        """
+        new_dict = {}
+        attr = 'tensor'
+        for key, value in self._data_dict.items():
+            if hasattr(value, attr):
+                attribute = getattr(value, attr)
+                new_dict[key] = attribute
+            else:
+                new_dict[key] = value
+        key_list, value_list = zip(*new_dict.items())
+        return DataTuple(key_list, value_list)
+        
+    
     def apply_class(self, class_type):
         """
         Allows applying a class constructor to all elements in the DataTuple.
@@ -327,6 +347,28 @@ class DataTuple:
             datatuple_subsampled = DataTuple(list_names, list_subsamples)
         
         return datatuple_subsampled
+    
+    def rename_keys(self, rename_dict):
+        """ 
+        Renames current keys to the ones given by rename_dict[key].
+        
+        :param rename_dict: Dictionary s.t. for each key in rename_dict, key is in
+            self.keys() with rename_dict[key] being the string that is the key
+            in the newly produced DataTuple.
+        :type rename_dict: dict
+        :return: DataTuple the same values but with changed keys. 
+        :rtype: DataTuple
+        """
+        
+        new_dict = {}
+        for key, value in self.items():
+            if key in rename_dict.keys():
+                new_dict[rename_dict[key]] = value
+            else:
+                new_dict[key] = value
+                    
+        key_list, value_list = zip(*new_dict.items())
+        return DataTuple(key_list, value_list)
 
     def __add__(self, other):
         """ 

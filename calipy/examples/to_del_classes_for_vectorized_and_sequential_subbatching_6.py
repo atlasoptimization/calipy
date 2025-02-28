@@ -18,7 +18,7 @@ from functorch.dim import dims
 
 import calipy
 from calipy.core.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
-from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter
+from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter, NoiseAddition
 from calipy.core.data import DataTuple
 from calipy.core.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
 from calipy.core.base import NodeStructure
@@ -558,32 +558,32 @@ render_2 = bias_object.render_comp_graph()
 render_2
 
 
-# Introduce distributions as nodes with forward method and dims
+# # Introduce distributions as nodes with forward method and dims
 
-CalipyNormal = calipy.core.dist.Normal
-CalipyNormal.dists
-CalipyNormal.input_vars
-normal_ns = NodeStructure(CalipyNormal)
-calipy_normal = CalipyNormal(node_structure = normal_ns)
+# CalipyNormal = calipy.core.dist.Normal
+# CalipyNormal.dists
+# CalipyNormal.input_vars
+# normal_ns = NodeStructure(CalipyNormal)
+# calipy_normal = CalipyNormal(node_structure = normal_ns)
 
-calipy_normal.id
-calipy_normal.node_structure
-CalipyNormal.default_nodestructure
+# calipy_normal.id
+# calipy_normal.node_structure
+# CalipyNormal.default_nodestructure
 
-# Calling the forward method
-normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
-normal_ns_sizes = normal_dims.sizes
-mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
-standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
-input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
-samples_normal = calipy_normal.forward(input_vars_normal)
+# # Calling the forward method
+# normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+# normal_ns_sizes = normal_dims.sizes
+# mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
+# standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
+# input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
+# samples_normal = calipy_normal.forward(input_vars_normal)
 
-# A more convenient way of creating the input_vars and observations data or
-# at least getting the infor on the input signatures
-create_input_vars = CalipyNormal.create_input_vars
-help(create_input_vars)
-input_vars_normal_2 = create_input_vars(loc = mean, scale = standard_deviation)
-samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
+# # A more convenient way of creating the input_vars and observations data or
+# # at least getting the infor on the input signatures
+# create_input_vars = CalipyNormal.create_input_vars
+# help(create_input_vars)
+# input_vars_normal_2 = create_input_vars(loc = mean, scale = standard_deviation)
+# samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
     
 
 
@@ -623,6 +623,32 @@ samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
 
 
 # TEST EFFECT CLASS NoiseAddition
+
+# i) Invoke and investigate class
+NoiseAddition = calipy.core.effects.NoiseAddition
+help(NoiseAddition)
+NoiseAddition.mro()
+print(NoiseAddition.input_vars_schema)
+
+# ii) Instantiate object
+noise_ns = NodeStructure(NoiseAddition)
+print(noise_ns)
+print(noise_ns.dims)
+noise_object = NoiseAddition(noise_ns)
+
+# iii) Create arguments
+noise_dims = noise_ns.dims['batch_dims'] + noise_ns.dims['event_dims']
+mu = CalipyTensor(torch.zeros(noise_dims.sizes), noise_dims, 'mu')
+sigma = CalipyTensor(torch.ones(noise_dims.sizes), noise_dims, 'sigma')
+noise_input_vars = NoiseAddition.create_input_vars(mean = mu, standard_deviation = sigma)
+
+# iv) Pass forward
+noisy_output = noise_object.forward(input_vars = noise_input_vars, 
+                                    observations = None, 
+                                    subsample_index = None)
+noisy_output.dims
+help(noisy_output)
+
 
 
 # Subsample indices (if any)

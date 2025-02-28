@@ -395,7 +395,8 @@ class NoiseAddition(CalipyEffect):
         
         # Instantiate the distribution and initiate forward() pass
         calipy_normal = CalipyNormal(normal_ns)     
-        output = calipy_normal.forward(input_vars, observations, subsample_index)
+        input_vars_normal = input_vars.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
+        output = calipy_normal.forward(input_vars_normal, observations, subsample_index)
         
         return output
     
