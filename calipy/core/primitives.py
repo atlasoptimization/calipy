@@ -206,7 +206,7 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
             
             # case [1,0] (obs, ssi)
             if obs is not None and ssi == None:
-                pass
+                current_obs = observations
             
             # case [1,1] (obs, ssi)
             if obs is not None and ssi is not None:

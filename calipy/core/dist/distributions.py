@@ -155,7 +155,8 @@ class CalipyDistribution(CalipyNode):
                 pyro_dist = self.create_pyro_dist(input_vars).to_event(n_event_dims)
  
                 # Sampling and compiling
-                calipy_sample = sample(name, pyro_dist, dims, observations = obs,
+                obs_or_None = obs['sample'].tensor if obs is not None else None
+                calipy_sample = sample(name, pyro_dist, dims, observations = obs_or_None,
                                        subsample_index = ssi, vectorizable = vec)
                 return calipy_sample
 

@@ -839,8 +839,9 @@ class CalipyProbModel(CalipyNode):
             raise ValueError("Either `input_data` and `output_data` must be provided, or `dataloader` must be set.")
     
         # Fetch optional arguments
+        lr = optim_opts.get('learning_rate', 0.01)
         self.optim_opts = optim_opts or {}
-        self.optimizer = self.optim_opts.get('optimizer', pyro.optim.NAdam({"lr": 0.01}))
+        self.optimizer = self.optim_opts.get('optimizer', pyro.optim.NAdam({"lr": lr}))
         self.loss = self.optim_opts.get('loss', pyro.infer.Trace_ELBO())
         self.n_steps = self.optim_opts.get('n_steps', 1000)
         self.n_steps_report = self.optim_opts.get('n_steps_report', 100)
