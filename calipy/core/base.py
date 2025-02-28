@@ -478,7 +478,7 @@ class CalipyNode(ABC):
     _instance_count = {}  # Class-level dictionary to keep count of instances per subclass
     
     # Optional: Define default schemes (subclasses can override)
-    input_args_schema: Optional[InputSchema] = None
+    input_vars_schema: Optional[InputSchema] = None
     observation_schema: Optional[InputSchema] = None
     
     def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
@@ -522,7 +522,7 @@ class CalipyNode(ABC):
     
     
     @abstractmethod
-    def forward(self, input_vars = None, observations = None, subsample_indices = None):
+    def forward(self, input_vars = None, observations = None, subsample_indices = None, **kwargs):
         pass
     
     
@@ -567,7 +567,7 @@ class CalipyNode(ABC):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         
-        # Generate create_input_args if input_schema exists
+        # Generate create_input_vars if input_schema exists
         if hasattr(cls, 'input_vars_schema') and cls.input_vars_schema is not None:
             cls.create_input_vars = cls._create_factory_method('input_vars_schema', 
                         'create_input_vars', 'Create a DataTuple for input_vars.')

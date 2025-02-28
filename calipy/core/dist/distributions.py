@@ -1,6 +1,7 @@
 # file: calipy/core/dist/distributions.py
 
 import inspect
+import textwrap
 from inspect import Parameter, signature
 from typing import Optional, Dict, Any, List
 
@@ -30,9 +31,68 @@ def build_default_nodestructure(class_name):
 
 class CalipyDistribution(CalipyNode):
     """
-    Base class for all auto-generated Calipy distributions.
-    It wraps a Pyro distribution class and associates a NodeStructure
-    (or any additional dimension-aware info).
+    Base class for all auto-generated Calipy distributions. It wraps a Pyro 
+    distribution class and associates a NodeStructure (or any additional 
+    dimension-aware info). CalipyDistributions are Subclasses of CalipyNode and
+    therefore come together with a method forward(input_vars, observations, 
+    subsample_index, **kwargs) method. The forward() method of distributions can
+    be seen as a way of passing parameters and sampling; the format of inputs 
+    and observations is documented within the methods create_input_vars or 
+    create_observations that help turn data into the DataTuples needed as input
+    for .forward(). Al CalipyDistributions come with a default_nodestructure
+    consisting of just batch_dims and event_dims being a single dimension with
+    either size 10 or 2.
+    
+    CalipyDistribution is not usually called by the user, it is called by an
+    script __init__.py in calipy.core.dist automatically executed during package
+    import. The subclasses of CalipyDistribution are e.g. CalipyDistribution.Normal
+    or CalipyDistribution.Gamma which can be accessed via calipy.core.dist.Normal
+    or calipy.core.dist.Gamma
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # CalipyDistribution objects are CalipyNodes --------------------------
+        #
+        # i) Imports and definitions
+        import torch
+        import calipy
+        from calipy.core.base import NodeStructure
+        from calipy.core.tensor import CalipyTensor
+        from calipy.core.data import DataTuple
+        #
+        # ii) Invoke and investigate CalipyDistribution
+        CalipyNormal = calipy.core.dist.Normal
+        CalipyNormal.dists
+        CalipyNormal.input_vars
+        CalipyNormal.input_vars_schema
+        
+        # iii) Build a concrete Node
+        normal_ns = NodeStructure(CalipyNormal)
+        print(normal_ns)
+        calipy_normal = CalipyNormal(node_structure = normal_ns)
+        
+        calipy_normal.id
+        calipy_normal.node_structure
+        CalipyNormal.default_nodestructure
+        
+        # Calling the forward method
+        normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+        normal_ns_sizes = normal_dims.sizes
+        mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
+        standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
+        input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
+        samples_normal = calipy_normal.forward(input_vars_normal)
+        samples_normal
+        samples_normal.dims
+        
+        # A more convenient way of creating the input_vars and observations data or
+        # at least getting the info on the input signatures
+        create_input_vars = CalipyNormal.create_input_vars
+        help(create_input_vars)
+        input_vars_normal_alt = create_input_vars(loc = mean, scale = standard_deviation)
+        samples_normal_alt = calipy_normal.forward(input_vars_normal_alt)
     """
     
     # Default empty schemas (will be overridden)
@@ -57,7 +117,7 @@ class CalipyDistribution(CalipyNode):
             input_vars_schema = input_schema
             observation_schema = obs_schema
             _pyro_dist_cls = pyro_dist_cls
-            cls.input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
+            input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
 
             def __init__(self, node_structure=None):
                 super().__init__(node_structure=node_structure)
@@ -68,7 +128,8 @@ class CalipyDistribution(CalipyNode):
                 parameters. Sampling as dimension handled by sample function.
                 """
                 
-                return pyro_dist_cls(**input_vars.as_dict())
+                input_vars_tensors = input_vars.get_subattributes('tensor')
+                return pyro_dist_cls(**input_vars_tensors.as_dict())
 
 
             def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
@@ -94,6 +155,16 @@ class CalipyDistribution(CalipyNode):
         Subclass.__name__ = dist_name
         Subclass.__qualname__ = f"CalipyDistribution.{dist_name}"
         Subclass.__module__ = __name__
+        Subclass.__doc__ = textwrap.dedent(f"""\
+            {dist_name} Distribution Subclass of CalipyDistribution 
+            inherited from pyro.distributions.{dist_name}.
+            
+            Input variables to `forward()` are:
+            {input_schema}
+            
+            Observations are:
+            {obs_schema}.
+        """)
         
         # Register the subclass without adding it as an attribute
         cls.dists[dist_name] = Subclass
@@ -189,8 +260,8 @@ def generate_schemas_from_pyro(pyro_dist_cls: type) -> tuple:
 
     # Observation schema (standardized to value/key)
     observation_schema = InputSchema(
-        required_keys=["value"],
-        key_types={"value": Any}  # Can specialize based on distribution
+        required_keys=["sample"],
+        key_types={"sample": Any}  # Can specialize based on distribution
     )
 
     return input_vars_schema, observation_schema

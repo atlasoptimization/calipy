@@ -571,52 +571,58 @@ calipy_normal.node_structure
 CalipyNormal.default_nodestructure
 
 # Calling the forward method
-normal_ns_sizes = normal_ns.dims['batch_dims'].sizes + normal_ns.dims['event_dims'].sizes
-input_vars_normal = DataTuple(['loc', 'scale'], [torch.zeros(normal_ns_sizes),
-                                                  torch.ones(normal_ns_sizes)])
+normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+normal_ns_sizes = normal_dims.sizes
+mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
+standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
+input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
 samples_normal = calipy_normal.forward(input_vars_normal)
 
 # A more convenient way of creating the input_vars and observations data or
 # at least getting the infor on the input signatures
 create_input_vars = CalipyNormal.create_input_vars
 help(create_input_vars)
-input_vars_normal_2 = create_input_vars(loc = torch.zeros(normal_ns_sizes), 
-                                        scale = torch.ones(normal_ns_sizes) )
+input_vars_normal_2 = create_input_vars(loc = mean, scale = standard_deviation)
 samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
     
+
 
 # sample_name = 'normal_sample'
 # sample_dist = calipy_normal
 # sample_ns = calipy_normal.node_structure
 # sample_ns_sizes = sample_ns.dims['batch_dims'].sizes + sample_ns.dims['event_dims'].sizes
 # sample_input_vars = DataTuple(['loc', 'scale'], [torch.zeros(sample_ns_sizes),
-#                                                  torch.ones(sample_ns_sizes)])
+#                                                   torch.ones(sample_ns_sizes)])
 # n_event = len(sample_ns.dims['event_dims'].sizes)
 # sample_pyro_dist = calipy_normal.create_pyro_dist(sample_input_vars).to_event(n_event)
 # sample_dist_dims = sample_ns.dims
 
 
 # calipy_sample = sample(sample_name, sample_pyro_dist, sample_dist_dims, 
+#                         observations = None, subsample_index = None, vectorizable = True)
+
+
+# sample_name_bigger = 'normal_sample_bigger'
+# sample_dist_bigger = calipy_normal
+# sample_ns_bigger = calipy_normal.node_structure
+# bigger_batch_dims = dim_assignment(['bd_1', 'bd_2'], dim_sizes = [10,6])
+# bigger_event_dims = dim_assignment(['ed_1', 'ed_2'], dim_sizes = [4,2])
+# sample_ns_bigger.set_dims(batch_dims = bigger_batch_dims, event_dims = bigger_event_dims)
+# sample_ns_bigger_sizes = sample_ns_bigger.dims['batch_dims'].sizes + sample_ns_bigger.dims['event_dims'].sizes
+# sample_input_vars_bigger = DataTuple(['loc', 'scale'], [torch.zeros(sample_ns_bigger_sizes),
+#                                                  torch.ones(sample_ns_bigger_sizes)])
+# n_event_bigger = len(sample_ns_bigger.dims['event_dims'].sizes)
+# sample_pyro_dist_bigger = calipy_normal.create_pyro_dist(sample_input_vars_bigger).to_event(n_event_bigger)
+# sample_dist_dims_bigger = sample_ns_bigger.dims
+
+
+# calipy_sample_bigger = sample(sample_name_bigger, sample_pyro_dist_bigger, sample_dist_dims_bigger, 
 #                        observations = None, subsample_index = None, vectorizable = True)
 
 
-sample_name_bigger = 'normal_sample_bigger'
-sample_dist_bigger = calipy_normal
-sample_ns_bigger = calipy_normal.node_structure
-bigger_batch_dims = dim_assignment(['bd_1', 'bd_2'], dim_sizes = [10,6])
-bigger_event_dims = dim_assignment(['ed_1', 'ed_2'], dim_sizes = [4,2])
-sample_ns_bigger.set_dims(batch_dims = bigger_batch_dims, event_dims = bigger_event_dims)
-sample_ns_bigger_sizes = sample_ns_bigger.dims['batch_dims'].sizes + sample_ns_bigger.dims['event_dims'].sizes
-sample_input_vars_bigger = DataTuple(['loc', 'scale'], [torch.zeros(sample_ns_bigger_sizes),
-                                                 torch.ones(sample_ns_bigger_sizes)])
-n_event_bigger = len(sample_ns_bigger.dims['event_dims'].sizes)
-sample_pyro_dist_bigger = calipy_normal.create_pyro_dist(sample_input_vars_bigger).to_event(n_event_bigger)
-sample_dist_dims_bigger = sample_ns_bigger.dims
 
 
-calipy_sample_bigger = sample(sample_name_bigger, sample_pyro_dist_bigger, sample_dist_dims_bigger, 
-                       observations = None, subsample_index = None, vectorizable = True)
-
+# TEST EFFECT CLASS NoiseAddition
 
 
 # Subsample indices (if any)

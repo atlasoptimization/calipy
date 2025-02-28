@@ -32,10 +32,11 @@ import pyro
 import torch
 import math
 from calipy.core.primitives import param
-from calipy.core.base import CalipyNode
+from calipy.core.base import CalipyNode, NodeStructure
 from calipy.core.tensor import CalipyTensor
 from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
 from calipy.core.base import NodeStructure
+import calipy.core.dist as dist
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Type
@@ -189,8 +190,8 @@ class UnknownParameter(CalipyQuantity):
     
     # Define the input schema for the forward method
     input_vars_schema = InputSchema(required_keys=[])
-    observation_schema = InputSchema(required_keys=["value"],
-                                     key_types={"value": CalipyTensor})
+    observation_schema = InputSchema(required_keys=["sample"],
+                                     key_types={"sample": CalipyTensor})
 
     
     # Class initialization consists in passing args and building dims
@@ -205,7 +206,23 @@ class UnknownParameter(CalipyQuantity):
         self.init_tensor = torch.ones(self.param_dims.sizes)
         
     # Forward pass is initializing and passing parameter
-    def forward(self, input_vars = None, observations = None, subsample_index = None):
+    def forward(self, input_vars = None, observations = None, subsample_index = None, **kwargs):
+        """
+        Create a parameter of dimension param_dims.shape that is copied n times
+        where n = batch_dims.size to yield an extendet tensor with the shape 
+        [batch_dims.sizes, param_dims.sizes]. It can be passed to subsequent 
+        effects and will be tracked to adjust it when training the model.
+        
+        :param input vars: None
+        :type input_vars: None
+        param observations: DataTuple with key ['sample'] containing CalipyTensor
+            object that is considered to be observed and used for inference.
+        type observations: DataTuple
+        param subsample_index:
+        type subsample_index:
+        :return: CalipyTensor containing parameter tensor and dimension info.
+        :rtype: CalipyTensor
+        """
         self.param = param(name = '{}__param_{}'.format(self.id_short, self.name), 
                            init_tensor = self.init_tensor,
                            dims = self.param_dims,
@@ -265,100 +282,122 @@ class UnknownVariance(UnknownParameter):
 
 
 
-# # ii) Addition of noise
+# ii) Addition of noise
 
-# # Define a class of effects that consist in a noise distribution that can be 
-# # sampled to serve as observations used for inference. This means that invocation of 
-# # the class produces objects that are interpretable as noisy observations of scalars,
-# # vectors, or matrices. Neither the mean nor the standard deviation for the noise
-# # distribution need to be constant.
-# # The node_structure passed upon instantiation determines the shape of the noise
-# # being added to the mean. E.g batch_plate_1 with size 5, batch_plate_2 with 
-# # size 20 produces (5,20) tensors of independent noise when using the function
-# # call forward(input_vars = (mean, standard_deviation)).
+# Define a class of effects that consist in a noise distribution that can be 
+# sampled to serve as observations used for inference. This means that invocation of 
+# the class produces objects that are interpretable as noisy observations of scalars,
+# vectors, or matrices. Neither the mean nor the standard deviation for the noise
+# distribution need to be constant.
+# The node_structure passed upon instantiation determines the shape of the noise
+# being added to the mean. E.g batch_plate_1 with size 5, batch_plate_2 with 
+# size 20 produces (5,20) tensors of independent noise when using the function
+# call forward(input_vars = (mean, standard_deviation)).
 
 
-# class NoiseAddition(CalipyEffect):
-#     """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
-#     forward() method emulates uncorrelated noise being added to an input. 
+class NoiseAddition(CalipyEffect):
+    """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
+    forward() method emulates uncorrelated noise being added to an input. 
 
-#     :param node_structure: Instance of NodeStructure that determines the internal
-#         structure (shapes, plate_stacks, plates, aux_data) completely.
-#     :type node_structure: NodeStructure
-#     :return: Instance of the NoiseAddition class built on the basis of node_structure
-#     :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
+    :param node_structure: Instance of NodeStructure that determines the internal
+        structure (shapes, plate_stacks, plates, aux_data) completely.
+    :type node_structure: NodeStructure
+    :return: Instance of the NoiseAddition class built on the basis of node_structure
+    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
     
-#     Example usage: Run line by line to investigate Class
+    Example usage: Run line by line to investigate Class
         
-#     .. code-block:: python
+    .. code-block:: python
     
-#         # Investigate 2D noise ------------------------------------------------
-#         #
-#         # i) Imports and definitions
-#         import calipy
-#         from calipy.core.effects import NoiseAddition
-#         node_structure = NoiseAddition.example_node_structure
-#         noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
-#         #
-#         # ii) Sample noise
-#         mean = torch.zeros([10,5])
-#         std = torch.ones([10,5])
-#         noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
-#         #
-#         # iii) Investigate object
-#         noisy_meas_object.dtype_chain
-#         noisy_meas_object.id
-#         noisy_meas_object.noise_dist
-#         noisy_meas_object.node_structure.description
-#         noisy_meas_object.plate_stack
-#         render_1 = noisy_meas_object.render((mean, std))
-#         render_1
-#         render_2 = noisy_meas_object.render_comp_graph((mean, std))
-#         render_2
-#     """
+        # Investigate 2D noise ------------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        from calipy.core.effects import NoiseAddition
+        node_structure = NoiseAddition.example_node_structure
+        noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
+        #
+        # ii) Sample noise
+        mean = torch.zeros([10,5])
+        std = torch.ones([10,5])
+        noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
+        #
+        # iii) Investigate object
+        noisy_meas_object.dtype_chain
+        noisy_meas_object.id
+        noisy_meas_object.noise_dist
+        noisy_meas_object.node_structure.description
+        noisy_meas_object.plate_stack
+        render_1 = noisy_meas_object.render((mean, std))
+        render_1
+        render_2 = noisy_meas_object.render_comp_graph((mean, std))
+        render_2
+    """
     
     
-#     # Initialize the class-level NodeStructure
-#     example_node_structure = NodeStructure()
-#     example_node_structure.set_plate_stack('noise_stack', [('batch_plate_1', 5, -2, 'plate denoting independence in row dim'),
-#                                                               ('batch_plate_2', 10, -1, 'plate denoting independence in col dim')],
-#                                             'Plate stack for noise ')
+    # Initialize the class-level NodeStructure
+    batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
+    event_dims = dim_assignment(dim_names = ['event_dim'], dim_sizes = [2])
+    batch_dims_description = 'The dims in which the noise is independent'
+    event_dims_description = 'The dims in which the noise is copied and repeated'
     
-#     input_vars_schema = InputSchema(required_keys=["loc", "scale"],
-#                                optional_keys=["validate_args"],
-#                                defaults={"validate_args": None},
-#                                key_types={"loc": CalipyTensor, "scale": CalipyTensor, 
-#                                           "validate_args": Optional[bool]})
+    default_nodestructure = NodeStructure()
+    default_nodestructure.set_dims(batch_dims = batch_dims,
+                                   event_dims = event_dims)
+    default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
+                                               event_dims = event_dims_description)
+    default_nodestructure.set_name("NoiseAddition")
+    
+    
+    # Define the input schema for the forward method
+    input_vars_schema = InputSchema(required_keys=["mean", "standard_deviation"],
+                                    optional_keys=["validate_args"],
+                                    defaults={"validate_args": None},
+                                    key_types={"mean": CalipyTensor, 
+                                               "standard_deviation": CalipyTensor, 
+                                               "validate_args": Optional[bool]})
 
-#     observation_schema = InputSchema(required_keys=["value"],
-#                                      key_types={"value": CalipyTensor})
+    observation_schema = InputSchema(required_keys=["sample"],
+                                     key_types={"sample": CalipyTensor})
 
-#     # Class initialization consists in passing args and building shapes
-#     def __init__(self, node_structure, **kwargs):
-#         super().__init__(**kwargs)
-#         self.node_structure = node_structure
-#         self.plate_stack = self.node_structure.plate_stacks['noise_stack']
+    # Class initialization consists in passing args and building shapes
+    def __init__(self, node_structure, **kwargs):
+        super().__init__(**kwargs)
+        self.node_structure = node_structure
+        self.batch_dims = self.node_structure.dims['batch_dims']
+        self.event_dims = self.node_structure.dims['event_dims']
+        self.dims = self.batch_dims + self.event_dims
         
-#     # Forward pass is passing input_vars and sampling from noise_dist
-#     def forward(self, input_vars, observations = None):
-#         """
-#         Create noisy samples using input_vars = (mean, standard_deviation) with
-#         shapes as indicated in the node_structures' plate_stack 'noise_stack' used
-#         for noisy_meas_object = NoiseAddition(node_structure).
+    # Forward pass is passing input_vars and sampling from noise_dist
+    def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
+        """
+        Create noisy samples using input_vars = (mean, standard_deviation) with
+        shapes as indicated in the node_structures' 'batch_dims' and 'event_dims'.
         
-#         :param input vars: 2-tuple (mean, standard_deviation) of tensors with 
-#             equal (or at least broadcastable) shapes. 
-#         :type input_vars: 2-tuple of instances of torch.Tensor
-#         :return: Tensor representing simulation of a noisy measurement of the mean.
-#         :rtype: torch.Tensor
-#         """
+        :param input vars: DataTuple with keys ['mean', 'standard_deviation']
+            containing CalipyTensor objects defining the underlying mean onto
+            which noise with distribution N(0, standard_deviation) is added.
+        :type input_vars: DataTuple
+        param observations: DataTuple with key ['sample'] containing CalipyTensor
+            object that is considered to be observed and used for inference.
+        type observations: DataTuple
+        param subsample_index:
+        type subsample_index:
+        :return: CalipyTensor representing simulation of a noisy measurement of
+            the mean.
+        :rtype: CalipyTensor
+        """
         
-#         self.noise_dist = pyro.distributions.Normal(loc = input_vars[0], scale = input_vars[1])
+        # Set up NodeStructure object normal_ns for the Normal distribution
+        CalipyNormal = dist.Normal
+        normal_ns = NodeStructure(CalipyNormal)
+        normal_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
         
-#         # Sample within independence context
-#         with context_plate_stack(self.plate_stack):
-#             output = pyro.sample('{}__noise_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
-#         return output
+        # Instantiate the distribution and initiate forward() pass
+        calipy_normal = CalipyNormal(normal_ns)     
+        output = calipy_normal.forward(input_vars, observations, subsample_index)
+        
+        return output
     
     
 # # iii) Polynomial trend
