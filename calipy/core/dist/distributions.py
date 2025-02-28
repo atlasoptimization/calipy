@@ -71,7 +71,7 @@ class CalipyDistribution(CalipyNode):
         # iii) Build a concrete Node
         normal_ns = NodeStructure(CalipyNormal)
         print(normal_ns)
-        calipy_normal = CalipyNormal(node_structure = normal_ns)
+        calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
         
         calipy_normal.id
         calipy_normal.node_structure
@@ -93,6 +93,14 @@ class CalipyDistribution(CalipyNode):
         help(create_input_vars)
         input_vars_normal_alt = create_input_vars(loc = mean, scale = standard_deviation)
         samples_normal_alt = calipy_normal.forward(input_vars_normal_alt)
+        
+        # Since distributions are nodes, we can illustrate them
+        calipy_normal.dtype_chain
+        calipy_normal.id
+        render_1 = calipy_normal.render(input_vars_normal)
+        render_1
+        render_2 = calipy_normal.render_comp_graph(input_vars_normal)
+        render_2
     """
     
     # Default empty schemas (will be overridden)
@@ -102,8 +110,8 @@ class CalipyDistribution(CalipyNode):
     
     
 
-    def __init__(self, node_structure=None):
-        super().__init__()
+    def __init__(self, node_structure=None, node_name = None):
+        super().__init__(node_name = node_name)
         self.node_structure = node_structure
         
     @classmethod
@@ -119,8 +127,8 @@ class CalipyDistribution(CalipyNode):
             _pyro_dist_cls = pyro_dist_cls
             input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
 
-            def __init__(self, node_structure=None):
-                super().__init__(node_structure=node_structure)
+            def __init__(self, node_structure=None, node_name = dist_name):
+                super().__init__(node_structure=node_structure, node_name = node_name)
                 
             def create_pyro_dist(self, input_vars):
                 """
@@ -139,7 +147,7 @@ class CalipyDistribution(CalipyNode):
                 vec = kwargs.get('vectorizable', True)
                 ssi = subsample_index
                 obs = observations
-                name = self.id + '_sample'
+                name = '{}__sample__{}'.format(self.id_short, self.name)
                 dims = self.node_structure.dims
                 
                 # Building pyro distribution

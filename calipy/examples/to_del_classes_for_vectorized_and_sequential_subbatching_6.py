@@ -558,32 +558,32 @@ render_2 = bias_object.render_comp_graph()
 render_2
 
 
-# # Introduce distributions as nodes with forward method and dims
+# Introduce distributions as nodes with forward method and dims
 
-# CalipyNormal = calipy.core.dist.Normal
-# CalipyNormal.dists
-# CalipyNormal.input_vars
-# normal_ns = NodeStructure(CalipyNormal)
-# calipy_normal = CalipyNormal(node_structure = normal_ns)
+CalipyNormal = calipy.core.dist.Normal
+CalipyNormal.dists
+CalipyNormal.input_vars
+normal_ns = NodeStructure(CalipyNormal)
+calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
 
-# calipy_normal.id
-# calipy_normal.node_structure
-# CalipyNormal.default_nodestructure
+calipy_normal.id
+calipy_normal.node_structure
+CalipyNormal.default_nodestructure
 
-# # Calling the forward method
-# normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
-# normal_ns_sizes = normal_dims.sizes
-# mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
-# standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
-# input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
-# samples_normal = calipy_normal.forward(input_vars_normal)
+# Calling the forward method
+normal_dims = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+normal_ns_sizes = normal_dims.sizes
+mean = CalipyTensor(torch.zeros(normal_ns_sizes), normal_dims)
+standard_deviation = CalipyTensor(torch.ones(normal_ns_sizes), normal_dims)
+input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
+samples_normal = calipy_normal.forward(input_vars_normal)
 
-# # A more convenient way of creating the input_vars and observations data or
-# # at least getting the infor on the input signatures
-# create_input_vars = CalipyNormal.create_input_vars
-# help(create_input_vars)
-# input_vars_normal_2 = create_input_vars(loc = mean, scale = standard_deviation)
-# samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
+# A more convenient way of creating the input_vars and observations data or
+# at least getting the infor on the input signatures
+create_input_vars = CalipyNormal.create_input_vars
+help(create_input_vars)
+input_vars_normal_2 = create_input_vars(loc = mean, scale = standard_deviation)
+samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
     
 
 

@@ -516,8 +516,7 @@ class CalipyNode(ABC):
         for cls in reversed(self.__class__.__mro__[:-2]):
             if cls.__name__ == 'CalipyNode':
                 count = CalipyNode._instance_count.get(cls, 0)
-                id_short_parts.append(f"Node_{count}")               
-                
+                id_short_parts.append(f"Node_{count}")                           
         return '__'.join(id_short_parts)
     
     
@@ -562,10 +561,14 @@ class CalipyNode(ABC):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
     
     
-    
-    
+        
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        
+        # If the subclass hasn't overridden `name` at the class level, set it
+        if 'name' not in cls.__dict__:
+            cls.name = cls.__name__
         
         # Generate create_input_vars if input_schema exists
         if hasattr(cls, 'input_vars_schema') and cls.input_vars_schema is not None:

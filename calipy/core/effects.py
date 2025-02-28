@@ -313,24 +313,43 @@ class NoiseAddition(CalipyEffect):
         #
         # i) Imports and definitions
         import calipy
+        import torch
+        from calipy.core.base import NodeStructure
+        from calipy.core.tensor import CalipyTensor
         from calipy.core.effects import NoiseAddition
-        node_structure = NoiseAddition.example_node_structure
-        noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
-        #
-        # ii) Sample noise
-        mean = torch.zeros([10,5])
-        std = torch.ones([10,5])
-        noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
-        #
-        # iii) Investigate object
-        noisy_meas_object.dtype_chain
-        noisy_meas_object.id
-        noisy_meas_object.noise_dist
-        noisy_meas_object.node_structure.description
-        noisy_meas_object.plate_stack
-        render_1 = noisy_meas_object.render((mean, std))
+        
+        # ii) Invoke and investigate class
+        help(NoiseAddition)
+        NoiseAddition.mro()
+        print(NoiseAddition.input_vars_schema)
+        
+        # iii) Instantiate object
+        noise_ns = NodeStructure(NoiseAddition)
+        print(noise_ns)
+        print(noise_ns.dims)
+        noise_object = NoiseAddition(noise_ns)
+        
+        # iv) Create arguments
+        noise_dims = noise_ns.dims['batch_dims'] + noise_ns.dims['event_dims']
+        mu = CalipyTensor(torch.zeros(noise_dims.sizes), noise_dims, 'mu')
+        sigma = CalipyTensor(torch.ones(noise_dims.sizes), noise_dims, 'sigma')
+        noise_input_vars = NoiseAddition.create_input_vars(mean = mu, standard_deviation = sigma)
+        print(noise_input_vars)
+        
+        # v) Pass forward
+        noisy_output = noise_object.forward(input_vars = noise_input_vars, 
+                                            observations = None, 
+                                            subsample_index = None)
+        noisy_output
+        noisy_output.dims
+        help(noisy_output)
+        
+        # vi) Investigate object further
+        noise_object.dtype_chain
+        noise_object.id
+        render_1 = noise_object.render(noise_input_vars)
         render_1
-        render_2 = noisy_meas_object.render_comp_graph((mean, std))
+        render_2 = noise_object.render_comp_graph(noise_input_vars)
         render_2
     """
     
