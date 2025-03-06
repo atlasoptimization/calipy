@@ -182,10 +182,10 @@ class UnknownParameter(CalipyQuantity):
     param_dims_description = 'The dims of the parameter, in which it can vary'
     
     default_nodestructure = NodeStructure()
-    default_nodestructure.set_dims(param_dims = param_dims,
-                                    batch_dims = batch_dims)
-    default_nodestructure.set_dim_descriptions(param_dims = param_dims_description,
-                                                batch_dims = batch_dims_description)
+    default_nodestructure.set_dims(batch_dims = batch_dims,
+                                   param_dims = param_dims)
+    default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
+                                               param_dims = param_dims_description)
     default_nodestructure.set_name("UnknownParameter")
     
     # Define the input schema for the forward method

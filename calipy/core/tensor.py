@@ -38,7 +38,7 @@ import random
 import einops
 
 
-from calipy.core.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment, multi_unsqueeze, ensure_tuple
+from calipy.core.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment, multi_unsqueeze, ensure_tuple, robust_meshgrid
 
 
 class CalipyIndex:
@@ -57,6 +57,13 @@ class CalipyIndex:
         # self.named = index_tensor[index_tensor_dims]
         self.dims = index_tensor_dims
         self.index_name_dict = self.generate_index_name_dict()
+        
+    @property
+    def is_empty(self):
+        """ Indicates if no indexing is actually performed because e.g. indexed
+        quantity is a scalar and does not have dims"""
+        
+        return len(self.tensor) == 0
         
     def generate_index_name_dict(self):
         """
@@ -191,7 +198,7 @@ class CalipyIndex:
         new_ranges = []
         for d in new_dims:
             new_ranges.append(torch.arange(d.size)) 
-        new_meshgrid = torch.meshgrid(*new_ranges, indexing='ij')
+        new_meshgrid = robust_meshgrid(new_ranges, indexing='ij')
         new_dims_indextensor = torch.stack(new_meshgrid, dim=-1)
         current_dims_indextensor = self.tensor
         
@@ -277,7 +284,7 @@ class CalipyIndexer:
         
         # Iterate through ranges
         index_ranges = [torch.arange(dim_size) for dim_size in dim_sizes]
-        meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
+        meshgrid = robust_meshgrid(index_ranges, indexing='ij')
         index_tensor = torch.stack(meshgrid, dim=-1)
         
         # Write out results
@@ -326,7 +333,7 @@ class CalipyIndexer:
         """
         # Iterate through ranges
         index_ranges = [torch.arange(indexslice.stop)[indexslice] for indexslice in indexslice_list]
-        meshgrid = torch.meshgrid(*index_ranges, indexing='ij')
+        meshgrid = robust_meshgrid(index_ranges, indexing='ij')
         indextensor = torch.stack(meshgrid, dim=-1)
         return indextensor
     
@@ -724,7 +731,7 @@ class TensorIndexer(CalipyIndexer):
             indices_ordered_list.append(indices_ordered[d])
         
         # Compile to indices and tensors
-        meshgrid = torch.meshgrid(*indices_ordered_list, indexing='ij')
+        meshgrid = robust_meshgrid(indices_ordered_list, indexing='ij')
         block_index_tensor = torch.stack(meshgrid, dim=-1)
         block_index = CalipyIndex(block_index_tensor, block_index_dims, name = 'from_' + self.name)
         block_tensor = self.tensor[block_index.tuple]
@@ -859,6 +866,12 @@ class CalipyTensor:
 
     .. code-block:: python
         
+        # Imports and definitions
+        import torch
+        from calipy.core.tensor import CalipyTensor, TensorIndexer
+        from calipy.core.utils import dim_assignment
+        from calipy.core.data import DataTuple
+    
         # Create CalipyTensors -----------------------------------------------
         #
         # Create DimTuples and tensors
@@ -885,19 +898,48 @@ class CalipyTensor:
         
         # Indexing of CalipyTensors via int, tuple, slice, and CalipyIndex
         data_A_cp[0,:]
+        local_index = data_A_cp.indexer.local_index
         data_A_cp[local_index]
         # During addressing, appropriate indexers are built
         data_A_cp[0,:].indexer.global_index
         data_A_cp[local_index].indexer.global_index
         
+        # CalipyTensors work well even when some dims are empty
+        # Set up data and dimensions
+        data_0dim = torch.ones([])
+        data_1dim = torch.ones([5])
+        data_2dim = torch.ones([5,2])
         
+        batch_dim = dim_assignment(['bd'])
+        event_dim = dim_assignment(['ed'])
+        empty_dim = dim_assignment(['empty'], dim_sizes = [])
+        
+        data_0dim_cp = CalipyTensor(data_0dim, empty_dim)
+        data_1dim_cp = CalipyTensor(data_1dim, batch_dim)
+        data_1dim_cp = CalipyTensor(data_1dim, batch_dim + empty_dim)
+        data_1dim_cp = CalipyTensor(data_1dim, empty_dim + batch_dim + empty_dim)
+        
+        data_2dim_cp = CalipyTensor(data_2dim, batch_dim + event_dim)
+        data_2dim_cp = CalipyTensor(data_2dim, batch_dim + empty_dim + event_dim)
+        
+        # Indexing a scalar with an empty index just returns the scalar
+        data_0dim_cp.indexer
+        zerodim_index = data_0dim_cp.indexer.local_index
+        zerodim_index.is_empty
+        data_0dim_cp[zerodim_index]
+        
+        # # These produce errors or warnings as they should.
+        # data_0dim_cp = CalipyTensor(data_0dim, batch_dim) # Trying to assign nonempty dim to scalar
+        # data_1dim_cp = CalipyTensor(data_1dim, empty_dim) # Trying to assign empty dim to vector
+        # data_2dim_cp = CalipyTensor(data_2dim, batch_dim + empty_dim) # Trying to assign empty dim to vector
+
         
         # CalipyTensor / DataTuple interaction ---------------------------------
         #
         # DataTuple and CalipyTensor interact well: In the following we showcase
         # that a DataTuple of CalipyTensors can be subsampled by providing a
         # DataTuple of CalipyIndexes or a single CalipyIndex that is automatically
-        distributed over the CalipyTensors for indexing.
+        # distributed over the CalipyTensors for indexing.
         
         # Set up DataTuple of CalipyTensors
         batch_dims = dim_assignment(dim_names = ['bd_1'])
@@ -1260,8 +1302,12 @@ class CalipyTensor:
         
         # Case 2: If index is CalipyIndex, use index.tuple for subsampling
         elif type(index) is CalipyIndex:
-            subtensor_cp = CalipyTensor(self.tensor[index.tuple], dims = self.dims,
-                                        name = self.name)
+            if index.is_empty:
+                subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
+                                            name = self.name)
+            else:
+                subtensor_cp = CalipyTensor(self.tensor[index.tuple], dims = self.dims,
+                                            name = self.name)
             subtensor_cp.indexer.create_global_index(subsample_indextensor = index.tensor, 
                                           data_source_name = self.name)
             return subtensor_cp
@@ -1371,7 +1417,7 @@ class CalipyTensor:
         return result
         
     def __repr__(self):
-        return f"CalipyTensor({repr(self.tensor)}, dims={self.dims})"
+        return f"CalipyTensor({repr(self.tensor)}, \n shape = {self.shape}, \n dims={self.dims})"
 
     def __str__(self):
         return f"CalipyTensor({str(self.tensor)}, dims={self.dims})"

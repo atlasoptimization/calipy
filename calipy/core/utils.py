@@ -73,6 +73,15 @@ def multi_unsqueeze(input_tensor, dims):
         output_tensor = output_tensor.unsqueeze(dim)
     return output_tensor
 
+def robust_meshgrid(tensors, indexing = 'ij'):
+    """ Ensures that meshgrid also works for empty inputs [] of sizes."""
+    if tensors == []:
+        output = (torch.tensor([]),)
+        # tensors = [torch.tensor([0])]
+    else:
+        output = torch.meshgrid(*tensors, indexing = indexing)
+    return output
+
 def ensure_tuple(item):
     """Ensures the input is a tuple. Leaves tuples unchanged."""
     return item if isinstance(item, tuple) else tuple(item)

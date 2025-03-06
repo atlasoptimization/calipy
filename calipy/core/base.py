@@ -677,7 +677,8 @@ class CalipyProbModel(CalipyNode):
     Example usage:
 
     .. code-block:: python
-
+        
+        # Architecture of CalipyProbModel objects is as below
         class MyProbModel(CalipyProbModel):
             def __init__(self, **kwargs):
                 super().__init__(**kwargs)
@@ -694,6 +695,65 @@ class CalipyProbModel(CalipyNode):
 
         prob_model = MyProbModel(name="example_model")
         prob_model.train(input_data, output_data, optim_opts)
+        
+        
+        # Here is a fuly worked example:
+            
+        # i) Imports and definitions
+        import torch
+        import pyro
+        import calipy
+        from calipy.core.utils import dim_assignment
+        from calipy.core.data import DataTuple
+        from calipy.core.tensor import CalipyTensor
+        from calipy.core.effects import UnknownParameter, NoiseAddition
+        from calipy.core.base import NodeStructure, CalipyProbModel
+        
+        # ii) Set up unknown mean parameter
+        batch_dims_param = dim_assignment(['bd_p1'], dim_sizes = [10])
+        param_dims_param = dim_assignment(['pd_p1'], dim_sizes = [2])
+        param_ns = NodeStructure(UnknownParameter)
+        param_ns.set_dims(param_dims = param_dims_param, batch_dims = batch_dims_param)
+        mu_object = UnknownParameter(param_ns)
+        
+        # iii) Set up noise addition
+        batch_dims_noise = dim_assignment(['bd_n1', 'bd_n2'], dim_sizes = [10,2])
+        event_dims_noise = dim_assignment(['ed_n1'], dim_sizes = [0])
+        noise_ns = NodeStructure(NoiseAddition)
+        noise_ns.set_dims(batch_dims = batch_dims_noise, event_dims = event_dims_noise)
+        noise_object = NoiseAddition(noise_ns)
+        
+        sigma = torch.ones(batch_dims_noise.sizes)
+        
+        # iv) Simulate some data
+        mu_true = torch.tensor([0.0,5.0]).reshape([2])
+        sigma_true = 1.0
+        data_tensor = pyro.distributions.Normal(loc = mu_true, scale = sigma_true).sample([10]) 
+        data_cp = CalipyTensor(data_tensor, batch_dims_noise)
+        data = DataTuple(['sample'], [data_cp])
+        
+        # v) Define ProbModel
+        class MyProbModel(CalipyProbModel):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+        
+            def model(self, input_vars = None, observations = None):
+                # Define the generative model
+                mu = mu_object.forward()
+                input_vars = DataTuple(['mean', 'standard_deviation'], [mu, sigma])
+                sample = noise_object.forward(input_vars, observations = observations)
+                return sample
+        
+            def guide(self, input_vars = None, observations = None):
+                # Define the guide (variational distribution)
+                pass
+        
+        # vi) Inference
+        prob_model = MyProbModel(name="example_model")
+        output = prob_model.model(observations = data)
+        optim_opts = {'n_steps' : 2000, 'learning_rate' : 0.01}
+        prob_model.train(input_data = None, output_data = data, optim_opts = optim_opts)
+        
     """
     
     # i) Initialization

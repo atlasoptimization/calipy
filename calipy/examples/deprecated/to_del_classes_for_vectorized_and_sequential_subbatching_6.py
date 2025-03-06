@@ -385,6 +385,37 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # generic_sum = calipy_sum(data_A_cp)
 
 
+# CalipyTensors work well even when some dims are empty
+# Set up data and dimensions
+data_0dim = torch.ones([])
+data_1dim = torch.ones([5])
+data_2dim = torch.ones([5,2])
+
+batch_dim = dim_assignment(['bd'])
+event_dim = dim_assignment(['ed'])
+empty_dim = dim_assignment(['empty'], dim_sizes = [])
+
+data_0dim_cp = CalipyTensor(data_0dim, empty_dim)
+data_1dim_cp = CalipyTensor(data_1dim, batch_dim)
+data_1dim_cp = CalipyTensor(data_1dim, batch_dim + empty_dim)
+data_1dim_cp = CalipyTensor(data_1dim, empty_dim + batch_dim + empty_dim)
+
+data_2dim_cp = CalipyTensor(data_2dim, batch_dim + event_dim)
+data_2dim_cp = CalipyTensor(data_2dim, batch_dim + empty_dim + event_dim)
+
+# Indexing a scalar with an empty index just returns the scalar
+data_0dim_cp.indexer
+zerodim_index = data_0dim_cp.indexer.local_index
+zerodim_index.is_empty
+data_0dim_cp[zerodim_index]
+
+# # These produce errors or warnings as they should.
+# data_0dim_cp = CalipyTensor(data_0dim, batch_dim) # Trying to assign nonempty dim to scalar
+# data_1dim_cp = CalipyTensor(data_1dim, empty_dim) # Trying to assign empty dim to vector
+# data_2dim_cp = CalipyTensor(data_2dim, batch_dim + empty_dim) # Trying to assign empty dim to vector
+
+
+
 # Expand a tensor by copying it among some dimensions.
 data_dims_A = data_dims_A.bind([6,4,2])
 data_dims_B = data_dims_B.bind([6,3])
@@ -695,8 +726,6 @@ class MyProbModel(CalipyProbModel):
         # Define the generative model
         mu = mu_object.forward()
         input_vars = DataTuple(['mean', 'standard_deviation'], [mu, sigma])
-        # obs_or_None = observations['sample'].tensor if observations is not None else None
-        # sample = noise_object.forward(input_vars, observations = obs_or_None)
         sample = noise_object.forward(input_vars, observations = observations)
         return sample
 
@@ -707,7 +736,7 @@ class MyProbModel(CalipyProbModel):
 # vi) Inference
 prob_model = MyProbModel(name="example_model")
 output = prob_model.model(observations = data)
-optim_opts = {'n_steps' : 2000, 'learning_rate' : 0.01}
+optim_opts = {'n_steps' : 500, 'learning_rate' : 0.01}
 prob_model.train(input_data = None, output_data = data, optim_opts = optim_opts)
 
 
@@ -736,95 +765,6 @@ for vectorizable in [True, False]:
             sample_results[tuple(vflag,oflag,sflag)] = sample_result
             
 
-
-
-class NoiseAddition(CalipyEffect):
-    """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
-    forward() method emulates uncorrelated noise being added to an input. 
-
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
-    
-    Example usage: Run line by line to investigate Class
-        
-    .. code-block:: python
-    
-        # Investigate 2D noise ------------------------------------------------
-        #
-        # i) Imports and definitions
-        import calipy
-        from calipy.core.effects import NoiseAddition
-        node_structure = NoiseAddition.example_node_structure
-        noisy_meas_object = NoiseAddition(node_structure, name = 'tutorial')
-        #
-        # ii) Sample noise
-        mean = torch.zeros([10,5])
-        std = torch.ones([10,5])
-        noisy_meas = noisy_meas_object.forward(input_vars = (mean, std))
-        #
-        # iii) Investigate object
-        noisy_meas_object.dtype_chain
-        noisy_meas_object.id
-        noisy_meas_object.noise_dist
-        noisy_meas_object.node_structure.description
-        noisy_meas_object.plate_stack
-        render_1 = noisy_meas_object.render((mean, std))
-        render_1
-        render_2 = noisy_meas_object.render_comp_graph((mean, std))
-        render_2
-    """
-    
-    
-    # Initialize the class-level NodeStructure
-    batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
-    event_dims = dim_assignment(dim_names = ['event_dim'], dim_sizes = [2])
-    batch_dims_description = 'The dims in which the noise is independent'
-    event_dims_description = 'The dims in which the noise is copied and repeated'
-    
-    default_nodestructure = NodeStructure()
-    default_nodestructure.set_dims(batch_dims = batch_dims,
-                                    event_dims = event_dims)
-    default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
-                                                event_dims = event_dims_description)
-    
-    # Class initialization consists in passing args and building dims
-    def __init__(self, node_structure, constraint = constraints.real, **kwargs):  
-        super().__init__(**kwargs)
-        self.node_structure = node_structure
-        self.batch_dims = self.node_structure.dims['batch_dims']
-        self.event_dims = self.node_structure.dims['event_dims']
-        self.dims = self.event_dims + self.param_dims
-
-        
-    # Forward pass is passing input_vars and sampling from noise_dist
-    def forward(self, input_vars, observations = None, subsample_index = None):
-        """
-        Create noisy samples using input_vars = (mean, standard_deviation) with
-        shapes as indicated in the node_structures' plate_stack 'noise_stack' used
-        for noisy_meas_object = NoiseAddition(node_structure).
-        
-        :param input vars: DataTuple with names ['mean', 'standard_deviation'] of tensors
-            with equal (or at least broadcastable) shapes. 
-        :type input_vars: DataTuple of instances of CalipyTensor
-        :param observations: DataTuple with names ['observation;]
-        :type observations: DataTuple of instance of CalipyTensor
-        :param subsample_index: CalipyIndex indexing a subsample of the noisy
-            samples.
-        :type subsample_index: CalipyIndex
-        :return: CalipyTensor representing simulation of a noisy measurement of
-            the mean.
-        :rtype: torch.Tensor
-        """
-        
-        self.noise_dist = pyro.distributions.Normal(loc = input_vars[0], scale = input_vars[1])
-        
-        # Sample within independence context
-        with context_plate_stack(self.plate_stack):
-            output = pyro.sample('{}__noise_{}'.format(self.id_short, self.name), self.noise_dist, obs = observations)
-        return output
 
 
 # # iv) Test the classes
