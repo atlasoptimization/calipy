@@ -34,7 +34,10 @@ import matplotlib.pyplot as plt
 # calipy
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, UnknownVariance, NoiseAddition
+from calipy.core.effects import UnknownParameter, NoiseAddition, UnknownVariance
+from calipy.core.utils import dim_assignment
+from calipy.core.data import DataTuple
+from calipy.core.tensor import CalipyTensor
 
 
 # ii) Definitions
@@ -77,45 +80,59 @@ data = (data_1, data_2)
 """
 
 
-# i) Set up dimensions for mean parameters mu_1, mu_2
+# i) Set up dimensions
+# The nodestructures require dimensions that are trivial for the parameter dim
+# of mu_1, mu_2, and siigma but vary for the batch dimensions of mu_1 and mu_2 
+# and are even undefined for sigma which takes on the role as standard deviation
+# for both sets of observations.
 
+param_dims_mu_1 = dim_assignment(['pd_mu1'], dim_sizes = [])
+batch_dims_meas_1 = dim_assignment(['bd_meas1'], dim_sizes = [n_meas_1])
+event_dims_meas_1 = dim_assignment(['ed_meas1'], dim_sizes = [])
+
+param_dims_mu_2 = dim_assignment(['pd_mu2'], dim_sizes = [])
+batch_dims_meas_2 = dim_assignment(['bd_meas2'], dim_sizes = [n_meas_2])
+event_dims_meas_2 = dim_assignment(['ed_meas2'], dim_sizes = [])
+
+param_dims_sigma = dim_assignment(['pd_sigma'], dim_sizes = [])
+batch_dims_sigma = dim_assignment(['bd_sigma'], dim_sizes = [])
+
+
+# ii) Set up nodestructures for mean parameters mu_1, mu_2
 # Setting up requires correctly specifying a NodeStructure object. You can get 
-# a template for the node_structure by calling generate_template() on the example
-# node_structure delivered with the class description.
-# Here we modify the output of UnknownParam.example_node_structure.generate_template()
+# a template for the node_structure by calling NodeStructure(UnknownParameter)
+# or more generally NodeStructure(Node) where node is the CalipyQuantity or the
+# CalipyEffect class you want to designate the NodeStructure for.
 
 # mu_1 setup
-mu_1_ns = NodeStructure()
-mu_1_ns.set_shape('batch_shape', (), 'Independent values')
-mu_1_ns.set_shape('event_shape', (n_meas_1,), 'Repeated values')
+mu_1_ns = NodeStructure(UnknownParameter)
+mu_1_ns.set_dims(batch_dims = batch_dims_meas_1, param_dims = param_dims_mu_1)
 mu_1_object = UnknownParameter(mu_1_ns, name = 'mu_1')
 
 # mu_2 setup
-mu_2_ns = NodeStructure()
-mu_2_ns.set_shape('batch_shape', (), 'Independent values')
-mu_2_ns.set_shape('event_shape', (n_meas_2,), 'Repeated values')
+mu_2_ns = NodeStructure(UnknownParameter)
+mu_2_ns.set_dims(batch_dims = batch_dims_meas_2, param_dims = param_dims_mu_2)
 mu_2_object = UnknownParameter(mu_2_ns, name = 'mu_2')
 
 
-# ii) Set up dimensions for sigma
+# iii) Set up nodestructures for sigma
 # Make it into a scalar so it automatically broadcasts with mu_1, mu_2
-sigma_ns = NodeStructure()
-sigma_ns.set_shape('batch_shape', (), 'Independent values')
-sigma_ns.set_shape('event_shape', (), 'Repeated values')
+sigma_ns = NodeStructure(UnknownVariance)
+sigma_ns.set_dims(batch_dims = batch_dims_sigma, param_dims = param_dims_sigma)
 sigma_object = UnknownVariance(sigma_ns, name = 'sigma')
 
 
-# iii) Set up the dimensions for noise addition
+# iv) Set up the nodestructure for noise addition
 # This requires not batch_shapes and event shapes but plate stacks instead - these
 # quantities determine conditional independence for stochastic objects. In our 
 # case, everything is independent since we prescribe i.i.d. noise.
 # Here we modify the output of NoiseAddition.example_node_structure.generate_template()
-noise_1_ns = NodeStructure()
-noise_1_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_1, -1, 'independent noise 1')], 'Stack containing noise')
+noise_1_ns = NodeStructure(NoiseAddition)
+noise_1_ns.set_dims(batch_dims = batch_dims_meas_1, event_dims = event_dims_meas_1)
 noise_1_object = NoiseAddition(noise_1_ns)
         
-noise_2_ns = NodeStructure()
-noise_2_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas_2, -1, 'independent noise 2')], 'Stack containing noise')
+noise_2_ns = NodeStructure(NoiseAddition)
+noise_2_ns.set_dims(batch_dims = batch_dims_meas_2, event_dims = event_dims_meas_2)
 noise_2_object = NoiseAddition(noise_2_ns) 
 
 
@@ -143,10 +160,29 @@ class DemoProbModel(CalipyProbModel):
         mu_1 = self.mu_1_object.forward()
         mu_2 = self.mu_2_object.forward()
         sigma = self.sigma_object.forward()
+        # The above works nicely because sigma broadcasts. however, in other cases
+        # I would need to do quite a bit of gymnastics, first take sigma.tensor,
+        # then expand it to the right sizes via sigma.tensor * torch.ones, then
+        # wrap that result back into a CalipyTensor. Potential remedies: Better
+        # Broadcasting, or allow things like multiplication with torch.ones to
+        # act on calipyTensors and produce CalipyTensors.
         
-        output_1 = self.noise_1_object.forward((mu_1, sigma), observations = observations[0])
-        output_2 = self.noise_2_object.forward((mu_2, sigma), observations = observations[1])
-        output = (output_1, output_2)
+        inputs_1 = DataTuple(names = ['mean', 'standard_deviation'], 
+                           values = [mu_1, sigma])  # Not bad but a bit awkward and DataTuple only needed here.
+        inputs_2 = DataTuple(names = ['mean', 'standard_deviation'], 
+                           values = [mu_2, sigma])  # Not bad but a bit awkward and DataTuple only needed here.
+        # inputs_1 = {'mean':mu_1, 'standard_deviation': sigma} # Maybe would also do?
+        # inputs_2 = {'mean':mu_2, 'standard_deviation': sigma} # Maybe would also do?
+        
+        # Another dumb thing: As the observations need to be DataTuples, i need
+        # to take the individual observations obs[meas_1] and obs[meas_2] and 
+        # wrap those into DataTuples again.
+        obs_1 = DataTuple(['sample'], [observations['meas_1']])
+        obs_2 = DataTuple(['sample'], [observations['meas_2']])
+        
+        output_1 = self.noise_1_object.forward(inputs_1, observations = obs_1)
+        output_2 = self.noise_2_object.forward(inputs_2, observations = obs_2)
+        output = DataTuple(names = ['meas_1', 'meas_2'], values = [output_1, output_2])
         
         return output
     
@@ -173,11 +209,13 @@ n_steps = 1000
 optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
 
-# ii) 
+# ii) Prepare observation data
 
 input_data = None
-output_data = data
-optim_results = demo_probmodel.train(input_data, output_data, optim_opts)
+data_1_cp = CalipyTensor(data_1, dims = batch_dims_meas_1)
+data_2_cp = CalipyTensor(data_2, dims = batch_dims_meas_2)
+output_data = DataTuple(['meas_1', 'meas_2'], values = [data_1_cp, data_2_cp])
+optim_results = demo_probmodel.train(input_data, output_data, optim_opts = optim_opts)
     
 
 
