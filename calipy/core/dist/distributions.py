@@ -9,6 +9,7 @@ from calipy.core.tensor import CalipyTensor
 from calipy.core.base import NodeStructure, CalipyNode
 from calipy.core.utils import dim_assignment, InputSchema
 from calipy.core.primitives import sample
+from calipy.core.data import CalipyDict
 
 
 def build_default_nodestructure(class_name):
@@ -136,29 +137,31 @@ class CalipyDistribution(CalipyNode):
                 parameters. Sampling as dimension handled by sample function.
                 """
                 
-                input_vars_tensors = input_vars.get_tensors()
+                input_vars_tensors = input_vars.as_datatuple().get_tensors()
                 return pyro_dist_cls(**input_vars_tensors.as_dict())
 
 
             def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
-                # input vars should be
+                # wrap input_vars and observations to CalipyDict
+                input_vars_cp = CalipyDict(input_vars)
+                observations_cp = CalipyDict(observations)
                 
                 # Formatting arguments
                 vec = kwargs.get('vectorizable', True)
                 ssi = subsample_index
-                obs = observations
+                obs = observations_cp
                 name = '{}__sample__{}'.format(self.id_short, self.name)
                 dims = self.node_structure.dims
                 
                 # Building pyro distribution
                 n_event_dims = len(self.node_structure.dims['event_dims'].sizes)
-                pyro_dist = self.create_pyro_dist(input_vars).to_event(n_event_dims)
+                pyro_dist = self.create_pyro_dist(input_vars_cp).to_event(n_event_dims)
  
                 # Sampling and compiling
-                obs_or_None = obs['sample'].tensor if obs is not None else None
-                calipy_sample = sample(name, pyro_dist, dims, observations = obs_or_None,
+                # obs_or_None = obs['sample'].tensor if obs is not None else None
+                calipy_sample = sample(name, pyro_dist, dims, observations = obs.value,
                                        subsample_index = ssi, vectorizable = vec)
-                return calipy_sample
+                return CalipyDict(calipy_sample)
 
         # Set class metadata
         Subclass.__name__ = dist_name

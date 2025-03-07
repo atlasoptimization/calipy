@@ -36,6 +36,7 @@ from calipy.core.base import CalipyNode, NodeStructure
 from calipy.core.tensor import CalipyTensor
 from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
 from calipy.core.base import NodeStructure
+from calipy.core.data import CalipyDict
 import calipy.core.dist as dist
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
@@ -190,8 +191,7 @@ class UnknownParameter(CalipyQuantity):
     
     # Define the input schema for the forward method
     input_vars_schema = InputSchema(required_keys=[])
-    observation_schema = InputSchema(required_keys=["sample"],
-                                     key_types={"sample": CalipyTensor})
+    observation_schema = InputSchema(required_keys=[])
 
     
     # Class initialization consists in passing args and building dims
@@ -213,9 +213,9 @@ class UnknownParameter(CalipyQuantity):
         [batch_dims.sizes, param_dims.sizes]. It can be passed to subsequent 
         effects and will be tracked to adjust it when training the model.
         
-        :param input vars: None
+        :param input vars: (Calipy)Dict with inputs, always None for UnknownParameter
         :type input_vars: None
-        param observations: dict with observations, always None for UnknownParameter
+        param observations: (Calipy)Dict with observations, always None for UnknownParameter
         type observations: dict
         param subsample_index:
         type subsample_index:
@@ -406,6 +406,10 @@ class NoiseAddition(CalipyEffect):
         :rtype: CalipyTensor
         """
         
+        # Wrap input_vars and observations
+        input_vars_cp = CalipyDict(input_vars)
+        observations_cp = CalipyDict(observations)
+        
         # Set up NodeStructure object normal_ns for the Normal distribution
         CalipyNormal = dist.Normal
         normal_ns = NodeStructure(CalipyNormal)
@@ -413,8 +417,8 @@ class NoiseAddition(CalipyEffect):
         
         # Instantiate the distribution and initiate forward() pass
         calipy_normal = CalipyNormal(normal_ns)     
-        input_vars_normal = input_vars.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
-        output = calipy_normal.forward(input_vars_normal, observations, subsample_index)
+        input_vars_normal = input_vars_cp.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
+        output = calipy_normal.forward(input_vars_normal, observations_cp, subsample_index)
         
         return output
     

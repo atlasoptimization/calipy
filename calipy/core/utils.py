@@ -172,6 +172,26 @@ class InputSchema:
         )
         
 
+def check_schema(calipy_dict_obj, required_keys=None, optional_keys=None):
+    """
+    Example schema validation function:
+      - required_keys: list of keys that must exist
+      - optional_keys: list of recognized but optional keys
+    Raises ValueError if some required keys are missing.
+    """
+    required_keys = required_keys or []
+    optional_keys = optional_keys or []
+
+    missing = []
+    for key in required_keys:
+        if key not in calipy_dict_obj:
+            missing.append(key)
+    if missing:
+        raise ValueError(f"Missing required keys: {missing} in data {calipy_dict_obj}")
+
+    return True
+
+
 
 # CalipyDim and Dimension management
 

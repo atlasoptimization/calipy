@@ -36,7 +36,7 @@ import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition, UnknownVariance
 from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple
+from calipy.core.data import DataTuple, CalipyDict
 from calipy.core.tensor import CalipyTensor
 
 
@@ -123,10 +123,8 @@ sigma_object = UnknownVariance(sigma_ns, name = 'sigma')
 
 
 # iv) Set up the nodestructure for noise addition
-# This requires not batch_shapes and event shapes but plate stacks instead - these
-# quantities determine conditional independence for stochastic objects. In our 
-# case, everything is independent since we prescribe i.i.d. noise.
-# Here we modify the output of NoiseAddition.example_node_structure.generate_template()
+# This is similar to what happened previously but notive that we have two noise
+# objects with different dimensions and therefore different nodestructures.
 noise_1_ns = NodeStructure(NoiseAddition)
 noise_1_ns.set_dims(batch_dims = batch_dims_meas_1, event_dims = event_dims_meas_1)
 noise_1_object = NoiseAddition(noise_1_ns)
@@ -156,7 +154,8 @@ class DemoProbModel(CalipyProbModel):
         self.noise_2_object = noise_2_object
         
     # Define model by forward passing
-    def model(self, input_vars = None, observations = (None, None)):
+    def model(self, input_vars = None, observations = CalipyDict({'meas_1' : None,
+                                                                  'meas_2' : None})):
         mu_1 = self.mu_1_object.forward()
         mu_2 = self.mu_2_object.forward()
         sigma = self.sigma_object.forward()
@@ -167,22 +166,12 @@ class DemoProbModel(CalipyProbModel):
         # Broadcasting, or allow things like multiplication with torch.ones to
         # act on calipyTensors and produce CalipyTensors.
         
-        inputs_1 = DataTuple(names = ['mean', 'standard_deviation'], 
-                           values = [mu_1, sigma])  # Not bad but a bit awkward and DataTuple only needed here.
-        inputs_2 = DataTuple(names = ['mean', 'standard_deviation'], 
-                           values = [mu_2, sigma])  # Not bad but a bit awkward and DataTuple only needed here.
-        # inputs_1 = {'mean':mu_1, 'standard_deviation': sigma} # Maybe would also do?
-        # inputs_2 = {'mean':mu_2, 'standard_deviation': sigma} # Maybe would also do?
+        inputs_1 = {'mean':mu_1, 'standard_deviation': sigma}
+        inputs_2 = {'mean':mu_2, 'standard_deviation': sigma}
         
-        # Another dumb thing: As the observations need to be DataTuples, i need
-        # to take the individual observations obs[meas_1] and obs[meas_2] and 
-        # wrap those into DataTuples again.
-        obs_1 = DataTuple(['sample'], [observations['meas_1']])
-        obs_2 = DataTuple(['sample'], [observations['meas_2']])
-        
-        output_1 = self.noise_1_object.forward(inputs_1, observations = obs_1)
-        output_2 = self.noise_2_object.forward(inputs_2, observations = obs_2)
-        output = DataTuple(names = ['meas_1', 'meas_2'], values = [output_1, output_2])
+        output_1 = self.noise_1_object.forward(inputs_1, observations = observations['meas_1'])
+        output_2 = self.noise_2_object.forward(inputs_2, observations = observations['meas_2'])
+        output = CalipyDict({'meas_1' : output_1, 'meas_2' : output_2})
         
         return output
     
@@ -210,11 +199,13 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
 
 # ii) Prepare observation data
-
+# Note that now we need to provide a CalipyDict object as output_data; i.e. the
+# observations inputted to the model because we distinnguish meas_1 and meas_2
+# and our observations are not anymore any single tensor.
 input_data = None
 data_1_cp = CalipyTensor(data_1, dims = batch_dims_meas_1)
 data_2_cp = CalipyTensor(data_2, dims = batch_dims_meas_2)
-output_data = DataTuple(['meas_1', 'meas_2'], values = [data_1_cp, data_2_cp])
+output_data = CalipyDict({ 'meas_1' : data_1_cp, 'meas_2' : data_2_cp})
 optim_results = demo_probmodel.train(input_data, output_data, optim_opts = optim_opts)
     
 

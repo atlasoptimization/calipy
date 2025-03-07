@@ -124,9 +124,13 @@ class DemoProbModel(CalipyProbModel):
     # Define model by forward passing
     def model(self, input_vars = None, observations = None):
         mu = self.mu_object.forward()       
-        inputs = DataTuple(names = ['mean', 'standard_deviation'], 
-                           values = [mu, sigma_true])  # Not bad but a bit awkward and DataTuple only needed here.
-        # inputs = {'mean':mu, 'standard_deviation': sigma_true} # Maybe would also do?
+        # inputs = DataTuple(names = ['mean', 'standard_deviation'], 
+        #                    values = [mu, sigma_true])  # Not bad but a bit awkward and DataTuple only needed here.
+        
+        # Dictionary/DataTuple input is converted to CalipyDict internally. It
+        # is also possible, to pass single element input_vars or observations;
+        # these are also autowrapped.
+        inputs = {'mean':mu, 'standard_deviation': sigma_true} 
         output = self.noise_object.forward(input_vars = inputs,
                                            observations = observations)
         
@@ -156,18 +160,15 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
 
 # ii) Train the model
-
-# Again we need to define the inputs and observations and it is awkward and verbose,
-# where does the keyname 'sample' come from? CalipyTensor seems like an extrastep even though
-# conceptually its super nice to have dims attached to the observation. DataTuple
-# contributes nothing for the user. Looking at output_data definition, i dont like the
-# pointless boilerplate gymnastics we have to do with the current construction.
-# output_data = {'sample' : data} # Maybe would also do?
+# When passed to any forward() method, input_vars and observations are wrapped
+# in CalipyDict. Passing data_cp is equivalent to passing CalipyTensor(data_cp).
+# Passing directly a CalipyDict is always ok, but in case of one-element
+# input_vars or observations, only passing that element and letting the autowrap
+# handle the rest can make code simpler to read.
 input_data = None
 data_cp = CalipyTensor(data, dims = batch_dims + event_dims)
-output_data = DataTuple(names= ['sample'], values = [data_cp])  
-optim_results = demo_probmodel.train(input_data, output_data, optim_opts = optim_opts)
-    
+optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+
 
 
 """

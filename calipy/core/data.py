@@ -456,37 +456,30 @@ class CalipyDict(dict):
         dict_from_single = CalipyDict(tensor_A)
         
         # Print contents and investigate 
-        for cp_dict in [dict_from_none]
-        
-        # Illustrate functionality
-        fun = lambda x: x +1
-        result_tuple_1 = data_tuple.apply_elementwise(fun)
-        print("Result of applying function:", result_tuple_1, result_tuple_1['tensor_A'], result_tuple_1['tensor_B'])
-        fun_dict = {'tensor_A': lambda x: x + 1, 'tensor_B': lambda x: x - 1}
-        result_tuple_2 = data_tuple.apply_from_dict(fun_dict)
-        print("Result of applying function dictionary:", result_tuple_2, result_tuple_2['tensor_A'], result_tuple_2['tensor_B'])
-        
+        for cp_dict in [dict_from_none, dict_from_dict, dict_from_tuple, 
+                        dict_from_calipy, dict_from_single]:
+            print(cp_dict)
+            
+        dict_from_single.has_single_item()
+        dict_from_single.value
+        dict_from_dict.as_datatuple()
     
     """
 
     def __init__(self, data=None):
         """
         Data used for dictionary initialization can be:
-          - None => empty dict
+          - None => Dict containing None
           - A dict {str -> item} => multi-item
           - A single item => store under a default key '__single__'
           - A DataTuple => convert to dict
           - A CalipyDict => Leave unchanged
         """
         super().__init__()  # Initialize the underlying dict
-        
-        if data is None:
-            # empty
-            return
-        
-        elif isinstance(data, CalipyDict):
+                
+        if isinstance(data, CalipyDict):
             # leave unchanged
-            self = data
+            self.update(data)
         
         elif isinstance(data, DataTuple):
             # convert from DataTuple
@@ -529,6 +522,21 @@ class CalipyDict(dict):
         keys_list = list(self.keys())
         vals_list = list(self.values())
         return DataTuple(keys_list, vals_list)
+    
+    def rename_keys(self, rename_dict):
+        """ 
+        Renames current keys to the ones given by rename_dict[key].
+        
+        :param rename_dict: Dictionary s.t. for each key in rename_dict, key is in
+            self.keys() with rename_dict[key] being the string that is the key
+            in the newly produced DataTuple.
+        :type rename_dict: dict
+        :return: DataTuple the same values but with changed keys. 
+        :rtype: DataTuple
+        """
+        
+        renamed_data_tuple = self.as_datatuple().rename_keys(rename_dict)
+        return CalipyDict(renamed_data_tuple)
 
     def __repr__(self):
         # Use dict's __repr__ to  represent content
@@ -536,23 +544,5 @@ class CalipyDict(dict):
         return f"CalipyDict({base})"
 
 
-def check_schema(calipy_dict_obj: CalipyDict, required_keys=None, optional_keys=None):
-    """
-    Example schema validation function:
-      - required_keys: list of keys that must exist
-      - optional_keys: list of recognized but optional keys
-    Raises ValueError if some required keys are missing.
-    """
-    required_keys = required_keys or []
-    optional_keys = optional_keys or []
-
-    missing = []
-    for key in required_keys:
-        if key not in calipy_dict_obj:
-            missing.append(key)
-    if missing:
-        raise ValueError(f"Missing required keys: {missing} in data {calipy_dict_obj}")
-
-    return True
 
 
