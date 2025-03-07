@@ -215,9 +215,8 @@ class UnknownParameter(CalipyQuantity):
         
         :param input vars: None
         :type input_vars: None
-        param observations: DataTuple with key ['sample'] containing CalipyTensor
-            object that is considered to be observed and used for inference.
-        type observations: DataTuple
+        param observations: dict with observations, always None for UnknownParameter
+        type observations: dict
         param subsample_index:
         type subsample_index:
         :return: CalipyTensor containing parameter tensor and dimension info.

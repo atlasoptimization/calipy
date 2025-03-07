@@ -20,8 +20,11 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
+
 import torch
+from typing import Any
 from calipy.core.tensor import CalipyTensor, CalipyIndex
+
 
 
 class DataTuple:
@@ -400,3 +403,156 @@ class DataTuple:
             else:
                 repr_items.append(f"{k}: {v.__repr__()}")
         return f"DataTuple({', '.join(repr_items)})"
+
+
+
+# CalipyDict class providing standard form and wrapping of I/O data
+
+class CalipyDict(dict):
+    """
+    A dictionary-like container that can store single or multiple items.
+    If it contains exactly one item, calipy_dict.value can be called to retrieve
+    it directly. Is meant as a convenient wrapper to DataTuple functionality 
+    and is the standard input/output/observation format handled inside of the
+    CalipyNode objects. Is typically autowrapped around dictionaries or single
+    objects provided by the user towards e.g. the forward() method. Has idempotent
+    property and leaves CalipyDict objects unchanged
+    
+    
+    :param data: The data being used to construct the CalipyDict. Data used for
+        dictionary initialization can be:
+          - None => empty dict
+          - A dict {str -> item} => multi-item
+          - A CalipyDict => Leave unchanged
+          - A DataTuple => convert to dict
+          - A single item => store under a default key '__single__'
+    :type data: None, or dict, or CalipyDict, or DataTuple, or single object.
+    
+    :return: An instance of CalipyDict
+    :rtype: CalipyDict
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+        from calipy.core.data import DataTuple, CalipyDict
+           
+
+        # Create data for CalipyDict initialization
+        tensor_A = torch.ones(2, 3)
+        tensor_B = torch.ones(4, 5)
+        names = ['tensor_A', 'tensor_B']
+        values = [tensor_A, tensor_B]
+        data_tuple = DataTuple(names, values)
+        data_dict = {'tensor_A': tensor_A, 'tensor_B' : tensor_B}
+        
+        # Create CalipyDict objects
+        dict_from_none = CalipyDict()
+        dict_from_dict = CalipyDict(data_dict)
+        dict_from_tuple = CalipyDict(data_tuple)
+        dict_from_calipy = CalipyDict(dict_from_dict)
+        dict_from_single = CalipyDict(tensor_A)
+        
+        # Print contents and investigate 
+        for cp_dict in [dict_from_none]
+        
+        # Illustrate functionality
+        fun = lambda x: x +1
+        result_tuple_1 = data_tuple.apply_elementwise(fun)
+        print("Result of applying function:", result_tuple_1, result_tuple_1['tensor_A'], result_tuple_1['tensor_B'])
+        fun_dict = {'tensor_A': lambda x: x + 1, 'tensor_B': lambda x: x - 1}
+        result_tuple_2 = data_tuple.apply_from_dict(fun_dict)
+        print("Result of applying function dictionary:", result_tuple_2, result_tuple_2['tensor_A'], result_tuple_2['tensor_B'])
+        
+    
+    """
+
+    def __init__(self, data=None):
+        """
+        Data used for dictionary initialization can be:
+          - None => empty dict
+          - A dict {str -> item} => multi-item
+          - A single item => store under a default key '__single__'
+          - A DataTuple => convert to dict
+          - A CalipyDict => Leave unchanged
+        """
+        super().__init__()  # Initialize the underlying dict
+        
+        if data is None:
+            # empty
+            return
+        
+        elif isinstance(data, CalipyDict):
+            # leave unchanged
+            self = data
+        
+        elif isinstance(data, DataTuple):
+            # convert from DataTuple
+            dt_dict = data.as_dict()
+            self.update(dt_dict)
+        
+        elif isinstance(data, dict):
+            # multiple items
+            self.update(data)  # fill this dict with the items
+        else:
+            # for single item, store under default key
+            self["__single__"] = data
+    
+    @property
+    def value(self) -> Any:
+        """
+        If there's exactly one item in this CalipyDict, return it.
+        Otherwise, raise an error. This property allows single-output usage.
+        """
+        if len(self) != 1:
+            raise ValueError(
+                "CalipyDict has {} items with keys {}, cannot use .value. Use"\
+                    " bracket notation or iterate instead.".format(len(self), list(self.keys()))
+            )
+        # get the only key
+        (k, v) = next(iter(self.items()))
+        return v
+
+    def has_single_item(self) -> bool:
+        """
+        :return: True if exactly one item is in this dict, else False.
+        """
+        return len(self) == 1
+    
+    def as_datatuple(self) -> DataTuple:
+        """
+        Convert this CalipyDict into a DataTuple for dimension-aware operations
+        or other advanced uses.
+        """
+        keys_list = list(self.keys())
+        vals_list = list(self.values())
+        return DataTuple(keys_list, vals_list)
+
+    def __repr__(self):
+        # Use dict's __repr__ to  represent content
+        base = dict.__repr__(self)
+        return f"CalipyDict({base})"
+
+
+def check_schema(calipy_dict_obj: CalipyDict, required_keys=None, optional_keys=None):
+    """
+    Example schema validation function:
+      - required_keys: list of keys that must exist
+      - optional_keys: list of recognized but optional keys
+    Raises ValueError if some required keys are missing.
+    """
+    required_keys = required_keys or []
+    optional_keys = optional_keys or []
+
+    missing = []
+    for key in required_keys:
+        if key not in calipy_dict_obj:
+            missing.append(key)
+    if missing:
+        raise ValueError(f"Missing required keys: {missing} in data {calipy_dict_obj}")
+
+    return True
+
+
