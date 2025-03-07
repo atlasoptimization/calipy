@@ -14,7 +14,7 @@ For this, do the following:
     6. Analyse results and illustrate
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -124,9 +124,7 @@ class DemoProbModel(CalipyProbModel):
     # Define model by forward passing
     def model(self, input_vars = None, observations = None):
         mu = self.mu_object.forward()       
-        # inputs = DataTuple(names = ['mean', 'standard_deviation'], 
-        #                    values = [mu, sigma_true])  # Not bad but a bit awkward and DataTuple only needed here.
-        
+
         # Dictionary/DataTuple input is converted to CalipyDict internally. It
         # is also possible, to pass single element input_vars or observations;
         # these are also autowrapped.

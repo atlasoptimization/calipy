@@ -53,7 +53,7 @@ import textwrap
 from functools import wraps
 import torchviz
 from calipy.core.utils import format_mro, InputSchema
-from calipy.core.data import DataTuple
+from calipy.core.data import DataTuple, CalipyDict
 from abc import ABC, ABCMeta, abstractmethod
 
 from types import MethodType
@@ -898,6 +898,10 @@ class CalipyProbModel(CalipyNode):
         elif output_data is None:
             raise ValueError("Either `input_data` and `output_data` must be provided, or `dataloader` must be set.")
     
+        # Wrap input_data and output_data into CalipyDict
+        input_data = CalipyDict(input_data)
+        output_data = CalipyDict(output_data)
+        
         # Fetch optional arguments
         lr = optim_opts.get('learning_rate', 0.01)
         self.optim_opts = optim_opts or {}

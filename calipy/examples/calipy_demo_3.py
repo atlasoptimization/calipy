@@ -16,7 +16,7 @@ For this, do the following:
     6. Analyse results and illustrate
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -35,13 +35,15 @@ import matplotlib.pyplot as plt
 # calipy
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, UnknownVariance, NoiseAddition
-
+from calipy.core.effects import UnknownParameter, NoiseAddition, UnknownVariance
+from calipy.core.utils import dim_assignment
+from calipy.core.data import DataTuple, CalipyDict
+from calipy.core.tensor import CalipyTensor
 
 # ii) Definitions
 
-n_meas = 100
-n_prod = 30
+n_meas = 200
+n_prod = 5
 
 
 
@@ -66,9 +68,9 @@ prod_lengths = prod_distribution.sample([n_prod])
 data_distribution = pyro.distributions.Normal(prod_lengths, sigma_meas_true)
 data = data_distribution.sample([n_meas]).T
 
-# The data now is a tensor of shape [n_el, n_meas] and reflects 5 products being
+# The data now is a tensor of shape [n_prod, n_meas] and reflects 5 products being
 # produced with different length characteristics that are then subsequently measured
-# 20 times
+# 200 times
 
 # We now consider the data to be an outcome of measurement of some real world
 # object; consider the true underlying data generation process to be unknown
@@ -81,36 +83,46 @@ data = data_distribution.sample([n_meas]).T
 """
 
 
-# i) Set up dimensions for mean parameter mu_prod = same for all measurements
+# i) Set up dimensions 
+
+# Production process
+batch_dims_prod = dim_assignment(['bd_prod'], dim_sizes = [n_prod])
+param_dims_prod = dim_assignment(['pd_prod'], dim_sizes = [])
+event_dims_prod = dim_assignment(['ed_prod'], dim_sizes = [])
+extension_dims = dim_assignment(['ext_dim'], dim_sizes = [n_meas])
+
+# Measurement process
+batch_dims_meas = dim_assignment(['bd_meas'], dim_sizes = [n_prod, n_meas])
+param_dims_meas = dim_assignment(['pd_meas'], dim_sizes = [])
+event_dims_meas = dim_assignment(['ed_meas'], dim_sizes = [])
+
+
+# ii) Set up nodestructures for mean parameter mu_prod = same for all measurements
 
 # mu_prod setup
-mu_prod_ns = NodeStructure()
-mu_prod_ns.set_shape('batch_shape', (), 'Independent values')
-mu_prod_ns.set_shape('event_shape', (), 'Repeated values')
+mu_prod_ns = NodeStructure(UnknownParameter)
+mu_prod_ns.set_dims(batch_dims = batch_dims_prod, param_dims = param_dims_prod)
 mu_prod_object = UnknownParameter(mu_prod_ns, name = 'mu')
 
 
-# i) Set up dimensions for std parameter sigma
+# iii) Set up dimensions for std parameter sigma
 
-# sigma_el setup
-sigma_prod_ns = NodeStructure()
-sigma_prod_ns.set_shape('batch_shape', (), 'Independent values')
-sigma_prod_ns.set_shape('event_shape', (n_prod,), 'Repeated values')
+# sigma_prod setup
+sigma_prod_ns = NodeStructure(UnknownVariance)
+sigma_prod_ns.set_dims(batch_dims = batch_dims_prod, param_dims = param_dims_prod)
 sigma_prod_object = UnknownVariance(sigma_prod_ns, name = 'sigma')
 
 
-# iii) Set up the dimensions for production randomness and noise
+# iv) Set up the dimensions for production randomness and noise
 
 # Production randomness
-prod_noise_ns = NodeStructure()
-prod_noise_ns.set_plate_stack('noise_stack', [('prod_plate', n_prod, -1, 'independent noise 1')], 'Stack containing production randomness')
+prod_noise_ns = NodeStructure(NoiseAddition)
+prod_noise_ns.set_dims(batch_dims = batch_dims_prod, event_dims = event_dims_prod)
 prod_noise_object = NoiseAddition(prod_noise_ns)
 
 # Measurement randomness
-meas_noise_ns = NodeStructure()
-meas_noise_ns.set_plate_stack('noise_stack', [('meas_plate_1', n_prod, -2, 'plate denoting independence in row dim'),
-                                              ('meas_plate_2', n_meas, -1, 'plate denoting independence in col dim')], 
-                              'Stack containing measurement randomness')
+meas_noise_ns = NodeStructure(NoiseAddition)
+meas_noise_ns.set_dims(batch_dims = batch_dims_meas, event_dims = event_dims_meas)
 meas_noise_object = NoiseAddition(meas_noise_ns)
         
 
@@ -139,13 +151,16 @@ class DemoProbModel(CalipyProbModel):
         sigma_prod = self.sigma_prod_object.forward()
         
         # sample lengths of shape [n_prod] via prod_lengths ~ N(mu_prod, sigma_prod)
-        prod_lengths = self.prod_noise_object.forward(input_vars = (mu_prod, sigma_prod))
-        
+        prod_lengths = self.prod_noise_object.forward(input_vars = {'mean' : mu_prod,
+                                                                    'standard_deviation' :sigma_prod})
+    
         # sample length measurements of shape [n_prod, n_meas] by adding noise
         # to copies of prod_lengths via meas ~ N(prod_lengths_extended, sigma_meas)
-        extension_tensor = torch.ones([n_prod, n_meas])
-        prod_lengths_extended = prod_lengths.unsqueeze(1) * extension_tensor
-        output = self.meas_noise_object.forward((prod_lengths_extended, sigma_meas_true), observations = observations)     
+        prod_lengths_expanded = prod_lengths.value.expand_to_dims(dims = batch_dims_prod 
+                                                                  + extension_dims)
+        output = self.meas_noise_object.forward({'mean' :prod_lengths_expanded,
+                                                 'standard_deviation' :sigma_meas_true}, 
+                                                observations = observations)     
         
         return output
     
@@ -171,7 +186,7 @@ demo_probmodel = DemoProbModel()
 
 # i) Set up optimization
 
-adam = pyro.optim.NAdam({"lr": 0.01})
+adam = pyro.optim.NAdam({"lr": 0.03})
 elbo = pyro.infer.Trace_ELBO()
 n_steps = 1000
 
@@ -181,8 +196,8 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 # ii) 
 
 input_data = None
-output_data = data
-optim_results = demo_probmodel.train(input_data, output_data, optim_opts)
+output_data = CalipyTensor(data, dims = batch_dims_meas)
+optim_results = demo_probmodel.train(input_data, output_data, optim_opts = optim_opts)
     
 
 

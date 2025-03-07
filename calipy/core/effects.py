@@ -386,19 +386,27 @@ class NoiseAddition(CalipyEffect):
         self.event_dims = self.node_structure.dims['event_dims']
         self.dims = self.batch_dims + self.event_dims
         
+        # Set up NodeStructure object normal_ns for the Normal distribution
+        CalipyNormal = dist.Normal
+        normal_ns = NodeStructure(CalipyNormal)
+        normal_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
+        
+        # Instantiate the distribution and initiate forward() pass
+        self.calipy_normal = CalipyNormal(normal_ns) 
+        
     # Forward pass is passing input_vars and sampling from noise_dist
     def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
         """
         Create noisy samples using input_vars = (mean, standard_deviation) with
         shapes as indicated in the node_structures' 'batch_dims' and 'event_dims'.
         
-        :param input vars: DataTuple with keys ['mean', 'standard_deviation']
+        :param input vars: CalipyDict with keys ['mean', 'standard_deviation']
             containing CalipyTensor objects defining the underlying mean onto
             which noise with distribution N(0, standard_deviation) is added.
-        :type input_vars: DataTuple
-        param observations: DataTuple with key ['sample'] containing CalipyTensor
+        :type input_vars: CalipyDict
+        param observations: CalipyDict containing a single CalipyTensor
             object that is considered to be observed and used for inference.
-        type observations: DataTuple
+        type observations: CalipyDict
         param subsample_index:
         type subsample_index:
         :return: CalipyTensor representing simulation of a noisy measurement of
@@ -410,15 +418,9 @@ class NoiseAddition(CalipyEffect):
         input_vars_cp = CalipyDict(input_vars)
         observations_cp = CalipyDict(observations)
         
-        # Set up NodeStructure object normal_ns for the Normal distribution
-        CalipyNormal = dist.Normal
-        normal_ns = NodeStructure(CalipyNormal)
-        normal_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
-        
-        # Instantiate the distribution and initiate forward() pass
-        calipy_normal = CalipyNormal(normal_ns)     
+    
         input_vars_normal = input_vars_cp.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
-        output = calipy_normal.forward(input_vars_normal, observations_cp, subsample_index)
+        output = self.calipy_normal.forward(input_vars_normal, observations_cp, subsample_index)
         
         return output
     

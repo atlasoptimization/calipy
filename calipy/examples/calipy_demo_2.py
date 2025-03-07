@@ -15,7 +15,7 @@ For this, do the following:
     6. Analyse results and illustrate
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -154,8 +154,8 @@ class DemoProbModel(CalipyProbModel):
         self.noise_2_object = noise_2_object
         
     # Define model by forward passing
-    def model(self, input_vars = None, observations = CalipyDict({'meas_1' : None,
-                                                                  'meas_2' : None})):
+    def model(self, input_vars = None, observations = {'meas_1' : None,
+                                                       'meas_2' : None}):
         mu_1 = self.mu_1_object.forward()
         mu_2 = self.mu_2_object.forward()
         sigma = self.sigma_object.forward()
@@ -205,7 +205,7 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 input_data = None
 data_1_cp = CalipyTensor(data_1, dims = batch_dims_meas_1)
 data_2_cp = CalipyTensor(data_2, dims = batch_dims_meas_2)
-output_data = CalipyDict({ 'meas_1' : data_1_cp, 'meas_2' : data_2_cp})
+output_data = { 'meas_1' : data_1_cp, 'meas_2' : data_2_cp}
 optim_results = demo_probmodel.train(input_data, output_data, optim_opts = optim_opts)
     
 

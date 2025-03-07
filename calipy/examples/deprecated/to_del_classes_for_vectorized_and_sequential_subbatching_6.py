@@ -677,7 +677,7 @@ noise_input_vars = NoiseAddition.create_input_vars(mean = mu, standard_deviation
 noisy_output = noise_object.forward(input_vars = noise_input_vars, 
                                     observations = None, 
                                     subsample_index = None)
-noisy_output.dims
+noisy_output.value.dims
 help(noisy_output)
 
 
@@ -715,7 +715,7 @@ mu_true = torch.tensor([0.0,5.0]).reshape([2])
 sigma_true = 1.0
 data_tensor = pyro.distributions.Normal(loc = mu_true, scale = sigma_true).sample([10]) 
 data_cp = CalipyTensor(data_tensor, batch_dims_noise)
-data = DataTuple(['sample'], [data_cp])
+data = {'sample' : data_cp}
 
 # v) Define ProbModel
 class MyProbModel(CalipyProbModel):
@@ -725,7 +725,7 @@ class MyProbModel(CalipyProbModel):
     def model(self, input_vars = None, observations = None):
         # Define the generative model
         mu = mu_object.forward()
-        input_vars = DataTuple(['mean', 'standard_deviation'], [mu, sigma])
+        input_vars = {'mean' : mu, 'standard_deviation' : sigma}
         sample = noise_object.forward(input_vars, observations = observations)
         return sample
 
