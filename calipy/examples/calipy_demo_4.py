@@ -137,49 +137,59 @@ class CalipyDataset(Dataset):
         # CalipyDict[key][k, ...] is the kth datapoint in the dataset. The input
         # arg io_data is a CalipyDict of CalipyTensors.
         
+        # i) Do the flattening
         data_flattened = {}
-        empty_dims = dim_assignment(['empty_dim'], dim_sizes = [])
+        for key, value in io_data.items():
+            data_flattened[key] = value.flatten(self.batch_dims, 'batch_dim_flattened') if value is not None else None
         
-        # i) Extract the actual sizes of the batch dims and other dims
-        data_dims_bound = {key : value.indexer.local_index.bound_dims[0:-1] if value is not None
-                        else empty_dims for key, value in io_data.items()}
-        batch_dims_dict = {key : value[self.batch_dims] if value is not None 
-                           else empty_dims for key, value in data_dims_bound.items()}
-        other_dims_dict = {key : value.delete_dims(self.batch_dims) if value is not None 
-                           else empty_dims for key, value in data_dims_bound.items()}
-        
-        batch_dims_sizes = {key : value.sizes if value is not None else [] 
-                            for key, value in batch_dims_dict.items()}
-        other_dims_sizes = {key : value.sizes if value is not None else [] 
-                            for key, value in other_dims_dict.items()}
-        
-        # ii) Check if flattening possible: compare eqality of batch dim sizes
-        first_key = list(batch_dims_sizes.keys())[0]
-        first_dim_sizes = batch_dims_sizes[first_key]
-        flattened_dim_size = [math.prod(first_dim_sizes)] if first_dim_sizes is not [] else []
+        # ii) Check if flattening consistent
+        batch_dims_sizes = {key : value.dims[['batch_dim_flattened']].sizes if value is not None else [] 
+                             for key, value in data_flattened.items()}
+        first_dim_sizes = batch_dims_sizes[list(batch_dims_sizes.keys())[0]]
         if not all([dim_sizes == first_dim_sizes for key, dim_sizes in batch_dims_sizes.items()]):
             raise(Exception('For flattening, all DimTuples batch_dims must be of ' \
                             'same size for all keys but are {} for keys {}'.format(batch_dims_sizes,list(batch_dims_sizes.keys()))))
-
-        # iii) Do the flattening
-        data_flattened = {}
-        batch_dim_flattened = dim_assignment(['batch_dim_flattened'], dim_sizes = flattened_dim_size)
-        new_dims = {key: batch_dim_flattened + value for key, value in other_dims_dict.items()}
-        
-        for key, tensor in io_data.items():
-            if tensor is not None:
-                reordered_tensor = tensor.reorder(batch_dims_dict[key] + other_dims_dict[key])
-                reshaped_tensor = reordered_tensor.tensor.reshape(batch_dim_flattened.sizes + other_dims_sizes[key])
-                data_flattened[key] = CalipyTensor(reshaped_tensor, new_dims[key])
-            else:
-                data_flattened = None
-            
-    
-        # for k in range(self.len_input_data):
-        #     input_data_flattened.append(tuple([ tensor[k,...].unsqueeze(0) for tensor in self.input_data ]))
-        # input_data_flattened = None if len(input_data_flattened) == 0 else input_data_flattened
-            
+                
         return CalipyDict(data_flattened)
+    
+        # data_flattened = {}
+        # empty_dims = dim_assignment(['empty_dim'], dim_sizes = [])
+        
+        # # i) Extract the actual sizes of the batch dims and other dims
+        # data_dims_bound = {key : value.indexer.local_index.bound_dims[0:-1] if value is not None
+        #                 else empty_dims for key, value in io_data.items()}
+        # batch_dims_dict = {key : value[self.batch_dims] if value is not None 
+        #                    else empty_dims for key, value in data_dims_bound.items()}
+        # other_dims_dict = {key : value.delete_dims(self.batch_dims) if value is not None 
+        #                    else empty_dims for key, value in data_dims_bound.items()}
+        
+        # batch_dims_sizes = {key : value.sizes if value is not None else [] 
+        #                     for key, value in batch_dims_dict.items()}
+        # other_dims_sizes = {key : value.sizes if value is not None else [] 
+        #                     for key, value in other_dims_dict.items()}
+        
+        # # ii) Check if flattening possible: compare eqality of batch dim sizes
+        # first_key = list(batch_dims_sizes.keys())[0]
+        # first_dim_sizes = batch_dims_sizes[first_key]
+        # flattened_dim_size = [math.prod(first_dim_sizes)] if first_dim_sizes is not [] else []
+        # if not all([dim_sizes == first_dim_sizes for key, dim_sizes in batch_dims_sizes.items()]):
+        #     raise(Exception('For flattening, all DimTuples batch_dims must be of ' \
+        #                     'same size for all keys but are {} for keys {}'.format(batch_dims_sizes,list(batch_dims_sizes.keys()))))
+
+        # # iii) Do the flattening
+        # data_flattened = {}
+        # batch_dim_flattened = dim_assignment(['batch_dim_flattened'], dim_sizes = flattened_dim_size)
+        # new_dims = {key: batch_dim_flattened + value for key, value in other_dims_dict.items()}
+        
+        # for key, tensor in io_data.items():
+        #     if tensor is not None:
+        #         reordered_tensor = tensor.reorder(batch_dims_dict[key] + other_dims_dict[key])
+        #         reshaped_tensor = reordered_tensor.tensor.reshape(batch_dim_flattened.sizes + other_dims_sizes[key])
+        #         data_flattened[key] = CalipyTensor(reshaped_tensor, new_dims[key])
+        #     else:
+        #         data_flattened = None
+                        
+        # return CalipyDict(data_flattened)
         
         
         
