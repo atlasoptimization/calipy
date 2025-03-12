@@ -19,7 +19,7 @@ from functorch.dim import dims
 import calipy
 from calipy.core.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
 from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter, NoiseAddition
-from calipy.core.data import DataTuple
+from calipy.core.data import DataTuple, CalipyDict, CalipyDataset
 from calipy.core.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.primitives import param, sample
@@ -681,65 +681,46 @@ noisy_output.value.dims
 help(noisy_output)
 
 
-
-# TEST SIMPLE CalipyProbModel
-
-# i) Imports and definitions
-import torch
-import pyro
-import calipy
-from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple
-from calipy.core.tensor import CalipyTensor
-from calipy.core.effects import UnknownParameter, NoiseAddition
-from calipy.core.base import NodeStructure, CalipyProbModel
-
-# ii) Set up unknown mean parameter
-batch_dims_param = dim_assignment(['bd_p1'], dim_sizes = [10])
-param_dims_param = dim_assignment(['pd_p1'], dim_sizes = [2])
-param_ns = NodeStructure(UnknownParameter)
-param_ns.set_dims(param_dims = param_dims_param, batch_dims = batch_dims_param)
-mu_object = UnknownParameter(param_ns)
-
-# iii) Set up noise addition
-batch_dims_noise = dim_assignment(['bd_n1', 'bd_n2'], dim_sizes = [10,2])
-event_dims_noise = dim_assignment(['ed_n1'], dim_sizes = [0])
-noise_ns = NodeStructure(NoiseAddition)
-noise_ns.set_dims(batch_dims = batch_dims_noise, event_dims = event_dims_noise)
-noise_object = NoiseAddition(noise_ns)
-
-sigma = torch.ones(batch_dims_noise.sizes)
-
-# iv) Simulate some data
-mu_true = torch.tensor([0.0,5.0]).reshape([2])
-sigma_true = 1.0
-data_tensor = pyro.distributions.Normal(loc = mu_true, scale = sigma_true).sample([10]) 
-data_cp = CalipyTensor(data_tensor, batch_dims_noise)
-data = {'sample' : data_cp}
-
-# v) Define ProbModel
-class MyProbModel(CalipyProbModel):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def model(self, input_vars = None, observations = None):
-        # Define the generative model
-        mu = mu_object.forward()
-        input_vars = {'mean' : mu, 'standard_deviation' : sigma}
-        sample = noise_object.forward(input_vars, observations = observations)
-        return sample
-
-    def guide(self, input_vars = None, observations = None):
-        # Define the guide (variational distribution)
-        pass
-
-# vi) Inference
-prob_model = MyProbModel(name="example_model")
-output = prob_model.model(observations = data)
-optim_opts = {'n_steps' : 500, 'learning_rate' : 0.01}
-prob_model.train(input_data = None, output_data = data, optim_opts = optim_opts)
+# TEST DATASET AND DATALOADER
 
 
+
+
+# TEST SAMPLE FUNCTION
+
+# General distribution setup
+CalipyNormal = calipy.core.dist.Normal
+normal_ns = NodeStructure(CalipyNormal)
+calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
+
+dims_normal = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+mean_cp = CalipyTensor(torch.zeros(dims_normal.sizes), dims_normal)
+sigma_cp = CalipyTensor(torch.ones(dims_normal.sizes), dims_normal)
+input_vars_normal = CalipyDict({'loc' : mean_cp, 'scale' : sigma_cp})
+pyro_normal = calipy_normal.create_pyro_dist(input_vars_normal).to_event(1)
+
+# Data generation
+data = torch.normal(10,1, [10,2])
+data_cp = CalipyTensor(data, dims_normal, 'data')
+data_ss, data_ssi = data_cp.indexer.simple_subsample(dims_normal[0],3)
+data_subsample_cp = data_ss[0]
+data_ssi = data_ssi[0]
+
+# Sample vectorizable, no observations, no subsample_indices
+vec = True
+obs = None
+ssi = None
+
+sample_result_100 = sample('Sample_100', pyro_normal, normal_ns.dims, observations = obs,
+                       subsample_index = ssi, vectorizable = vec)
+
+# Sample vectorizable, no observations, subsample_indices
+vec = True
+obs = None
+ssi = data_ssi
+
+sample_result_101 = sample('Sample_101', pyro_normal, normal_ns.dims, observations = obs,
+                       subsample_index = ssi, vectorizable = vec)
 
 
 # Subsample indices (if any)
@@ -789,6 +770,68 @@ for vectorizable in [True, False]:
 #             sample_results[tuple(vflag,oflag,sflag)] = sample_result
             
             
+
+
+
+# TEST SIMPLE CalipyProbModel
+
+# i) Imports and definitions
+import torch
+import pyro
+import calipy
+from calipy.core.utils import dim_assignment
+from calipy.core.data import DataTuple
+from calipy.core.tensor import CalipyTensor
+from calipy.core.effects import UnknownParameter, NoiseAddition
+from calipy.core.base import NodeStructure, CalipyProbModel
+
+# ii) Set up unknown mean parameter
+batch_dims_param = dim_assignment(['bd_p1'], dim_sizes = [10])
+param_dims_param = dim_assignment(['pd_p1'], dim_sizes = [2])
+param_ns = NodeStructure(UnknownParameter)
+param_ns.set_dims(param_dims = param_dims_param, batch_dims = batch_dims_param)
+mu_object = UnknownParameter(param_ns)
+
+# iii) Set up noise addition
+batch_dims_noise = dim_assignment(['bd_n1', 'bd_n2'], dim_sizes = [10,2])
+event_dims_noise = dim_assignment(['ed_n1'], dim_sizes = [0])
+noise_ns = NodeStructure(NoiseAddition)
+noise_ns.set_dims(batch_dims = batch_dims_noise, event_dims = event_dims_noise)
+noise_object = NoiseAddition(noise_ns)
+
+sigma = torch.ones(batch_dims_noise.sizes)
+
+# iv) Simulate some data
+mu_true = torch.tensor([0.0,5.0]).reshape([2])
+sigma_true = 1.0
+data_tensor = pyro.distributions.Normal(loc = mu_true, scale = sigma_true).sample([10]) 
+data_cp = CalipyTensor(data_tensor, batch_dims_noise)
+data = {'sample'}
+
+# v) Define ProbModel
+class MyProbModel(CalipyProbModel):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def model(self, input_vars = None, observations = None):
+        # Define the generative model
+        mu = mu_object.forward()
+        input_vars = {'mean' : mu, 'standard_deviation' : sigma}
+        sample = noise_object.forward(input_vars, observations = observations)
+        return sample
+
+    def guide(self, input_vars = None, observations = None):
+        # Define the guide (variational distribution)
+        pass
+
+# vi) Inference
+prob_model = MyProbModel(name="example_model")
+output = prob_model.model(observations = data)
+optim_opts = {'n_steps' : 500, 'learning_rate' : 0.01}
+prob_model.train(input_data = None, output_data = data, optim_opts = optim_opts)
+
+
+
 
 
 # TEST EFFECT CLASS NoiseAddition

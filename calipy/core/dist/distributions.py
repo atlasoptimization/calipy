@@ -133,8 +133,10 @@ class CalipyDistribution(CalipyNode):
                 
             def create_pyro_dist(self, input_vars):
                 """
-                Instantiate the underlying Pyro distribution with input vars as
-                parameters. Sampling as dimension handled by sample function.
+                Instantiate the underlying Pyro distribution with a CalipyDict
+                input vars as parameters. Sampling handled by sample function.
+                Function is called inside of forward() method; user interaction
+                not expected.
                 """
                 
                 input_vars_tensors = input_vars.as_datatuple().get_tensors()
@@ -158,7 +160,6 @@ class CalipyDistribution(CalipyNode):
                 pyro_dist = self.create_pyro_dist(input_vars_cp).to_event(n_event_dims)
  
                 # Sampling and compiling
-                # obs_or_None = obs['sample'].tensor if obs is not None else None
                 calipy_sample = sample(name, pyro_dist, dims, observations = obs.value,
                                        subsample_index = ssi, vectorizable = vec)
                 return CalipyDict(calipy_sample)

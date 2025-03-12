@@ -180,12 +180,28 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
     
     # Compute plate dim arguments as counted from right from leftmost event dim
     batch_dim_positions_from_right = dist_dims.find_indices(batch_dims.names, from_right = True) 
-    batch_dim_positions = [dim_pos + + len(event_dim_sizes) for dim_pos in batch_dim_positions_from_right]
+    batch_dim_positions = [dim_pos + len(event_dim_sizes) for dim_pos in batch_dim_positions_from_right]
     
     
     # Plate setup
     plate_names = [name + '_plate' for name in batch_dims.names]
     plate_sizes = [size if size is not None else 1 for size in batch_dims.sizes]
+    
+    # Plate lengths of the subsamples or None if no subsampling.
+    ssi_bound_dims = ssi.bound_dims[batch_dims] if ssi is not None else []
+    plate_ssi_lengths = [ssi_dim.size for ssi_dim in ssi_bound_dims]
+    if len(plate_ssi_lengths) == 0:
+        plate_ssi_lengths = [None] * len(batch_dims)
+    
+    # plate_ssi_lengths = []
+    # for ssi_dim in ssi_bound_dims:
+    #     plate_ssi_lengths.append(ssi_dim.size)
+        
+    # for k, (name, dim) in enumerate(zip(plate_names, ssi.bound_dims)):
+    #     plate_ssi_lengths.append(dim.size)
+        
+    # bound_dims = [ssi.bound_dims if ssi is not None else None]
+    # plate_ssi_lengths = [None for name in batch_dims.names]
 
 
     # cases [1,x,x] vectorizable
@@ -198,11 +214,12 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
             # case [0,0] (obs, ssi)
             if obs == None and ssi == None:
                 current_obs = None
+                
             
             # case [0,1] (obs, ssi)
             if obs == None and ssi is not None:
-                pass
-            
+                current_obs = None
+        
             
             # case [1,0] (obs, ssi)
             if obs is not None and ssi == None:
@@ -213,10 +230,9 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
                 pass
             
             # Handle multiple plates
-            for i, (plate_name, plate_size, dim) in enumerate(zip(plate_names, plate_sizes, batch_dim_positions)):
-                subsample = subsample_index if subsample_index is not None else None
-                size = plate_size
-                stack.enter_context(pyro.plate(plate_name, size=size, subsample=subsample, dim=dim))
+            for i, (plate_name, plate_size, dim, subsample_size) in enumerate(zip(plate_names, plate_sizes, batch_dim_positions, plate_ssi_lengths)):
+                
+                stack.enter_context(pyro.plate(plate_name, size=plate_size, subsample_size=subsample_size, dim=dim))
 
             # Sample data
             sample_vals = pyro.sample(name, dist, obs=current_obs)

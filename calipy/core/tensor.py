@@ -31,6 +31,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 import torch
+import math
 import pandas as pd
 import warnings
 import itertools
@@ -57,6 +58,12 @@ class CalipyIndex:
         # self.named = index_tensor[index_tensor_dims]
         self.dims = index_tensor_dims
         self.index_name_dict = self.generate_index_name_dict()
+        
+    @property
+    def bound_dims(self):
+        """ Returns the dims of ssi bound to the current actual sizes"""
+        bound_dims = self.dims.bind(self.tensor.shape)
+        return bound_dims
         
     @property
     def is_empty(self):
@@ -997,7 +1004,7 @@ class CalipyTensor:
     
     __torch_function__ = True  # Not strictly necessary, but clarity
 
-    def __init__(self, tensor, dims, name = None):
+    def __init__(self, tensor, dims, name = 'noname'):
         
         # Input checks
         if not isinstance(tensor, torch.Tensor):
@@ -1040,6 +1047,64 @@ class CalipyTensor:
             return tuple(CalipyTensor(r, new_dims) if isinstance(r, torch.Tensor) else r for r in result)
         else:
             return result
+
+    def flatten(self, dims_to_flatten, name_flat_dim = 'flat_dim'):
+        """Flattens the current CalipyTensor to another CalipyTensor by collapsing
+        the dims dims_to_flatten towards a new dim with name name_dim_flat.
+        Procedure consists of reordering followed by reshaping and repackaging
+        into a new CalipyTensor.
+        
+        :param dims_to_flatten: A DimTuple instance that contains some dims of 
+            the current CalipyTensor that are to be flattened.
+        :type dims_to_flatten: DimTuple
+        
+        :param name_flat_dim: A string providing the name of the flattened dim 
+            that will replace the collapsed dims.
+        :type dims: str
+    
+        :return: An instance of CalipyTensor reordered to match dims.
+        :rtype: CalipyTensor
+    
+        Example usage:
+    
+        .. code-block:: python
+        
+            # Imports and definitions
+            import torch
+            from calipy.core.utils import dim_assignment
+            from calipy.core.tensor import CalipyTensor
+            
+            # Create DimTuples and tensors
+            data_torch = torch.normal(0,1,[10,5,3])
+            batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+            event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+            data_dims = batch_dims + event_dims
+            data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+            
+            data_flattened_cp = data_cp.flatten(batch_dims)
+            assert((data_flattened_cp.tensor - data_cp.tensor.reshape([50,3]) == 0).all())
+        """
+        
+        
+        # i) Extract the actual sizes of the batch dims and other dims
+        data_dims_bound = self.indexer.local_index.bound_dims[0:-1]
+        batch_dims = data_dims_bound[dims_to_flatten]
+        other_dims = data_dims_bound.delete_dims(dims_to_flatten)
+        
+        batch_dims_sizes = batch_dims.sizes 
+        other_dims_sizes = other_dims.sizes
+        flattened_dim_size = math.prod(batch_dims.sizes)
+        
+        # ii) Do the flattening
+        batch_dim_flattened = dim_assignment([name_flat_dim], dim_sizes = [flattened_dim_size])
+        new_dims = batch_dim_flattened + other_dims
+        
+        reordered_tensor = self.reorder(batch_dims + other_dims)
+        reshaped_tensor = reordered_tensor.tensor.reshape(batch_dim_flattened.sizes + other_dims_sizes)
+        tensor_flattened = CalipyTensor(reshaped_tensor, new_dims)
+        
+        return tensor_flattened
+
 
     def reorder(self, dims):
         """ Reorders the current CalipyTensor to another CalipyTensor with dims
@@ -1417,7 +1482,7 @@ class CalipyTensor:
         return result
         
     def __repr__(self):
-        return f"CalipyTensor({repr(self.tensor)}, \n shape = {self.shape}, \n dims={self.dims})"
+        return f"CalipyTensor({repr(self.tensor)}, \n shape = {self.shape}, \n dims = {self.dims})"
 
     def __str__(self):
         return f"CalipyTensor({str(self.tensor)}, dims={self.dims})"

@@ -37,7 +37,6 @@ import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition, UnknownVariance
 from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple, CalipyDict
 from calipy.core.tensor import CalipyTensor
 
 # ii) Definitions

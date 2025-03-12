@@ -35,14 +35,12 @@ import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition
 from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple
 from calipy.core.tensor import CalipyTensor
 
 
 # ii) Definitions
 
 n_meas = 20
-
 
 
 """
@@ -62,7 +60,7 @@ data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
 data = data_distribution.sample([n_meas])
 
 # The data now is a tensor of shape [n_meas] and reflects measurements being
-# being taken of a single object with a single measurement device.
+# taken of a single object with a single measurement device.
 
 # We now consider the data to be an outcome of measurement of some real world
 # object; consider the true underlying data generation process to be unknown

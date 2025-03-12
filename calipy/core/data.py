@@ -23,6 +23,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import torch
 from typing import Any
+from torch.utils.data import Dataset
 from calipy.core.tensor import CalipyTensor, CalipyIndex
 
 
@@ -542,7 +543,5 @@ class CalipyDict(dict):
         # Use dict's __repr__ to  represent content
         base = dict.__repr__(self)
         return f"CalipyDict({base})"
-
-
 
 

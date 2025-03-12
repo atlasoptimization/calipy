@@ -702,16 +702,24 @@ class DimTuple(tuple):
         return dim_index - ref_index
     
     
-    def delete_dims(self, dim_names):
+    def delete_dims(self, dims_or_names):
         """ Computes a DimTuple object reduced_dim_tuple with the dims referenced
         in dim_names deleted from reduced_dim_tuple. Consequently, reduced_dim_tuple
         contains only those dims which are not mentioned in dim_names.
         
-        :param dim_names: The names of the dims to be deleted from DimTuple.
-        :type dim_names: list of str
-        :return: A DimTuple object without the dims in dim_names.
+        :param dims_or_names: The names of the dims to be deleted from DimTuple or
+            a DimTuple specifying the dims themselves.
+        :type dims_or_names: list of str or DimTuple
+        :return: A DimTuple object without the dims in dims_or_names.
         :rtype: DimTuple
         """
+        # Check input type
+        if isinstance(dims_or_names, DimTuple):
+            dim_names = dims_or_names.names
+        elif isinstance(dims_or_names, list):
+            dim_names = dims_or_names
+            
+        # Rebuild DimTuple without indicated dims
         unlisted_dims = []
         for d in self:
             if d.name not in dim_names:
