@@ -889,6 +889,7 @@ class CalipyTensor:
         data_A_cp = CalipyTensor(data_A_torch, data_dims_A, name = 'data_A')
         
         # Confirm that subsampling works as intended
+        subtensor_1 = data_A_cp[0,0:3,...]  # identical to next line
         subtensor_1 = data_A_cp[0:1,0:3,...]
         subtensor_1.dims == data_A_cp.dims
         assert((subtensor_1.tensor - data_A_cp.tensor[0:1,0:3,...] == 0).all())
@@ -1210,6 +1211,63 @@ class CalipyTensor:
         expanded_tensor_cp = CalipyTensor(expanded_tensor, dims = expanded_dims,
                                           name = self.name + '_expanded')
         return expanded_tensor_cp
+    
+    def get_element(self, dims, indices):
+        """ Access the tensor at positions indices in dims dims of self and return it.
+        Returns a CalipyTensor with the same dims as self.
+        
+        :param dims: A DimTuple instance that represents the dims in which indexing
+            should be performed
+        :type dims: DimTuple
+        :param indices: A list containing integers providing where to access 
+            the corresponding dimensions. match between dims and indices is done
+            via ordering
+        :type indices: list of int
+    
+        :return: An instance of CalipyTensor containing the one element of self
+        where [dims = indices ,...].
+        :rtype: CalipyTensor
+        
+        Example usage:
+    
+        .. code-block:: python
+        
+            # Imports and definitions
+            import torch
+            from calipy.core.tensor import CalipyTensor
+            from calipy.core.utils import dim_assignment
+        
+            # Create DimTuples and tensors
+            data_torch = torch.normal(0,1,[10,5,3])
+            batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+            event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+            data_dims = batch_dims + event_dims
+            data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+            
+            # Access the single element where batch_dim 'bd_1' has the value 5
+            data_cp_element_1 = data_cp.get_element(batch_dims[0:1], [5])
+            assert((data_cp_element_1.tensor.squeeze() - data_cp.tensor[5,...] == 0).all())
+            
+            # Access the single element where batch_dims has the value [5,2]
+            data_cp_element_2 = data_cp.get_element(batch_dims, [5,2])
+            assert((data_cp_element_2.tensor.squeeze() - data_cp.tensor[5,2,...] == 0).all())
+        """
+        
+        # Reorder tensor
+        index_dims = dims
+        other_dims = self.dims.delete_dims(index_dims)
+        reordered_dims = index_dims + other_dims
+        reordered_tensor = self.reorder(reordered_dims)
+        
+        # Access tensor
+        full_indices = tuple(indices) + tuple(len(other_dims) * [slice(None)])
+        tensor_element_reordered = reordered_tensor[full_indices]
+        
+        # Rewrap into calipy
+        tensor_element_cp = tensor_element_reordered.reorder(self.dims)
+        
+        return tensor_element_cp
+    
 
     def _compute_new_dims(self, func, orig_args, orig_kwargs, result):
         # A placeholder method that decides how dims change after an operation.
@@ -1344,7 +1402,8 @@ class CalipyTensor:
             index = []
             for dim, idx in enumerate(old_index):
                 if isinstance(idx, int):  # Prevent dimension collapse
-                    index.append(torch.tensor([idx]))  # Convert to a tensor list
+                    # index.append(torch.tensor([idx]))  # Convert to a tensor list
+                    index.append(slice(idx, idx+1))  # Convert to slice to preserve singleton
                 else:
                     index.append(idx)
                    

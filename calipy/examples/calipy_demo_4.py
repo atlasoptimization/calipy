@@ -42,7 +42,7 @@ from calipy.core.tensor import CalipyTensor
 
 
 # Todel
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from calipy.core.utils import CalipyDim
 
 
@@ -128,7 +128,8 @@ class CalipyDataset(Dataset):
     
     def infer_length(self, query_data):
         # Infer the batch length of input_data or output_data
-        len_data = [query_data[key].shape[0] for key in query_data.keys()]
+        len_data = {key: query_data[key].shape[0] if query_data[key] is not None else None 
+                    for key in query_data.keys()}
         return len_data
         
     def flatten(self, io_data):
@@ -145,11 +146,11 @@ class CalipyDataset(Dataset):
         # ii) Check if flattening consistent
         batch_dims_sizes = {key : value.dims[['batch_dim_flattened']].sizes if value is not None else [] 
                              for key, value in data_flattened.items()}
-        first_dim_sizes = batch_dims_sizes[list(batch_dims_sizes.keys())[0]]
-        if not all([dim_sizes == first_dim_sizes for key, dim_sizes in batch_dims_sizes.items()]):
+        first_dim_size = batch_dims_sizes[list(batch_dims_sizes.keys())[0]]
+        if not all([dim_sizes == first_dim_size for key, dim_sizes in batch_dims_sizes.items()]):
             raise(Exception('For flattening, all DimTuples batch_dims must be of ' \
                             'same size for all keys but are {} for keys {}'.format(batch_dims_sizes,list(batch_dims_sizes.keys()))))
-                
+        self.batch_length = first_dim_size
         return CalipyDict(data_flattened)
     
         # data_flattened = {}
@@ -225,16 +226,38 @@ class CalipyDataset(Dataset):
     def __len__(self):
         # return the length of the dataset, i.e. the number of independent event samples
         # return self.batch_length_total
-        return  self.len_output_data
+        return  self.batch_length
         
 
     def __getitem__(self, idx):
         # print(idx)
         # Handle the case where idx is a single integer
-        input_data_idx = self.input_data_flattened[idx] if self.input_data_flattened is not None else None
-        output_data_idx = self.output_data_flattened[idx]
+        input_data_idx = self.flattened_input[idx] if self.flattened_input is not None else None
+        output_data_idx = self.flattened_output[idx] if self.flattened_output is not None else None
+        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : idx}
+        
+        return CalipyDict(data_dict)
 
-        return (input_data_idx, output_data_idx, idx)
+
+
+# Custom collate function that collates dicts together by stacking contained 
+# tensors along their batch dimension (which is assumed to have the name of
+# 'batch_dim_flattened').
+
+def dict_collate(batch):
+    """ Custom collate function that collates dicts together by stacking contained 
+    tensors along their batch dimension (which is assumed to have the name of
+    'batch_dim_flattened'). Used primarily as collate function for the DataLoader
+    to perform automatized subsampling.
+    :param batch: The CalipyDict containing info on input_vars, observations, and
+        corresponding index that was used to produce them via dataset.__getitem__[idx]
+    :type batch: CalipyDict
+        
+    :return: An instance of CalipyDict, where multiple CalipyDict objects are 
+        collated together into a calipy_dict containing stacked CalipyTensors.
+    :rtype: CalipyDict
+    """
+
 
 
 
@@ -242,7 +265,6 @@ class CalipyDataset(Dataset):
 # Custom collate function that collates tensors by concatenating them among the 
 # first dimension. Allows vectorization. Only possible when batch shapes are 
 # consistent and event shapes for each element are independent of batch
-
 # Input to the collate are assumed to be tensortuplelists
 def tensor_collate(batch):
     
@@ -387,6 +409,11 @@ data_dims = dim_assignment(['bd1_data', 'bd2_data', 'ed_data'], dim_sizes = [n_m
 data_cp = CalipyTensor(data, data_dims, name = 'data')
 dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd1_data', 'bd2_data']])
 
+dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=tensor_collate)
+
+# Iterate through the DataLoader
+for batch_input, batch_output, index in dataloader:
+    print(batch_input, batch_output, index)
 #########################################################
 
 

@@ -203,6 +203,8 @@ assert (((data_A_cp[local_index] - data_A_cp).tensor == 0).all())
 # Indexing of CalipyTensors via int, tuple, slice, and CalipyIndex
 data_A_cp[0,:]
 data_A_cp[local_index]
+subtensor_A = data_A_cp[0,...]  # identical to next line
+subtensor_A = data_A_cp[0:1,...]
 
 # During addressing, appropriate indexers are built
 data_A_cp[0,:].indexer.global_index

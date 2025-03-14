@@ -539,6 +539,26 @@ class CalipyDict(dict):
         renamed_data_tuple = self.as_datatuple().rename_keys(rename_dict)
         return CalipyDict(renamed_data_tuple)
 
+    def __getitem__(self, key):
+        """ Allows accessing elements of CalipyDict by passing different types
+        of arguments as keys, these include:
+            - str => string is interpreted as key of dict; value[key] returned
+            - tuple => (int, calipy_dim) returns a new CalipyDict with keys of
+                self and corresponding values  = value[key[0], ...] i.e. the 
+                value indexed by the integer in dimension calipy_dim.            
+        """
+        if type(key) == str:
+            # Standard dictionary behavior for string keys
+            return super().__getitem__(key)
+        if type(key) == tuple:
+            key_int = key[0]
+            key_dim = key[1]
+            new_dict = {}
+            for key, value in self.items():
+                new_dict[key] = value.get_element(key_dim, key_int)
+            return CalipyDict(new_dict)
+
+        
     def __repr__(self):
         # Use dict's __repr__ to  represent content
         base = dict.__repr__(self)
