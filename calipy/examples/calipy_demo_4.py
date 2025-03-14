@@ -142,6 +142,7 @@ class CalipyDataset(Dataset):
         data_flattened = {}
         for key, value in io_data.items():
             data_flattened[key] = value.flatten(self.batch_dims, 'batch_dim_flattened') if value is not None else None
+        self.batch_dim_flattened = dim_assignment(['batch_dim_flattened'])
         
         # ii) Check if flattening consistent
         batch_dims_sizes = {key : value.dims[['batch_dim_flattened']].sizes if value is not None else [] 
@@ -150,6 +151,7 @@ class CalipyDataset(Dataset):
         if not all([dim_sizes == first_dim_size for key, dim_sizes in batch_dims_sizes.items()]):
             raise(Exception('For flattening, all DimTuples batch_dims must be of ' \
                             'same size for all keys but are {} for keys {}'.format(batch_dims_sizes,list(batch_dims_sizes.keys()))))
+        
         self.batch_length = first_dim_size
         return CalipyDict(data_flattened)
     
@@ -230,11 +232,11 @@ class CalipyDataset(Dataset):
         
 
     def __getitem__(self, idx):
-        # print(idx)
         # Handle the case where idx is a single integer
-        input_data_idx = self.flattened_input[idx] if self.flattened_input is not None else None
-        output_data_idx = self.flattened_output[idx] if self.flattened_output is not None else None
-        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : idx}
+        bd_flat = self.batch_dim_flattened
+        input_data_idx = self.flattened_input.subsample_tensors(bd_flat, [idx]) if self.flattened_input is not None else None
+        output_data_idx = self.flattened_output.subsample_tensors(bd_flat, [idx]) if self.flattened_output is not None else None
+        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : (bd_flat, idx)}
         
         return CalipyDict(data_dict)
 
@@ -249,14 +251,31 @@ def dict_collate(batch):
     tensors along their batch dimension (which is assumed to have the name of
     'batch_dim_flattened'). Used primarily as collate function for the DataLoader
     to perform automatized subsampling.
-    :param batch: The CalipyDict containing info on input_vars, observations, and
+    :param batch: A list of CalipyDict containing info on input_vars, observations, and
         corresponding index that was used to produce them via dataset.__getitem__[idx]
-    :type batch: CalipyDict
+    :type batch: list of CalipyDict
         
     :return: An instance of CalipyDict, where multiple CalipyDict objects are 
         collated together into a calipy_dict containing stacked CalipyTensors.
     :rtype: CalipyDict
     """
+    
+    # Untangle batch list
+    list_of_dicts = batch
+    list_of_inputs = [batch_dict['input'] for batch_dict in list_of_dicts]
+    list_of_outputs =[batch_dict['output'] for batch_dict in list_of_dicts] 
+    list_of_indices = [batch_dict['index'] for batch_dict in list_of_dicts]
+    
+    # Check input signatures
+    
+    # Construct new dictionary
+    collated_dict = {}
+    
+    
+    
+    
+    
+    return  collated_dict
 
 
 
@@ -409,11 +428,17 @@ data_dims = dim_assignment(['bd1_data', 'bd2_data', 'ed_data'], dim_sizes = [n_m
 data_cp = CalipyTensor(data, data_dims, name = 'data')
 dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd1_data', 'bd2_data']])
 
+batch_dim_flattened = dataset.batch_dim_flattened
+flattened_output = dataset.flattened_output.subsample_tensors(batch_dim_flattened, [0])
+
 dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=tensor_collate)
 
 # Iterate through the DataLoader
 for batch_input, batch_output, index in dataloader:
     print(batch_input, batch_output, index)
+    
+    
+    
 #########################################################
 
 

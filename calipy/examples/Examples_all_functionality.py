@@ -387,6 +387,28 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # generic_sum = calipy_sum(data_A_cp)
 
 
+
+# Check the calipy_cat function
+from calipy.core.funs import calipy_cat
+
+# Create data for CalipyDict initialization
+tensor_dims = dim_assignment(['bd', 'ed'])
+tensor_A_cp = CalipyTensor(torch.ones(2, 3), tensor_dims) 
+tensor_B_cp = CalipyTensor(2*torch.ones(4, 3), tensor_dims) 
+tensor_C_cp = CalipyTensor(2*torch.ones(2, 2), tensor_dims) 
+
+# Create CalipyDict cat
+tensor_cat_1 = calipy_cat([tensor_A_cp, tensor_B_cp], dim = 0)
+tensor_cat_2 = calipy_cat([tensor_A_cp, tensor_C_cp], dim = 1)
+
+tensor_cat_1_alt = calipy_cat([tensor_A_cp, tensor_B_cp], dim = tensor_dims[0:1])
+tensor_cat_2_alt = calipy_cat([tensor_A_cp, tensor_C_cp], dim = tensor_dims[1:2])
+
+assert(( tensor_cat_1.tensor - tensor_cat_1_alt.tensor == 0).all())
+assert(( tensor_cat_2.tensor - tensor_cat_2_alt.tensor == 0).all())
+
+
+
 # CalipyTensors work well even when some dims are empty
 # Set up data and dimensions
 data_0dim = torch.ones([])
@@ -437,6 +459,22 @@ assert((data_A_reordered_cp.tensor - data_A_cp.tensor.permute([1,2,0]) == 0).all
 assert(data_A_reordered_cp.dims == data_dims_A_reordered)
 
 
+# Indexing can also be done in typical torch fashion for CalipyTensors
+# Create DimTuples and tensors
+data_torch = torch.normal(0,1,[10,5,3])
+batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+data_dims = batch_dims + event_dims
+data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+
+# Access the single element where batch_dim 'bd_1' has the value 5
+data_cp_element_1 = data_cp.get_element(batch_dims[0:1], [5])
+assert((data_cp_element_1.tensor.squeeze() - data_cp.tensor[5,...] == 0).all())
+
+# Access the single element where batch_dims has the value [5,2]
+data_cp[5,2,0]
+data_cp_element_2 = data_cp.get_element(batch_dims, [5,2])
+assert((data_cp_element_2.tensor.squeeze() - data_cp.tensor[5,2,...] == 0).all())
 
 # BASE CLASS EXPERIMENTATION
 # Base classes

@@ -23,6 +23,8 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import torch
 
+from calipy.core.tensor import preprocess_args, CalipyTensor
+
 # Define calipy wrappers for torch functions
 # This should be converted to commands calipy.sum, calipy.mean etc
 # These functions are useful to process CalipyTensors in such a way that the dim
@@ -62,3 +64,86 @@ def calipy_sum(calipy_tensor, dim = None, keepdim = False, dtype = None):
     return result
     
 calipy_sum.__doc__ += "\n" + torch.sum.__doc__
+
+
+def calipy_cat(calipy_tensors, dim = 0):
+    """ Wrapper function for torch.cat applying a dimension-aware sum to CalipyTensor
+    objects. Input args are as for torch.cat but accept dim = dims for dims either
+    a DimTuple or an integer.
+    
+    Notes:
+    - This function acts on CalipyTensor objects
+    - This function acts on dim args of class DimTuple and int.
+    - The behavior is equivalent to torch.cat on the CalipyTensor.tensor level
+        but augments the result with dimensions.
+        
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+        from calipy.core.tensor import CalipyTensor
+        from calipy.core.utils import dim_assignment
+        from calipy.core.funs import calipy_cat
+        
+        # Create data for CalipyDict initialization
+        tensor_dims = dim_assignment(['bd', 'ed'])
+        tensor_A_cp = CalipyTensor(torch.ones(2, 3), tensor_dims) 
+        tensor_B_cp = CalipyTensor(2*torch.ones(4, 3), tensor_dims) 
+        tensor_C_cp = CalipyTensor(2*torch.ones(2, 2), tensor_dims) 
+        
+        # Create CalipyDict cat
+        tensor_cat_1 = calipy_cat([tensor_A_cp, tensor_B_cp], dim = 0)
+        tensor_cat_2 = calipy_cat([tensor_A_cp, tensor_C_cp], dim = 1)
+        
+        tensor_cat_1_alt = calipy_cat([tensor_A_cp, tensor_B_cp], dim = tensor_dims[0:1])
+        tensor_cat_2_alt = calipy_cat([tensor_A_cp, tensor_C_cp], dim = tensor_dims[1:2])
+        
+        assert(( tensor_cat_1.tensor - tensor_cat_1_alt.tensor == 0).all())
+        assert(( tensor_cat_2.tensor - tensor_cat_2_alt.tensor == 0).all())
+
+    Original torch.cat docstring:
+    """
+    
+    # Compile and unwrap arguments
+    args = calipy_tensors
+    kwargs = {'dim' : dim}
+    
+    # Convert CalipyDims in 'dim' argument to int indices if present
+    if not isinstance(dim, int):
+        kwargs['dim'] = (calipy_tensors[0].dims.find_indices(kwargs['dim'].names))[0]
+    tensor_list, unwrapped_kwargs = preprocess_args(args, kwargs)
+    
+    
+    # Call torch function
+    result = torch.cat(tensor_list, **unwrapped_kwargs)
+    result_dims = calipy_tensors[0].dims
+    result_name = calipy_tensors[0].name
+    result_cp = CalipyTensor(result, result_dims, name = result_name)
+    
+    return result_cp
+    
+calipy_cat.__doc__ += "\n" + torch.cat.__doc__
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

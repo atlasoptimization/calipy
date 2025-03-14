@@ -841,7 +841,15 @@ def preprocess_args(args, kwargs):
 
     # Unwrap CalipyTensors to get underlying tensors
     def unwrap(x):
-        return x.tensor if isinstance(x, CalipyTensor) else x
+        if isinstance(x, CalipyTensor):
+            result = x.tensor
+        elif isinstance(x, list):
+            result = [unwrap(element) for element in x]
+        else:
+            result = x
+        
+        return result
+        
 
     unwrapped_args = tuple(unwrap(a) for a in args)
     unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
@@ -1029,8 +1037,8 @@ class CalipyTensor:
         
         # Find first CalipyTensor in args
         self_instance = next((arg for arg in args if isinstance(arg, cls)), None)
-        if self_instance is None:
-            return NotImplemented
+        # if self_instance is None:
+        #     return NotImplemented
         
         
         # Call the original PyTorch function
@@ -1278,7 +1286,7 @@ class CalipyTensor:
         
         # List compatible function cases
         reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
-        elementwise_fun_list = ['add', 'mul', 'sub', 'div']
+        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat']
         
         result_shape = result.shape
 

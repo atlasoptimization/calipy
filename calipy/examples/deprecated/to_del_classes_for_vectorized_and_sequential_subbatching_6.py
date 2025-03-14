@@ -19,7 +19,7 @@ from functorch.dim import dims
 import calipy
 from calipy.core.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
 from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter, NoiseAddition
-from calipy.core.data import DataTuple, CalipyDict, CalipyDataset
+from calipy.core.data import DataTuple, CalipyDict
 from calipy.core.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.primitives import param, sample
@@ -90,6 +90,27 @@ batch_dims_B = dim_assignment(dim_names = ['bd_1_B'])
 event_dims_B = dim_assignment(dim_names = ['ed_1_B'])
 data_dims_B = batch_dims_B + event_dims_B
 
+
+
+import torch
+from calipy.core.tensor import CalipyTensor
+from calipy.core.utils import dim_assignment
+
+# Create DimTuples and tensors
+data_torch = torch.normal(0,1,[10,5,3])
+batch_dims = dim_assignment(dim_names = ['bd_1', 'bd_2'], dim_sizes = [10,5])
+event_dims = dim_assignment(dim_names = ['ed_1'], dim_sizes = [3])
+data_dims = batch_dims + event_dims
+data_cp = CalipyTensor(data_torch, data_dims, name = 'data')
+
+# Access the single element where batch_dim 'bd_1' has the value 5
+data_cp_element_1 = data_cp.get_element(batch_dims[0:1], [5])
+assert((data_cp_element_1.tensor.squeeze() - data_cp.tensor[5,...] == 0).all())
+
+# Access the single element where batch_dims has the value [5,2]
+data_cp[5,2,0]
+data_cp_element_2 = data_cp.get_element(batch_dims, [5,2])
+assert((data_cp_element_2.tensor.squeeze() - data_cp.tensor[5,2,...] == 0).all())
 
 
 # # Test the DataTuple definitions
@@ -383,6 +404,30 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 # # Showcase torch functions acting on CalipyTensor
 # specific_sum = calipy_sum(data_A_cp, dim = batch_dims_A)
 # generic_sum = calipy_sum(data_A_cp)
+
+
+
+# Imports and definitions
+import torch
+from calipy.core.tensor import CalipyTensor
+from calipy.core.utils import dim_assignment
+from calipy.core.funs import calipy_cat
+
+# Create data for CalipyDict initialization
+tensor_dims = dim_assignment(['bd', 'ed'])
+tensor_A_cp = CalipyTensor(torch.ones(2, 3), tensor_dims) 
+tensor_B_cp = CalipyTensor(2*torch.ones(4, 3), tensor_dims) 
+tensor_C_cp = CalipyTensor(2*torch.ones(2, 2), tensor_dims) 
+
+# Create CalipyDict cat
+tensor_cat_1 = calipy_cat([tensor_A_cp, tensor_B_cp], dim = 0)
+tensor_cat_2 = calipy_cat([tensor_A_cp, tensor_C_cp], dim = 1)
+
+tensor_cat_1_alt = calipy_cat([tensor_A_cp, tensor_B_cp], dim = tensor_dims[0:1])
+tensor_cat_2_alt = calipy_cat([tensor_A_cp, tensor_C_cp], dim = tensor_dims[1:2])
+
+assert(( tensor_cat_1.tensor - tensor_cat_1_alt.tensor == 0).all())
+assert(( tensor_cat_2.tensor - tensor_cat_2_alt.tensor == 0).all())
 
 
 # CalipyTensors work well even when some dims are empty

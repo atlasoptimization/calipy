@@ -538,25 +538,115 @@ class CalipyDict(dict):
         
         renamed_data_tuple = self.as_datatuple().rename_keys(rename_dict)
         return CalipyDict(renamed_data_tuple)
+    
+    def subsample_tensors(self, dim, indices):
+        """ Allows accessing CalipyTensor elements of CalipyDict by passing a
+        list of integer indices and a single dimension along which all of the
+        CalipyTensors in the dict are to be sliced.
+        
+        :param indices: List of integer indices that is used for indexing self
+            in the dimension dim
+        :type indices: list of int
+        :param dim: A DimTuple containing a single CalipyDim object declaring
+            which dim is to be subsampled
+        :type dim: DimTuple
+        :return: A new CalipyDict with keys of self and corresponding values =
+            value[..., indices, ...] i.e. the values indexed by the indices in
+            dimension dim.       
+        :rtype: CalipyDict           
+        """
+        new_dict = {}
+        for key, value in self.items():
+            if isinstance(value, CalipyTensor):
+                new_dict[key] = value.get_element(dim, indices)
+        return CalipyDict(new_dict)
+    
+    def stack(self, other):
+        """ 
+        Overloads the + operator to return a new CalipyDicte when adding two 
+        CalipyDict objects. Addition is defined 
+        
+        :param other: The CalipyDict to add.
+        :type other: CalipyDict
+        :return: A new CalipyDict with elements from each dict stacked.
+        :rtype: CalipyDict
+        :raises ValueError: If both DataTuples do not have matching keys.
+        """
+        
+        # Basic IO check
+        if not isinstance(other, CalipyDict):
+            return NotImplemented
+
+        if self.keys() != other.keys():
+            raise ValueError("Both CalipyDicts must have the same keys for stacking.")
+
+        # Stack elements based on their type
+        stacked_dict = {}
+        for key, value in self.items():
+            val_1 = value
+            val_2 = other[key]
+            if type(val_1) != type(val_2):
+                raise ValueError('Both values must be of the same type for stacking' \
+                                 'but are {} and {}.'.format(type(val_1), type(val_2)))
+
+
+        return stacked_dict
+    
 
     def __getitem__(self, key):
         """ Allows accessing elements of CalipyDict by passing different types
         of arguments as keys, these include:
-            - str => string is interpreted as key of dict; value[key] returned
-            - tuple => (int, calipy_dim) returns a new CalipyDict with keys of
-                self and corresponding values  = value[key[0], ...] i.e. the 
-                value indexed by the integer in dimension calipy_dim.            
+            - str => string is interpreted as key of dict; value[key] returned            
         """
         if type(key) == str:
             # Standard dictionary behavior for string keys
             return super().__getitem__(key)
-        if type(key) == tuple:
-            key_int = key[0]
-            key_dim = key[1]
-            new_dict = {}
-            for key, value in self.items():
-                new_dict[key] = value.get_element(key_dim, key_int)
-            return CalipyDict(new_dict)
+
+    
+    def __add__(self, other):
+        """ 
+        Overloads the + operator to return a new CalipyDicte when adding two 
+        CalipyDict objects. Addition is defined elementwise for each key.
+        
+        :param other: The CalipyDict to add.
+        :type other: CalipyDict
+        :return: A new CalipyDict with elements from each dict added and keys as
+            from self.
+        :rtype: CalipyDict
+        :raises ValueError: If both DataTuples do not have matching keys.
+        
+        Example usage:
+    
+        .. code-block:: python
+            
+            # Imports and definitions
+            import torch
+            from calipy.core.data import CalipyDict
+               
+    
+            # Create data for CalipyDict initialization
+            tensor_A = torch.ones(2, 3)
+            tensor_B = torch.ones(2, 3)
+            data_dict_1 = CalipyDict({'tensor': tensor_A})
+            data_dict_2 = CalipyDict({'tensor' : tensor_B})
+            
+            # Create CalipyDict sum
+            dict_sum = data_dict_1 + data_dict_2
+
+        """
+        if not isinstance(other, CalipyDict):
+            return NotImplemented
+
+        if self.keys() != other.keys():
+            raise ValueError("Both CalipyDicts must have the same keys for elementwise addition.")
+
+        data_tuple_1 = self.as_datatuple()
+        data_tuple_2 = other.as_datatuple()
+        
+        data_tuple_sum = data_tuple_1 + data_tuple_2
+        dict_sum = CalipyDict(data_tuple_sum)
+
+        return dict_sum
 
         
     def __repr__(self):
