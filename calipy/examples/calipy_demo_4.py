@@ -38,7 +38,8 @@ from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition
 from calipy.core.utils import dim_assignment
 from calipy.core.data import DataTuple, CalipyDict
-from calipy.core.tensor import CalipyTensor
+from calipy.core.tensor import CalipyTensor, CalipyIndex
+from calipy.core.funs import calipy_cat
 
 
 # Todel
@@ -48,9 +49,9 @@ from calipy.core.utils import CalipyDim
 
 # ii) Definitions
 
-n_meas = 20
+n_meas = 10
 n_event = 1
-n_subbatch = 15
+n_subbatch = 7
 
 
 # # # CLASSES FOR INJECTION INTO DATA 
@@ -228,7 +229,7 @@ class CalipyDataset(Dataset):
     def __len__(self):
         # return the length of the dataset, i.e. the number of independent event samples
         # return self.batch_length_total
-        return  self.batch_length
+        return  self.batch_length[0]
         
 
     def __getitem__(self, idx):
@@ -236,7 +237,7 @@ class CalipyDataset(Dataset):
         bd_flat = self.batch_dim_flattened
         input_data_idx = self.flattened_input.subsample_tensors(bd_flat, [idx]) if self.flattened_input is not None else None
         output_data_idx = self.flattened_output.subsample_tensors(bd_flat, [idx]) if self.flattened_output is not None else None
-        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : (bd_flat, idx)}
+        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : (bd_flat, torch.tensor([idx]))}
         
         return CalipyDict(data_dict)
 
@@ -268,118 +269,132 @@ def dict_collate(batch):
     
     # Check input signatures
     
-    # Construct new dictionary
-    collated_dict = {}
+    # Construct new dictionaries
     
-    
-    
-    
-    
-    return  collated_dict
-
-
-
-
-
-# Custom collate function that collates tensors by concatenating them among the 
-# first dimension. Allows vectorization. Only possible when batch shapes are 
-# consistent and event shapes for each element are independent of batch
-# Input to the collate are assumed to be tensortuplelists
-def tensor_collate(batch):
-    
-    batch_input, batch_output, indices = zip(*batch)
-    reduced_batch_input = reduce_nones(batch_input)
-    
-    len_input = len(batch_input) if reduced_batch_input is not None else 0 
-    len_input_tuple = len(batch_input[0]) if reduced_batch_input is not None else 0
-    len_output = len(batch_output)
-    len_output_tuple = len(batch_output[0])
-    
-    # Check if vectorizable
-    batch_input_shapes = []
-    batch_output_shapes = []
-    
-    # for k_in in range(len_input):
-    #     input_shapes = [bi.shape for bi in batch_input[k_in]]
-    #     batch_input_shapes.append(input_shapes)
-    # for k_out in range(len_output):
-    #     output_shapes = [bo.shape for bo in batch_output[k_out]]
-    #     batch_output_shapes.append(output_shapes)
+    output_dict = {}
+    output_keys = list_of_outputs[0].keys()
+    for key in output_keys:
+        tensors_to_concat = [d[key] for d in list_of_outputs]
+        output_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
         
-    batch_input_shapes = [[bi.shape for bi in batch_input[k]] for k in range(len_input)]
-    batch_output_shapes = [[bo.shape for bo in batch_output[k]] for k in range(len_output)]
-    input_consistency = [x == batch_input_shapes[0] for x in batch_input_shapes]
-    output_consistency = [x == batch_output_shapes[0] for x in batch_output_shapes]
-    batch_consistency = len_input == len_output if reduced_batch_input is not None else True
+    input_dict = {}
+    input_keys = list_of_inputs[0].keys()
+    for key in input_keys:
+        tensors_to_concat = [d[key] for d in list_of_inputs]
+        input_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
+        
     
-    if input_consistency is False:
-        raise(Exception('The batch input has shapes that disallow vectorization. Need to be equal'\
-                        ' for each tuple but are {}'.format(batch_input_shapes)))
-    if output_consistency is False:
-        raise(Exception('The batch output has shapes that disallow vectorization. Need to be equal'\
-                        ' for each tuple but are {}'.format(batch_output_shapes)))
-    if batch_consistency is False:
-        raise(Exception('The number of list elements is inconsistent between input and' \
-                        ' output batch. Should be equal but are len(batch_input) ={}' \
-                        ' len(batch_output) = {}. Alternatively, input may be None'
-                        .format(len_input, len_output)))
+    flattened_batch_dim = list_of_indices[0][0]
+    index_dim = dim_assignment(['index_dim'])
+    indices_to_concat = torch.cat([d[1] for d in list_of_indices], dim = 0).reshape([-1,1])
+    ssi = CalipyIndex(indices_to_concat, flattened_batch_dim + index_dim, name = 'subsample_index')
     
     
+    return  input_dict, output_dict, ssi
+
+
+
+
+
+# # Custom collate function that collates tensors by concatenating them among the 
+# # first dimension. Allows vectorization. Only possible when batch shapes are 
+# # consistent and event shapes for each element are independent of batch
+# # Input to the collate are assumed to be tensortuplelists
+# def tensor_collate(batch):
     
-    # Keep None as is, or handle as required
-    # collated_batch_input = tuple([torch.cat(bi, dim = 0) for bi in batch_input]) if reduced_batch_input is not None else None
-    # collated_batch_output = tuple([torch.cat(bo, dim=0) for bo in batch_output])
+#     batch_input, batch_output, indices = zip(*batch)
+#     reduced_batch_input = reduce_nones(batch_input)
     
-    collated_batch_input = []
-    collated_batch_output = []
-    for k_inputs in range(len_input_tuple):
-        input_batch_list = []
-        for k_samples in range(len_input):
-            input_batch_list.append(batch_input[k_samples][k_inputs])
-        input_batch_tensor = torch.cat(input_batch_list, dim = 0)
-        collated_batch_input.append(input_batch_tensor)
-    collated_batch_input = collated_batch_input if not len(collated_batch_input) ==0 else None
+#     len_input = len(batch_input) if reduced_batch_input is not None else 0 
+#     len_input_tuple = len(batch_input[0]) if reduced_batch_input is not None else 0
+#     len_output = len(batch_output)
+#     len_output_tuple = len(batch_output[0])
     
-    for k_outputs in range(len_output_tuple):
-        output_batch_list = []
-        for k_samples in range(len_output):
-            output_batch_list.append(batch_output[k_samples][k_outputs])
-        output_batch_tensor = torch.cat(output_batch_list, dim = 0)
-        collated_batch_output.append(output_batch_tensor)
+#     # Check if vectorizable
+#     batch_input_shapes = []
+#     batch_output_shapes = []
+    
+#     # for k_in in range(len_input):
+#     #     input_shapes = [bi.shape for bi in batch_input[k_in]]
+#     #     batch_input_shapes.append(input_shapes)
+#     # for k_out in range(len_output):
+#     #     output_shapes = [bo.shape for bo in batch_output[k_out]]
+#     #     batch_output_shapes.append(output_shapes)
+        
+#     batch_input_shapes = [[bi.shape for bi in batch_input[k]] for k in range(len_input)]
+#     batch_output_shapes = [[bo.shape for bo in batch_output[k]] for k in range(len_output)]
+#     input_consistency = [x == batch_input_shapes[0] for x in batch_input_shapes]
+#     output_consistency = [x == batch_output_shapes[0] for x in batch_output_shapes]
+#     batch_consistency = len_input == len_output if reduced_batch_input is not None else True
+    
+#     if input_consistency is False:
+#         raise(Exception('The batch input has shapes that disallow vectorization. Need to be equal'\
+#                         ' for each tuple but are {}'.format(batch_input_shapes)))
+#     if output_consistency is False:
+#         raise(Exception('The batch output has shapes that disallow vectorization. Need to be equal'\
+#                         ' for each tuple but are {}'.format(batch_output_shapes)))
+#     if batch_consistency is False:
+#         raise(Exception('The number of list elements is inconsistent between input and' \
+#                         ' output batch. Should be equal but are len(batch_input) ={}' \
+#                         ' len(batch_output) = {}. Alternatively, input may be None'
+#                         .format(len_input, len_output)))
+    
+    
+    
+#     # Keep None as is, or handle as required
+#     # collated_batch_input = tuple([torch.cat(bi, dim = 0) for bi in batch_input]) if reduced_batch_input is not None else None
+#     # collated_batch_output = tuple([torch.cat(bo, dim=0) for bo in batch_output])
+    
+#     collated_batch_input = []
+#     collated_batch_output = []
+#     for k_inputs in range(len_input_tuple):
+#         input_batch_list = []
+#         for k_samples in range(len_input):
+#             input_batch_list.append(batch_input[k_samples][k_inputs])
+#         input_batch_tensor = torch.cat(input_batch_list, dim = 0)
+#         collated_batch_input.append(input_batch_tensor)
+#     collated_batch_input = collated_batch_input if not len(collated_batch_input) ==0 else None
+    
+#     for k_outputs in range(len_output_tuple):
+#         output_batch_list = []
+#         for k_samples in range(len_output):
+#             output_batch_list.append(batch_output[k_samples][k_outputs])
+#         output_batch_tensor = torch.cat(output_batch_list, dim = 0)
+#         collated_batch_output.append(output_batch_tensor)
         
             
-    #         collated_batch_input.append([torch.cat([bi[k_inputs] for bi in batch_input], dim = 0)])
-    # for k_outputs in range(len_output_tuple):
-    #     collated_batch_output.append([torch.cat([bo[k_outputs] for bo in batch_output], dim = 0)])
+#     #         collated_batch_input.append([torch.cat([bi[k_inputs] for bi in batch_input], dim = 0)])
+#     # for k_outputs in range(len_output_tuple):
+#     #     collated_batch_output.append([torch.cat([bo[k_outputs] for bo in batch_output], dim = 0)])
     
-    # indices = torch.tensor(indices)
+#     # indices = torch.tensor(indices)
     
-    return collated_batch_input, collated_batch_output, indices
+#     return collated_batch_input, collated_batch_output, indices
 
 
-# helper function to cat also none tensors
-def safe_cat(tensor_list, dim=0):
+# # helper function to cat also none tensors
+# def safe_cat(tensor_list, dim=0):
     
-    # Filter out None values
-    filtered_tensors = [t for t in tensor_list if t is not None]
+#     # Filter out None values
+#     filtered_tensors = [t for t in tensor_list if t is not None]
     
-    # Concatenate the remaining tensors
-    if filtered_tensors:
-        return torch.cat(filtered_tensors, dim=dim)
-    else:
-        return None  # or raise an exception if needed
+#     # Concatenate the remaining tensors
+#     if filtered_tensors:
+#         return torch.cat(filtered_tensors, dim=dim)
+#     else:
+#         return None  # or raise an exception if needed
 
-safe_cat.__doc__ = 'A torch.cat derivative that handles entries of None in the tensor list'\
-    'by omitting them.' + torch.cat.__doc__
+# safe_cat.__doc__ = 'A torch.cat derivative that handles entries of None in the tensor list'\
+#     'by omitting them.' + torch.cat.__doc__
 
 
-def reduce_nones(input_list):
-    # reduces a list containing Nones by eliminating the Nones and replaces a
-    # full None list [None, None, ...] with None
-    reduced_list = [element for element in input_list if element is not None]
-    reduced_list = reduced_list if not len(reduced_list) == 0 else None
+# def reduce_nones(input_list):
+#     # reduces a list containing Nones by eliminating the Nones and replaces a
+#     # full None list [None, None, ...] with None
+#     reduced_list = [element for element in input_list if element is not None]
+#     reduced_list = reduced_list if not len(reduced_list) == 0 else None
     
-    return reduced_list
+#     return reduced_list
 
 
 
@@ -401,41 +416,74 @@ def reduce_nones(input_list):
 # for batch_input, batch_output, index in dataloader:
 #     print(batch_input, batch_output, index)
 
+# # STANDARD BATCH SITUATION
 
-# MULTIBATCH Situation
-n_meas1 = 20
-n_meas2 = 5
-
-mu_true = torch.tensor(0.0)
-sigma_true = torch.tensor(0.1)
+# mu_true = torch.tensor(0.0)
+# sigma_true = torch.tensor(0.1)
 
 
-# ii) Sample from distributions
+# # ii) Sample from distributions
 
-data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
-data = data_distribution.sample([n_meas1, n_meas2, n_event])
+# data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
+# data = data_distribution.sample([n_meas, n_event])
 
-# The data now is a tensor of shape [n_meas] and reflects measurements being
-# taken of a single object with a single measurement device.
+# # The data now is a tensor of shape [n_meas,1] and reflects measurements being
+# # taken of a single object with a single measurement device.
 
-# We now consider the data to be an outcome of measurement of some real world
-# object; consider the true underlying data generation process to be unknown
-# from now on.
+# # We now consider the data to be an outcome of measurement of some real world
+# # object; consider the true underlying data generation process to be unknown
+# # from now on.
 
 
-# iii) Enable subbatching
-data_dims = dim_assignment(['bd1_data', 'bd2_data', 'ed_data'], dim_sizes = [n_meas1, n_meas2, n_event])
-data_cp = CalipyTensor(data, data_dims, name = 'data')
-dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd1_data', 'bd2_data']])
+# # iii) Enable subbatching
+# data_dims = dim_assignment(['bd_data', 'ed_data'], dim_sizes = [n_meas, n_event])
+# data_cp = CalipyTensor(data, data_dims, name = 'data')
+# dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd_data']])
 
-batch_dim_flattened = dataset.batch_dim_flattened
-flattened_output = dataset.flattened_output.subsample_tensors(batch_dim_flattened, [0])
+# batch_dim_flattened = dataset.batch_dim_flattened
+# flattened_output = dataset.flattened_output.subsample_tensors(batch_dim_flattened, [0])
 
-dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=tensor_collate)
+# dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=dict_collate)
 
-# Iterate through the DataLoader
-for batch_input, batch_output, index in dataloader:
-    print(batch_input, batch_output, index)
+# # Iterate through the DataLoader
+# for batch_input, batch_output, batch_index in dataloader:
+#     print(batch_input, batch_output, batch_index)
+
+
+# # MULTIBATCH Situation
+# n_meas1 = 20
+# n_meas2 = 5
+
+# mu_true = torch.tensor(0.0)
+# sigma_true = torch.tensor(0.1)
+
+
+# # ii) Sample from distributions
+
+# data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
+# data = data_distribution.sample([n_meas1, n_meas2, n_event])
+
+# # The data now is a tensor of shape [n_meas] and reflects measurements being
+# # taken of a single object with a single measurement device.
+
+# # We now consider the data to be an outcome of measurement of some real world
+# # object; consider the true underlying data generation process to be unknown
+# # from now on.
+
+
+# # iii) Enable subbatching
+# data_dims = dim_assignment(['bd1_data', 'bd2_data', 'ed_data'], dim_sizes = [n_meas1, n_meas2, n_event])
+# data_cp = CalipyTensor(data, data_dims, name = 'data')
+# dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd1_data', 'bd2_data']])
+
+# batch_dim_flattened = dataset.batch_dim_flattened
+# flattened_output = dataset.flattened_output.subsample_tensors(batch_dim_flattened, [0])
+
+# dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=dict_collate)
+
+# # Iterate through the DataLoader
+# for batch_input, batch_output, batch_index in dataloader:
+#     print(batch_input, batch_output, batch_index)
     
     
     
@@ -472,6 +520,14 @@ data_cp = CalipyTensor(data, data_dims, name = 'data')
 dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = data_dims[['bd_data']])
 
 
+batch_dim_flattened = dataset.batch_dim_flattened
+dataloader = DataLoader(dataset, batch_size=n_subbatch, shuffle=True, collate_fn=dict_collate)
+
+# Iterate through the DataLoader
+for batch_input, batch_output, batch_index in dataloader:
+    print(batch_input, batch_output, batch_index)
+
+
 """
     3. Load and customize effects
 """
@@ -480,7 +536,7 @@ dataset = CalipyDataset(input_data = None, output_data = data_cp, batch_dims = d
 # i) Set up dimensions
 
 batch_dims = dim_assignment(['bd_1'], dim_sizes = [n_meas])
-event_dims = dim_assignment(['ed_1'], dim_sizes = [])
+event_dims = dim_assignment(['ed_1'], dim_sizes = [1])
 param_dims = dim_assignment(['pd_1'], dim_sizes = [])
 
 
@@ -524,20 +580,21 @@ class DemoProbModel(CalipyProbModel):
         self.noise_object = noise_object 
         
     # Define model by forward passing
-    def model(self, input_vars = None, observations = None):
-        mu = self.mu_object.forward()       
+    def model(self, input_vars = None, observations = None, subsample_index = None):
+        mu = self.mu_object.forward(subsample_index = subsample_index)    
 
         # Dictionary/DataTuple input is converted to CalipyDict internally. It
         # is also possible, to pass single element input_vars or observations;
         # these are also autowrapped.
         inputs = {'mean':mu, 'standard_deviation': sigma_true} 
         output = self.noise_object.forward(input_vars = inputs,
-                                           observations = observations)
+                                           observations = observations,
+                                           subsample_index = subsample_index)
         
         return output
     
     # Define guide (trivial since no posteriors)
-    def guide(self, input_vars = None, observations = None):
+    def guide(self, input_vars = None, observations = None, subsample_index = None):
         pass
     
 demo_probmodel = DemoProbModel()
@@ -567,7 +624,7 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 # handle the rest can make code simpler to read.
 input_data = None
 data_cp = CalipyTensor(data, dims = batch_dims + event_dims)
-optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+optim_results = demo_probmodel.train(dataloader = dataloader, optim_opts = optim_opts)
 
 
 

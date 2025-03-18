@@ -918,8 +918,10 @@ class CalipyProbModel(CalipyNode):
             # Handle DataLoader case
             for epoch in range(self.n_steps):
                 epoch_loss = 0
-                for batch_input, batch_output, idx in dataloader:
-                    loss = self.svi.step(input_vars=batch_input, observations=batch_output)
+                for batch_input, batch_output, batch_index in dataloader:
+                    loss = self.svi.step(input_vars=batch_input,
+                                         observations=batch_output,
+                                         subsample_index = batch_index)
                     epoch_loss += loss
                 
                 epoch_loss /= len(dataloader)

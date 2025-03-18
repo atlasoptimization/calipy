@@ -38,7 +38,7 @@ import itertools
 import random
 import einops
 
-
+from collections.abc import Mapping, Iterable
 from calipy.core.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment, multi_unsqueeze, ensure_tuple, robust_meshgrid
 
 
@@ -51,14 +51,39 @@ class CalipyIndex:
         index_tensor.tuple can be used for indexing via data[tuple]
         index_tensor.named can be used for dimension specific operations
     """
-    def __init__(self, index_tensor, index_tensor_dims, name = None):
-        self.name = name
+    def __init__(self, index_tensor, index_tensor_dims = None, name = None):
+        
+        # Raise error for invalid combination
+        signature = [index_tensor is None, index_tensor_dims is None]
+        if signature == [True,False] or signature == [False,True]:
+            raise Exception('If index_tensor is None, also index_tensor_dims must' \
+                            ' be None and if index_tensor is not None, so must' \
+                            ' be the index_tensor_dims. But index_tensor is None : {}' \
+                            ' and index_tensor_dims is None: {}'.format(signature[0], signature[1]))
+        
+        # Normal construction
+        self.name = name if name is not None else 'noname'
         self.tensor = index_tensor
-        self.tuple = index_tensor.unbind(-1)
-        # self.named = index_tensor[index_tensor_dims]
         self.dims = index_tensor_dims
+        
+        # Construction varies if input is None
+        if index_tensor is None:
+            self.tuple = None
+        else:
+            self.tuple = index_tensor.unbind(-1)    
         self.index_name_dict = self.generate_index_name_dict()
         
+    @classmethod
+    def null(cls):
+        """Construct a null index object."""
+        return cls(None, None)
+    
+    @property
+    def is_null(self):
+        """Indicates if the Index is null and will not perform any subsampling
+        just returning the orginal tensor"""
+        return self.tensor == None
+    
     @property
     def bound_dims(self):
         """ Returns the dims of ssi bound to the current actual sizes"""
@@ -68,9 +93,15 @@ class CalipyIndex:
     @property
     def is_empty(self):
         """ Indicates if no indexing is actually performed because e.g. indexed
-        quantity is a scalar and does not have dims"""
+        quantity is a scalar and does not have dims. is_empty is passed to the 
+        CalipyTensor __getitem__ method to check if the full tensor is to be 
+        returned. """
         
-        return len(self.tensor) == 0
+        if self.is_null:
+            bool_val = True
+        else:
+            bool_val = len(self.tensor) == 0
+        return bool_val
         
     def generate_index_name_dict(self):
         """
@@ -81,8 +112,10 @@ class CalipyIndex:
         """
 
         index_to_name_dict = {}
-        indextensor_flat = self.tensor.flatten(0,-2)
-        for k in range(indextensor_flat.shape[0]):
+        indextensor_flat = self.tensor.flatten(0,-2) if self.tensor is not None else None
+        index_tensor_length = indextensor_flat.shape[0] if indextensor_flat is not None else 0
+        
+        for k in range(index_tensor_length):
             idx = indextensor_flat[k, :]
             dim_name_list = [dim.name for dim in self.dims[0:-1]]
             idx_name_list = [str(i.long().item()) for i in idx]
@@ -98,6 +131,10 @@ class CalipyIndex:
         :param dims_to_keep: DimTuple of CalipyDims to keep.
         :return: True if reducible without loss, False otherwise.
         """
+        
+        # Check if trivial
+        if self.is_null:
+            return False
     
         # Extract indices for the dimensions to keep
         dim_positions_keep = self.dims.find_indices(dims_to_keep.names, from_right = False)
@@ -142,6 +179,11 @@ class CalipyIndex:
         
         """
         
+        # Check if trivial
+        if self.is_null:
+            return self
+        
+        
         # i) Check reducibility
         
         if not self.is_reducible(dims_to_keep):
@@ -181,57 +223,80 @@ class CalipyIndex:
         :return: A new CalipyIndex instance with the expanded index tensor.
         
         """
+        # Check if trivial
+        if self.is_null:
+            
+            # If trivial, all dims are new dims
+            expanded_tensor_dims = dims.bind(dim_sizes)
+            
+            # Iterate through them to generate indextensor
+            new_ranges = []
+            for d in expanded_tensor_dims:
+                new_ranges.append(torch.arange(d.size)) 
+            new_meshgrid = robust_meshgrid(new_ranges, indexing='ij')
+            expanded_indextensor = torch.stack(new_meshgrid, dim=-1)
+            
+            # Add index_dim and invoke CalipyIndex
+            index_dim = dim_assignment(['index_dim']).bind([len(dims)])
+            expanded_indextensor_dims = dims + index_dim
+            expanded_index = CalipyIndex(expanded_indextensor, expanded_indextensor_dims , name = self.name + '_expanded')
         
-        # Set up current and expanded dimensions
-        index_dim = DimTuple(self.dims[-1:]).bind([len(dims)])
-        current_tensor_dims = DimTuple(self.dims[0:-1]).bind(self.tensor.shape[0:-1])
-        expanded_tensor_dims = dims.bind(dim_sizes)
+        else:
+            
+            # Perform expansion by reordering tensor, then adding new dims, then
+            # order to prescribed dims.
         
-        # current_indextensor_dims = self.dims
-        expanded_indextensor_dims = expanded_tensor_dims + index_dim
-        new_dims = expanded_tensor_dims.delete_dims(current_tensor_dims.names)
-        default_order_dims = current_tensor_dims + new_dims + index_dim
-        
-        # Build index tensor with default order [current_dims, new_dims, index_dim]
-        # i) Set up torchdims
-        current_tdims = current_tensor_dims.build_torchdims(fix_size = True)
-        new_tdims = new_dims.build_torchdims(fix_size = True)
-        index_tdim = index_dim.build_torchdims(fix_size = True)
-        default_order_tdim = current_tdims + new_tdims + index_tdim
-        expanded_order_tdims = default_order_tdim[expanded_indextensor_dims]
-        
-        
-        # ii) Build indextensor new_dims
-        new_ranges = []
-        for d in new_dims:
-            new_ranges.append(torch.arange(d.size)) 
-        new_meshgrid = robust_meshgrid(new_ranges, indexing='ij')
-        new_dims_indextensor = torch.stack(new_meshgrid, dim=-1)
-        current_dims_indextensor = self.tensor
-        
-        # iii) Combine current_dims_indextensor and new_dims_indextensor
-        broadcast_sizes = default_order_tdim.sizes[:-1] + [1]
-        broadcast_tensor = torch.ones(broadcast_sizes).long()
-        current_expanded = multi_unsqueeze(current_dims_indextensor, [-2]*len(new_dims))
-        new_expanded = multi_unsqueeze(new_dims_indextensor, [0]*len(current_tensor_dims))
-        default_order_indextensor = torch.cat((current_expanded*broadcast_tensor, new_expanded*broadcast_tensor), dim = -1)
-        
-        # Order index_tensor to [expanded_tensor_dims, index_dim]
-        default_order_indextensor_named = default_order_indextensor[default_order_tdim]  
-        expanded_indextensor = default_order_indextensor_named.order(*expanded_order_tdims)
-        # Also reorder in the [..., index_dim] so that indices and entries in index_dim align
-        index_signature = default_order_dims.find_indices(expanded_indextensor_dims.names, from_right = False)
-        expanded_indextensor = expanded_indextensor[..., index_signature[0:-1]]
- 
-        # Create new CalipyIndex
-        expanded_index = CalipyIndex(expanded_indextensor, expanded_indextensor_dims, name = self.name + '_expanded')
+            # Set up current and expanded dimensions
+            index_dim = DimTuple(self.dims[-1:]).bind([len(dims)])
+            current_tensor_dims = DimTuple(self.dims[0:-1]).bind(self.tensor.shape[0:-1])
+            expanded_tensor_dims = dims.bind(dim_sizes)
+            
+            # current_indextensor_dims = self.dims
+            expanded_indextensor_dims = expanded_tensor_dims + index_dim
+            new_dims = expanded_tensor_dims.delete_dims(current_tensor_dims.names)
+            default_order_dims = current_tensor_dims + new_dims + index_dim
+            
+            # Build index tensor with default order [current_dims, new_dims, index_dim]
+            # i) Set up torchdims
+            current_tdims = current_tensor_dims.build_torchdims(fix_size = True)
+            new_tdims = new_dims.build_torchdims(fix_size = True)
+            index_tdim = index_dim.build_torchdims(fix_size = True)
+            default_order_tdim = current_tdims + new_tdims + index_tdim
+            expanded_order_tdims = default_order_tdim[expanded_indextensor_dims]
+            
+            
+            # ii) Build indextensor new_dims
+            new_ranges = []
+            for d in new_dims:
+                new_ranges.append(torch.arange(d.size)) 
+            new_meshgrid = robust_meshgrid(new_ranges, indexing='ij')
+            new_dims_indextensor = torch.stack(new_meshgrid, dim=-1)
+            current_dims_indextensor = self.tensor
+            
+            # iii) Combine current_dims_indextensor and new_dims_indextensor
+            broadcast_sizes = default_order_tdim.sizes[:-1] + [1]
+            broadcast_tensor = torch.ones(broadcast_sizes).long()
+            current_expanded = multi_unsqueeze(current_dims_indextensor, [-2]*len(new_dims))
+            new_expanded = multi_unsqueeze(new_dims_indextensor, [0]*len(current_tensor_dims))
+            default_order_indextensor = torch.cat((current_expanded*broadcast_tensor, new_expanded*broadcast_tensor), dim = -1)
+            
+            # Order index_tensor to [expanded_tensor_dims, index_dim]
+            default_order_indextensor_named = default_order_indextensor[default_order_tdim]  
+            expanded_indextensor = default_order_indextensor_named.order(*expanded_order_tdims)
+            # Also reorder in the [..., index_dim] so that indices and entries in index_dim align
+            index_signature = default_order_dims.find_indices(expanded_indextensor_dims.names, from_right = False)
+            expanded_indextensor = expanded_indextensor[..., index_signature[0:-1]]
+     
+            # Create new CalipyIndex
+            expanded_index = CalipyIndex(expanded_indextensor, expanded_indextensor_dims, name = self.name + '_expanded')
 
         return expanded_index
         
 
     def __repr__(self):
-        sizes = [size for size in self.tensor.shape]
-        repr_string = 'CalipyIndex for tensor with dims {} and sizes {}'.format(self.dims.names, sizes)
+        sizes = [size for size in self.tensor.shape] if self.tensor is not None else []
+        names = [name for name in self.dims.names] if self.tensor is not None else []
+        repr_string = 'CalipyIndex for tensor with dims {} and sizes {}'.format(names, sizes)
         return repr_string
 
 
@@ -835,27 +900,99 @@ class TensorIndexer(CalipyIndexer):
 # CalipyTensor basic class 
     
 # Preprocessing input arguments
-def preprocess_args(args, kwargs):
-    if kwargs is None:
-            kwargs = {}
 
-    # Unwrap CalipyTensors to get underlying tensors
-    def unwrap(x):
-        if isinstance(x, CalipyTensor):
-            result = x.tensor
-        elif isinstance(x, list):
-            result = [unwrap(element) for element in x]
+from collections.abc import Mapping, Iterable
+
+def preprocess_args(args, kwargs):
+    """Recursively preprocesses and unwraps input arguments and keyword arguments
+    by replacing any nested CalipyTensor objects with their underlying torch.Tensor 
+    instances. Supports arbitrary nesting including dictionaries, lists, tuples, and sets.
+
+    :param args: Positional arguments potentially containing nested CalipyTensor
+        instances.
+    :type args: tuple
+
+    :param kwargs: Keyword arguments potentially containing nested CalipyTensor
+        instances.
+    :type kwargs: dict
+
+    :return: A tuple consisting of unwrapped positional arguments and keyword arguments
+        with all CalipyTensor instances replaced by torch.Tensor objects.
+    :rtype: (tuple, dict)
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Imports and definitions
+        import torch
+        from calipy.core.tensor import CalipyTensor, preprocess_args
+
+        # Create sample CalipyTensors
+        batch_dims = dim_assignment(dim_names = ['bd_1'])
+        event_dims = dim_assignment(dim_names = ['ed_1'])
+        data_dims = batch_dims + event_dims
+        tensor_a = CalipyTensor(torch.ones([ 2, 3]), dims = data_dims)
+        tensor_b = CalipyTensor(torch.ones([4, 5]), dims = data_dims)
+
+        # Nested structure containing CalipyTensors
+        args = (tensor_a, {'key1': tensor_b, 'key2': [tensor_a, 10]})
+        kwargs = {'param': {'nested': tensor_b}}
+
+        unwrapped_args, unwrapped_kwargs = preprocess_args(args, kwargs)
+
+        assert isinstance(unwrapped_args[0], torch.Tensor)
+        assert isinstance(unwrapped_args[1]['key1'], torch.Tensor)
+        assert isinstance(unwrapped_kwargs['param']['nested'], torch.Tensor)
+    """
+    if kwargs is None:
+        kwargs = {}
+
+    def unwrap(obj):
+        if isinstance(obj, CalipyTensor):
+            return obj.tensor
+
+        elif isinstance(obj, Mapping):
+            # Dict-like objects: recursively unwrap each value
+            return {key: unwrap(value) for key, value in obj.items()}
+
+        elif isinstance(obj, (list, tuple, set)):
+            # Iterable objects: recursively unwrap each element, preserving type
+            unwrapped = (unwrap(element) for element in obj)
+            return type(obj)(unwrapped)
+
         else:
-            result = x
-        
-        return result
-        
+            # Other types remain untouched
+            return obj
 
     unwrapped_args = tuple(unwrap(a) for a in args)
     unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
+
+    return unwrapped_args, unwrapped_kwargs
+
+
+
+# def preprocess_args(args, kwargs):
+#     if kwargs is None:
+#             kwargs = {}
+
+#     # Unwrap CalipyTensors to get underlying tensors
+#     def unwrap(x):
+#         if isinstance(x, CalipyTensor):
+#             result = x.tensor
+#         elif isinstance(x, list):
+#             result = [unwrap(element) for element in x]
+#         else:
+#             result = x
+        
+#         return result
+        
+
+#     unwrapped_args = tuple(unwrap(a) for a in args)
+#     unwrapped_kwargs = {k: unwrap(v) for k, v in kwargs.items()}
     
         
-    return unwrapped_args, unwrapped_kwargs
+#     return unwrapped_args, unwrapped_kwargs
     
 
 class CalipyTensor:
@@ -1448,7 +1585,13 @@ class CalipyTensor:
         elif type(index) is TorchdimTuple:
             pass
         
-        # Case 4: Raise an error for unsupported types
+        # Case 4: Passing None returns the full tensor
+        elif type(index) is type(None) :
+            subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
+                            name = self.name)
+            return subtensor_cp
+        
+        # Case 5: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported index type: {type(index)}")
         

@@ -33,7 +33,7 @@ import torch
 import math
 from calipy.core.primitives import param
 from calipy.core.base import CalipyNode, NodeStructure
-from calipy.core.tensor import CalipyTensor
+from calipy.core.tensor import CalipyTensor, CalipyIndex
 from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
 from calipy.core.base import NodeStructure
 from calipy.core.data import CalipyDict
@@ -222,11 +222,19 @@ class UnknownParameter(CalipyQuantity):
         :return: CalipyTensor containing parameter tensor and dimension info.
         :rtype: CalipyTensor
         """
+        
+        # Invoke parameter
         self.param = param(name = '{}__param_{}'.format(self.id_short, self.name), 
                            init_tensor = self.init_tensor,
                            dims = self.param_dims,
                            constraint = self.constraint,
-                           subsample_index = subsample_index)
+                           subsample_index = None)
+        
+        # # Subsample extension & serve
+        # subsample_index_extended = (subsample_index.expand_to_dims(subsample_index.dims,
+        #                                                            subsample_index.tensor.shape)
+        #     if not subsample_index is None else None)
+        # self.extended_param = self.param.expand_to_dims(self.dims)[subsample_index_extended]
         self.extended_param = self.param.expand_to_dims(self.dims)
         return self.extended_param
 
