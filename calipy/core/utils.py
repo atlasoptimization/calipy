@@ -25,7 +25,7 @@ import varname
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List, Type
-
+from collections.abc import Iterable
 
 
 """
@@ -82,9 +82,17 @@ def robust_meshgrid(tensors, indexing = 'ij'):
         output = torch.meshgrid(*tensors, indexing = indexing)
     return output
 
+# def ensure_tuple(item):
+#     """Ensures the input is a tuple. Leaves tuples unchanged."""
+#     return item if isinstance(item, tuple) else tuple(item)
 def ensure_tuple(item):
-    """Ensures the input is a tuple. Leaves tuples unchanged."""
-    return item if isinstance(item, tuple) else tuple(item)
+    """Ensures the input is a tuple. Leaves tuples unchanged. Wraps non-iterables into a tuple."""
+    if isinstance(item, tuple):
+        return item
+    elif isinstance(item, Iterable):
+        return tuple(item)
+    else:
+        return (item,)
 
 def format_mro(cls):
     # Get the MRO tuple and extract class names

@@ -481,6 +481,40 @@ assert(data_A_reordered_cp.dims == data_dims_A_reordered)
 
 
 
+# NULL OBJECTS
+
+# CalipyTensors and CalipyIndex also work with None inputs to produce Null objects
+# Create data for initialization
+tensor_dims = dim_assignment(['bd', 'ed'])
+tensor_cp = CalipyTensor(torch.ones(6, 3), tensor_dims) 
+tensor_none = None
+
+index_full = tensor_cp.indexer.local_index
+index_none = None
+
+# ii) Create and investigate null CalipyIndex
+CI_none = CalipyIndex(None)
+print(CI_none)
+CI_expanded = CI_none.expand_to_dims(tensor_dims, [5,2])
+
+# Passing a null index to CalipyTensor returns the orginal tensor.
+tensor_cp[CI_none]
+tensor_cp[CI_expanded]
+# The following errors out, as intended: 
+#   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
+
+# iii) Create and investigate null CalipyTensor
+CT_none = CalipyTensor(None)
+CT_none
+CT_none[CI_none] 
+CT_none[CI_expanded]
+
+tensor_dims_bound = tensor_dims.bind(tensor_cp.shape)
+CT_expanded = CT_none.expand_to_dims(tensor_dims_bound)
+# The following errors out, as intended: 
+#   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
+
+
 # BASE CLASS EXPERIMENTATION
 # Base classes
 
@@ -726,7 +760,47 @@ noisy_output.value.dims
 help(noisy_output)
 
 
+
+# TEST CALIPYDICT, CALIPYLIST, CALIPYIO
+
+import torch
+from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+   
+
+# Create data for CalipyList
+calipy_list_empty = CalipyList()
+calipy_list = CalipyList(data = ['a','b'])
+calipy_same_list = CalipyList(calipy_list)
+
+
+# Create data for CalipyDict initialization
+tensor_A = torch.ones(2, 3)
+tensor_B = torch.ones(4, 5)
+names = ['tensor_A', 'tensor_B']
+values = [tensor_A, tensor_B]
+data_tuple = DataTuple(names, values)
+data_dict = {'tensor_A': tensor_A, 'tensor_B' : tensor_B}
+
+# Create CalipyDict objects
+dict_from_none = CalipyDict()
+dict_from_dict = CalipyDict(data_dict)
+dict_from_tuple = CalipyDict(data_tuple)
+dict_from_calipy = CalipyDict(dict_from_dict)
+dict_from_single = CalipyDict(tensor_A)
+
+# Print contents and investigate 
+for cp_dict in [dict_from_none, dict_from_dict, dict_from_tuple, 
+                dict_from_calipy, dict_from_single]:
+    print(cp_dict)
+    
+dict_from_single.has_single_item()
+dict_from_single.value
+dict_from_dict.as_datatuple()
+
+
+
 # TEST DATASET AND DATALOADER
+
 
 
 

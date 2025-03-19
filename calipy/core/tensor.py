@@ -83,13 +83,7 @@ class CalipyIndex:
         """Indicates if the Index is null and will not perform any subsampling
         just returning the orginal tensor"""
         return self.tensor == None
-    
-    @property
-    def bound_dims(self):
-        """ Returns the dims of ssi bound to the current actual sizes"""
-        bound_dims = self.dims.bind(self.tensor.shape)
-        return bound_dims
-        
+            
     @property
     def is_empty(self):
         """ Indicates if no indexing is actually performed because e.g. indexed
@@ -102,6 +96,12 @@ class CalipyIndex:
         else:
             bool_val = len(self.tensor) == 0
         return bool_val
+
+    @property
+    def bound_dims(self):
+        """ Returns the dims of ssi bound to the current actual sizes"""
+        bound_dims = self.dims.bind(self.tensor.shape)
+        return bound_dims
         
     def generate_index_name_dict(self):
         """
@@ -999,7 +999,7 @@ class CalipyTensor:
     """
     Class that wraps torch.Tensor objects and augments them with indexing operations
     and dimension upkeep functionality, while referring most torch functions to
-    its wrapped torch.Tensor object. Can be sliced and indexed in the usual ways
+    its wrapped torch. Tensor object. Can be sliced and indexed in the usual ways
     which produces another CalipyTensor whose indexer is inherited.
     
     :param tensor: The tensor which should be embedded into CalipyTensor
@@ -1020,7 +1020,7 @@ class CalipyTensor:
         
         # Imports and definitions
         import torch
-        from calipy.core.tensor import CalipyTensor, TensorIndexer
+        from calipy.core.tensor import CalipyTensor, TensorIndexer, CalipyIndex
         from calipy.core.utils import dim_assignment
         from calipy.core.data import DataTuple
     
@@ -1146,15 +1146,55 @@ class CalipyTensor:
         assert((data_A_reordered_cp.tensor - data_A_cp.tensor.permute([1,2,0]) == 0).all())
         assert(data_A_reordered_cp.dims == data_dims_A_reordered)
         
+        
+        # Null object functionality -------------------------------------------
+        
+        # CalipyTensors and CalipyIndex also work with None inputs to produce Null objects
+        # Create data for initialization
+        tensor_dims = dim_assignment(['bd', 'ed'])
+        tensor_cp = CalipyTensor(torch.ones(6, 3), tensor_dims) 
+        tensor_none = None
+        
+        index_full = tensor_cp.indexer.local_index
+        index_none = None
+        
+        # ii) Create and investigate null CalipyIndex
+        CI_none = CalipyIndex(None)
+        print(CI_none)
+        CI_expanded = CI_none.expand_to_dims(tensor_dims, [5,2])
+        
+        # Passing a null index to CalipyTensor returns the orginal tensor.
+        tensor_cp[CI_none]
+        tensor_cp[CI_expanded]
+        # The following errors out, as intended: 
+        #   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
+        
+        # iii) Create and investigate null CalipyTensor
+        CT_none = CalipyTensor(None)
+        CT_none
+        CT_none[CI_none] 
+        CT_none[CI_expanded]
+        
+        tensor_dims_bound = tensor_dims.bind(tensor_cp.shape)
+        CT_expanded = CT_none.expand_to_dims(tensor_dims_bound)
+        # The following errors out, as intended: 
+        #   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
     """
     
     __torch_function__ = True  # Not strictly necessary, but clarity
 
-    def __init__(self, tensor, dims, name = 'noname'):
+    def __init__(self, tensor, dims = None, name = 'noname'):
         
         # Input checks
-        if not isinstance(tensor, torch.Tensor):
-            raise TypeError("tensor must be a torch.Tensor")
+        signature = [tensor is None, dims is None]
+        if signature == [True,False] or signature == [False,True]:
+            raise Exception('If tensor is None, also dims must be None and if ' \
+                            'tensor is not None, so must be the dims. But tensor '\
+                            ' is None : {} and index_tensor_dims is None: {}'
+                            .format(signature[0], signature[1]))
+        
+        if not isinstance(tensor, (torch.Tensor, type(None))):
+            raise TypeError("tensor must be a torch.Tensor or None")
         if dims is not None and len(dims) != tensor.ndim:
             warnings.warn("Number of dims in DimTuple does not match tensor.ndim, setting dims=None.")
 
@@ -1162,16 +1202,19 @@ class CalipyTensor:
         self.name = name
         self.tensor = tensor
         self.dims = dims
-        self._indexer_construct(dims, name)
         
-    def _indexer_construct(self, tensor_dims, name, silent = True):
-        """Constructs a TensorIndexer for the tensor."""
-        self.indexer = TensorIndexer(self.tensor, tensor_dims, name)
-        return self if silent == False else None
-
+        if self.tensor is not None:
+            self._indexer_construct(dims, name)
+        
+    @property
+    def is_null(self):
+        """Indicates if the Index is null and will not perform any subsampling
+        just returning the orginal tensor"""
+        return self.tensor == None
+    
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs={}):
-        
+                
         # Find first CalipyTensor in args
         self_instance = next((arg for arg in args if isinstance(arg, cls)), None)
         # if self_instance is None:
@@ -1194,6 +1237,11 @@ class CalipyTensor:
         else:
             return result
 
+    def _indexer_construct(self, tensor_dims, name, silent = True):
+        """Constructs a TensorIndexer for the tensor."""
+        self.indexer = TensorIndexer(self.tensor, tensor_dims, name)
+        return self if silent == False else None
+    
     def flatten(self, dims_to_flatten, name_flat_dim = 'flat_dim'):
         """Flattens the current CalipyTensor to another CalipyTensor by collapsing
         the dims dims_to_flatten towards a new dim with name name_dim_flat.
@@ -1327,10 +1375,18 @@ class CalipyTensor:
             assert((data_expanded_cp[:,0,:].tensor.squeeze() - data_cp.tensor == 0).all())
         """
         
-        # i) Raise error if not all dims have sizes
+        # i) Input checks
+        # Raise error if not all dims have sizes
         if None in dims.sizes:
             raise ValueError("All dims need to have integer sizes but sizes are {}"
                              .format(dims.sizes))
+            
+        # Produce tensor of ones if null object is extended
+        if self.is_null:
+            expanded_tensor = torch.ones(dims.sizes)
+            expanded_tensor_cp = CalipyTensor(expanded_tensor, dims, self.name + '_expanded')
+            return expanded_tensor_cp 
+        
         
         # ii) Process dims
         current_dims = self.dims
@@ -1341,10 +1397,8 @@ class CalipyTensor:
         expansion_dims = expanded_dims.squeeze_dims(current_dims.names)
         expansion_tensor = torch.ones(expansion_dims.sizes)
         
-        # iii) Construct expanded tensor
-        # indices_current_dims = expanded_dims.find_indices(current_dims.names)
-        # indices_new_dims = expanded_dims.find_indices(new_dims.names)
         
+        # iii) Construct expanded tensor
         input_dim_signature = ' '.join(current_dims.names)
         unsqueezed_dim_signature = [name if name in current_dims.names else '1' 
                                     for name in expanded_dims.names]
@@ -1538,6 +1592,9 @@ class CalipyTensor:
         :rtype: CalipyTensor
         """
         
+        # If Null object, return Null object
+        if self.is_null:
+            return self
         
         # Case 1: Standard indexing
         if type(index) in (int, tuple, slice):
@@ -1551,7 +1608,8 @@ class CalipyTensor:
                     index.append(slice(idx, idx+1))  # Convert to slice to preserve singleton
                 else:
                     index.append(idx)
-                   
+            index = ensure_tuple(index) # Added recently, check full compatibility
+            
             # Create new CalipyTensorby subsampling
             subtensor_cp = CalipyTensor(self.tensor[index], dims = self.dims,
                                         name = self.name)
@@ -1692,7 +1750,8 @@ class CalipyTensor:
         return result
         
     def __repr__(self):
-        return f"CalipyTensor({repr(self.tensor)}, \n shape = {self.shape}, \n dims = {self.dims})"
+        shape = self.shape if not self.is_null else []
+        return f"CalipyTensor({repr(self.tensor)}, \n shape = {shape}, \n dims = {self.dims})"
 
     def __str__(self):
         return f"CalipyTensor({str(self.tensor)}, dims={self.dims})"

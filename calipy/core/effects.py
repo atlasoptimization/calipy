@@ -287,6 +287,51 @@ class UnknownVariance(UnknownParameter):
     Classes of simple effects
 """
 
+# # Expand or reshape CalipyTensor
+
+# class ShapeExtension(CalipyEffect):
+#     """ 
+#     Shape extension class takes as input some tensor and repeats it multiple
+#     times such that in the end it has shape batch_shape + original_shape + event_shape
+#     """
+    
+#     # Initialize the class-level NodeStructure
+#     # example_node_structure = NodeStructure()
+#     example_node_structure = None
+#     # example_node_structure.set_shape('batch_shape', (10, ), 'Batch shape description')
+#     # example_node_structure.set_shape('event_shape', (5, ), 'Event shape description')
+
+#     # Class initialization consists in passing args and building shapes
+#     def __init__(self, node_structure = None, **kwargs):
+#         super().__init__(**kwargs)
+#         self.node_structure = node_structure
+#         # self.batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_shapes = self.node_structure.shapes['batch_shape'])
+#         # self.event_dims = dim_assignment(dim_names = ['event_dim'], dim_shapes = self.node_structure.shapes['event_shape'])
+        
+    
+#     # Forward pass is passing input_vars and extending them by broadcasting over
+#     # batch_dims (left) and event_dims (right)
+#     def forward(self, input_vars, observations = None):
+#         """
+#         input_vars = (tensor, batch_shape, event_shape)
+#         """
+        
+#         # Fetch and distribute arguments
+#         tensor, batch_shape, event_shape = input_vars
+#         batch_dim = dim_assignment(dim_names =  ['batch_dim'], dim_shapes = batch_shape)
+#         event_dim = dim_assignment(dim_names =  ['event_dim'], dim_shapes = event_shape)
+#         tensor_dim = dim_assignment(dim_names =  ['tensor_dim'], dim_shapes = tensor.shape)
+
+#         # compute the extensions
+#         batch_extension_dims = batch_dim + generate_trivial_dims(len(tensor.shape) + len(event_shape))
+#         event_extension_dims = generate_trivial_dims(len(batch_shape) + len(tensor.shape)) +event_dim
+        
+#         batch_extension_tensor = torch.ones(batch_extension_dims.sizes)
+#         event_extension_tensor = torch.ones(event_extension_dims.sizes)
+        
+#         extended_tensor = batch_extension_tensor * tensor * event_extension_tensor
+#         output =  extended_tensor
+#         return output
 
 
 # ii) Addition of noise

@@ -21,11 +21,10 @@ produces a null tensor. Practically this avoids the following constructs:
 
 
 
-# Imports and definitions
+# i) Imports and definitions
 import torch
 from calipy.core.tensor import CalipyTensor, CalipyIndex
 from calipy.core.utils import dim_assignment
-from calipy.core.funs import calipy_cat
 
 # Create data for initialization
 tensor_dims = dim_assignment(['bd', 'ed'])
@@ -35,17 +34,27 @@ tensor_none = None
 index_full = tensor_cp.indexer.local_index
 index_none = None
 
-# Create and investigate null CalipyIndex
+
+# ii) Create and investigate null CalipyIndex
 
 CI_none = CalipyIndex(None)
 print(CI_none)
-# Empty Index can be upgraded by extension
 CI_expanded = CI_none.expand_to_dims(tensor_dims, [5,2])
-# The following errors out, as intended: 
-#   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
 
 # Passing a null index to CalipyTensor returns the orginal tensor.
 tensor_cp[CI_none]
 tensor_cp[CI_expanded]
-# CT_none = CalipyTensor(None)
+# The following errors out, as intended: 
+#   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
 
+# iii) Create and investigate null CalipyTensor
+
+CT_none = CalipyTensor(None)
+CT_none
+CT_none[CI_none] 
+CT_none[CI_expanded]
+
+tensor_dims_bound = tensor_dims.bind(tensor_cp.shape)
+CT_expanded = CT_none.expand_to_dims(tensor_dims_bound)
+# The following errors out, as intended: 
+#   CalipyIndex(torch.ones([1]), index_tensor_dims = None)

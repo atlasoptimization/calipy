@@ -25,6 +25,7 @@ import torch
 from typing import Any
 from torch.utils.data import Dataset
 from calipy.core.tensor import CalipyTensor, CalipyIndex
+from calipy.core.utils import dim_assignment, ensure_tuple
 
 
 
@@ -414,11 +415,10 @@ class CalipyDict(dict):
     A dictionary-like container that can store single or multiple items.
     If it contains exactly one item, calipy_dict.value can be called to retrieve
     it directly. Is meant as a convenient wrapper to DataTuple functionality 
-    and is the standard input/output/observation format handled inside of the
-    CalipyNode objects. Is typically autowrapped around dictionaries or single
-    objects provided by the user towards e.g. the forward() method. Has idempotent
-    property and leaves CalipyDict objects unchanged
-    
+    and is the basis  for the standard input/output/observation format CalipyIO
+    handled inside of the CalipyNode objects. Is typically autowrapped around 
+    dictionaries or single objects provided by the user towards e.g. the forward()
+    method. Has idempotent property and leaves CalipyDict objects unchanged.
     
     :param data: The data being used to construct the CalipyDict. Data used for
         dictionary initialization can be:
@@ -508,6 +508,12 @@ class CalipyDict(dict):
         # get the only key
         (k, v) = next(iter(self.items()))
         return v
+    
+    @property
+    def is_null(self):
+        """ Indicate if CalipyDict only has one element and that one is trivial"""
+        null_indicator = self[list(self.keys())[0]] is  None and len(self) == 1
+        return null_indicator
 
     def has_single_item(self) -> bool:
         """
@@ -653,5 +659,279 @@ class CalipyDict(dict):
         # Use dict's __repr__ to  represent content
         base = dict.__repr__(self)
         return f"CalipyDict({base})"
+
+
+
+# CalipyList class providing standard form and wrapping of I/O data
+
+class CalipyList(list):
+    """
+    A list-like container that can store single or multiple dict like containers.
+    Is meant as a convenient wrapper for homogeneous and inhomogeneous lists of
+    data where each list element is a CalipyDict. CalipyList is a central element
+    to the standard input/output/observation format handled inside of the CalipyNode
+    objects. Is typically autowrapped around lists of dictionaries or single objects
+    provided by the user towards e.g. the forward() method. Has idempotent property
+    and leaves CalipyList objects unchanged; i.e. wrapping multiple times is equivalent
+    to wrapping once. Ingredient to CalipyIO.
+    
+    
+    :param data: The data being used to construct the CalipyList. Data used for
+        dictionary initialization can be:
+          - A single item => CalipyList containing single item
+          - A list => CalipyList containg list of objects
+    :type data: Any
+    
+    :return: An instance of CalipyList
+    :rtype: CalipyList
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+        from calipy.core.data import CalipyList
+           
+        
+        # Create data for CalipyList, check idempotency
+        calipy_list_empty = CalipyList()
+        calipy_list = CalipyList(data = ['a','b'])
+        calipy_same_list = CalipyList(calipy_list)
+
+    
+    """
+    
+    def __new__(cls, data = None):
+        if isinstance(data, cls):
+            return data  # Idempotent: if data is already CalipyList, return it directly.
+        instance = super().__new__(cls)
+        return instance
+
+
+    def __init__(self, data = None):
+        """
+        Data used for CalipyList initialization can be:
+          - A single item => CalipyList containing single item
+          - A list => CalipyList containg list of objects
+        """
+        
+        # Initialization already done, avoid overwriting
+        if isinstance(data, CalipyList):
+            return 
+        
+        # If list, wrap elements into CalipyDict
+        elif isinstance(data, list):
+            for datapoint in data:
+                self.append(CalipyDict(datapoint)) 
+        # Else assume single element and append
+        else:
+            self.append(CalipyDict(data))
+    
+    @property
+    def is_null(self):
+        """ Indicate if CalipyList only has one element and that one is trivial"""
+        null_indicator = self[0].is_null and len(self) == 1
+        return null_indicator
+        
+    def __repr__(self):
+        # Use dict's __repr__ to  represent content
+        base = list.__repr__(self)
+        return f"CalipyList({base})"
+
+
+
+
+
+# CalipyIO master class providing standard form and wrapping of I/O data
+
+class CalipyIO:
+    """
+    A data container that can store single or multiple dict like containers.
+    Is meant as a convenient wrapper for homogeneous and inhomogeneous lists of
+    data where each list element is a CalipyDict. CalipyIO s the standard input
+    /output/observation format handled inside of the CalipyNode objects. Is
+    typically autowrapped around lists of dictionaries or single objects provided
+    by the user towards e.g. the forward() method. Has idempotent property and 
+    leaves CalipyIO objects unchanged; i.e. wrapping multiple times is equivalent
+    to wrapping once. CalipyIO objects are also the output of iterating through
+    InhomogeneousDataLoader objects; i.e. datasets and subbatched datasets are
+    represented in this way.
+    
+    :param data: The data being used to construct the CalipyDict. Data used for
+        dictionary initialization can be:
+          - None => empty dict
+          - A dict {str -> item} => multi-item
+          - A CalipyDict => Leave unchanged
+          - A DataTuple => convert to dict
+          - A single item => store under a default key '__single__'
+    :type data: None, or dict, or CalipyDict, or DataTuple, or single object.
+    
+    :return: An instance of CalipyDict
+    :rtype: CalipyDict
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+
+    
+    """
+    
+    def __new__(cls, data = None):
+        if isinstance(data, cls):
+            instance =  data  # Idempotency on CalipyIO
+        else:
+            instance = super().__new__(cls)
+        return instance
+
+    def __init__(self, data=None):
+        """
+        Data used for CalipyIO initialization can be:
+          - None => CalipyIO containing None
+          - A single item => store under a default key '__single__'
+          - A dict {str -> item} => multi-item
+          - A list [obj_1, .. ob_n] => inhomogeneous multi-item
+          - A DataTuple => convert to dict, then wrap in list
+          - A CalipyDict => Wrap in list
+          - A CalipyIO => Leave unchanged
+        """
+ 
+        if isinstance(data, CalipyIO):
+            # Initialization already done, avoid overwriting
+            return    
+ 
+        # Build new instance depending on input type            
+        if isinstance(data, (list, CalipyList)):
+            self.calipy_dict = None
+            self.data_tuple = None
+            self.calipy_list = CalipyList(data)
+            
+        # elif isinstance(data, (type(None), dict, CalipyDict, DataTuple)):
+        
+        else:
+            self.calipy_dict = CalipyDict(data)
+            self.data_tuple = self.calipy_dict.as_datatuple()
+            self.calipy_list = CalipyList(CalipyDict(data))
+        
+        if self.is_reducible:
+            self.reduce()
+            
+        self.data = data
+        self.batch_dim_flattened = dim_assignment(['batch_dim_flattened'], 
+            dim_descriptions = ['Flattened batch dimension used to index list elements'])
+            
+    @property
+    def is_null(self):
+        """ Indicate if CalipyIO only has one element and that one is trivial"""
+        null_indicator = self.calipy_list.is_null
+        return null_indicator
+        
+    @property
+    def is_reducible(self):
+        pass
+    
+    def __len__(self):
+        return len(self.calipy_list)
+
+    @property
+    def value(self) -> Any:
+        """
+        If there's exactly one item in this CalipyIO, return it.
+        Otherwise, raise an error. This property allows single-output usage.
+        """
+        if len(self.calipy_list) != 1:
+            raise ValueError("CalipyIO has {} items, cannot use .value. Use"\
+                    " bracket notation or iterate instead.".format(len(self)))
+            
+        value = self.calipy_list[0].value
+        return value
+        
+    def reduce(self):
+        pass
+    
+    def preprocess_for_node(self, nodestructure):
+        pass
+
+    def __getitem__(self, index):
+        """ Returns new CalipyIO based on either standard indexing quantities
+        like slices or integers or a CalipyIndex. 
+        
+        :param index: Identifier for determining which elements of self to compile
+            to a new CalipyIO
+        :type index: Integer, tuple of ints,  slice, CalipyIndex
+        :return: A new datacontainer with same functionality as self
+        :rtype: CalipyIO
+        """
+        
+        # If Null object, return Null object
+        if self.is_null:
+            return self
+        
+        # Case 1: Standard indexing
+        if type(index) in (int, tuple, slice):
+            old_index = ensure_tuple(index)
+            
+            # Preserve singleton dimensions for integer indexing
+            index = []
+            for dim, idx in enumerate(old_index):
+                if isinstance(idx, int):  # Prevent dimension collapse
+                    # index.append(torch.tensor([idx]))  # Convert to a tensor list
+                    index.append(slice(idx, idx+1))  # Convert to slice to preserve singleton
+                else:
+                    index.append(idx)
+            index = ensure_tuple(index) # Added recently, check full compatibility
+                    
+            # Create new CalipyIO by subsampling
+            sub_io = CalipyIO(self.calipy_list[index[0]])
+            
+            # Get indices corresponding to index
+            mask = torch.zeros_like(torch.ones([len(self)]), dtype=torch.bool)
+            mask[index] = True  # Apply the given index
+            selected_indices = torch.nonzero(mask)
+            
+            # Reshape to proper indextensor
+            indextensor_shape = [len(sub_io)] + [selected_indices.shape[1]]
+            indextensor = selected_indices.view(*indextensor_shape)
+
+            # sub_io.indexer.create_global_index(subsample_indextensor = indextensor, 
+            #                                           data_source_name = self.name)
+            return sub_io
+        
+        # Case 2: If index is CalipyIndex, use index.tuple for subsampling
+        elif type(index) is CalipyIndex:
+            if index.is_empty:
+                subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
+                                            name = self.name)
+            else:
+                subtensor_cp = CalipyTensor(self.tensor[index.tuple], dims = self.dims,
+                                            name = self.name)
+            subtensor_cp.indexer.create_global_index(subsample_indextensor = index.tensor, 
+                                          data_source_name = self.name)
+            return subtensor_cp
+        
+        # # Case 3: TorchDimTuple based indexing
+        # elif type(index) is TorchdimTuple:
+        #     pass
+        
+        # Case 4: Passing None returns the full tensor
+        elif type(index) is type(None) :
+            subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
+                            name = self.name)
+            return subtensor_cp
+        
+        # Case 5: Raise an error for unsupported types
+        else:
+            raise TypeError(f"Unsupported index type: {type(index)}")
+        
+        return sub_io
+        
+    def __repr__(self):
+        # list_rep = [obj.__repr__() for obj in self.calipy_list]
+        # rep_string = list.__repr__(list_rep)
+        rep_string = self.calipy_list.__repr__()
+        return f"CalipyIO({rep_string})"
 
 
