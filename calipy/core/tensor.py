@@ -445,12 +445,111 @@ class CalipyIndexer:
         return repr_string
 
 
+class IOIndexer(CalipyIndexer):
+    """
+    Class to handle indexing operations for CalipyIO objects, including creating
+    local and global indices, managing subsampling, and generating named dictionaries
+    for indexing purposes. Takes as input a CalipyIO object and a DimTuple object
+    and creates a CalipyIndexer object that can be used to produce indices, bind
+    dimensions, order the calipy_io and similar other support functionality.
+    Indexing is performed over the calipy_list elements. 
+    
+    :param calipy_io: The CalipyIO object for which the indexer is to be constructed
+    :type calipy_io: CalipyIO
+    :param dims: A DimTuple containing the dimensions of the tensor
+    :type dims: DimTuple
+    :param name: A name for the indexer, useful for keeping track of subservient indexers.
+        Default is None.
+    :type name: string
+
+    :return: An instance of TensorIndexer containing functionality for indexing the
+        input tensor including subbatching, naming, index tensors.
+    :rtype: TensorIndexer
+
+    Example usage:
+
+    .. code-block:: python
+    
+        # Create DimTuples and tensors
+        data_A_torch = torch.normal(0,1,[6,4,2])
+        batch_dims_A = dim_assignment(dim_names = ['bd_1_A', 'bd_2_A'])
+        
+    """
+    
+    def __init__(self, calipy_io, dims, name = None):
+        # Intialize abstract CalipyIndexer
+        super().__init__(dims, name=name)
+        
+        # Integrate initial data
+        self.name = name
+        self.calipy_io = calipy_io
+        self.io_dims = dims
+        self.io_bound_dims = dims.bind([len(self.calipy_io)])
+        
+        # Create index tensors
+        self.local_index = self.create_local_index()
+    
+    def create_local_index(self):
+        """
+        Create a local index tensor enumerating all indices for the list calipy_list
+        inside of the CalipyIO object.
+
+        :return: Returns CalipyIndex containing torch tensors with indices
+            representing all list indices.
+
+        """
+        
+        local_index = self._create_local_index(self.io_bound_dims.sizes)
+        return local_index
+    
+    def create_global_index(self, subsample_indextensor = None, data_source_name = None):
+        """
+        Create a global CalipyIndex object enumerating all possible indices for all the dims. The
+        indices global_index_tensor are chosen such that they can be used to access the data
+        in data_source with name data_source_name via self.tensor  = data_source[global_index_tensor_tuple] 
+        
+        :param subsample_indextensor: An index tensor that enumerates for all the entries of
+            self.tensor which index needs to be used to access it in some global dataset.
+        :param data_source_name: A string serving as info to record which object the global indices are indexing.
+        
+        :return: A CalipyIndex object global index containing indexing data that
+            describes how the tensor is related to the superpopulation it has been
+            sampled from.
+        """
+        
+        global_index = self._create_global_index(subsample_indextensor, data_source_name)
+        return global_index
+    
+    def simple_subsample(self, batch_dim, subsample_size):
+        """
+        Generate indices for subbatching across a single batch dimension and 
+        extract the subbatches.
+
+        :param batch_dim: Element of DimTuple (typically CalipyDim) along which
+            subbatching happens.
+        :param subsample_size: Single size determining length of batches to create.
+        :return: List of tensors and CalipyIndex representing the subbatches.
+        """
+        
+        subsample_data, subsample_indices = self.block_subsample(DimTuple((batch_dim,)), [subsample_size])
+        
+        return subsample_data, subsample_indices
+    
+    def __repr__(self):
+        dim_name_list = self.io_bound_dims.names
+        dim_sizes_list = self.io_bound_dims.sizes
+        repr_string = 'IOIndexer for calipyIO object {} with dims {} of sizes {}'.format(self.name, dim_name_list, dim_sizes_list)
+        return repr_string
+
+
+
 class TensorIndexer(CalipyIndexer):
     """
-    Class to handle indexing operations for observations, including creating local and global indices,
-    managing subsampling, and generating named dictionaries for indexing purposes. Takes as input
-    a tensor and a DimTuple object and creates a CalipyIndexer object that can be used to produce
-    indices, bind dimensions, order the tensor and similar other support functionality.
+    Class to handle indexing operations for observations, including creating local
+    and global indices, managing subsampling, and generating named dictionaries
+    for indexing purposes. Takes as input a tensor and a DimTuple object and creates
+    a CalipyIndexer object that can be used to produce indices, bind dimensions, 
+    order the tensor and similar other support functionality.
     
     :param tensor: The tensor for which the indexer is to be constructed
     :type tensor: torch.Tensor

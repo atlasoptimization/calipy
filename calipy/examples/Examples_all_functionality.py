@@ -477,6 +477,17 @@ data_cp_element_2 = data_cp.get_element(batch_dims, [5,2])
 assert((data_cp_element_2.tensor.squeeze() - data_cp.tensor[5,2,...] == 0).all())
 
 
+# Check indexing of tensors; ensure dims are consistent in edge cases
+tensor_A = torch.ones([5])
+tensor_A_dim = dim_assignment(['dim_1'])
+tensor_A_cp = CalipyTensor(tensor_A, tensor_A_dim)
+tensor_A_cp[0]
+
+tensor_B = torch.ones([5,2])
+tensor_B_dim = dim_assignment(['dim_1','dim_2'])
+tensor_B_cp = CalipyTensor(tensor_B, tensor_B_dim)
+tensor_B_cp[0,0]
+
 
 # NULL OBJECTS
 

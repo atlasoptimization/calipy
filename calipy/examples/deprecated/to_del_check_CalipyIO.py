@@ -33,6 +33,137 @@ calipy_list = CalipyList(data = ['a','b'])
 calipy_same_list = CalipyList(calipy_list)
 
 
+# Pass data into CalipyIO and investigate
+
+# Legal input types are None, single object, dict, CalipyDict, DataTuple, list,
+# CalipyList, CalipyIO. 
+
+# Build inputs
+none_input = None
+single_input = torch.tensor([1.0])
+dict_input = {'a': 1, 'b' : 2}
+CalipyDict_input = CalipyDict(dict_input)
+DataTuple_input = CalipyDict_input.as_datatuple()
+list_input = [dict_input, {'c' : 3}, {'d' : 4}]
+CalipyList_input = CalipyList(list_input)
+CalipyIO_input = CalipyIO(dict_input)
+
+# Build CalipyIO's
+none_io = CalipyIO(none_input)
+single_io = CalipyIO(single_input)
+dict_io = CalipyIO(dict_input)
+CalipyDict_io = CalipyIO(CalipyDict_input)
+DataTuple_io = CalipyIO(DataTuple_input)
+list_io = CalipyIO(list_input, name = 'io_from_list')
+CalipyList_io = CalipyIO(CalipyList_input)
+CalipyIO_io = CalipyIO(CalipyIO_input)
+
+
+# Check properties
+none_io.is_null
+single_io.is_null
+print(single_io)
+
+    
+# Functionality includes:
+#   1. Iteration
+#   2. Fetch by index
+#   3. Associated CalipyIndex
+#      -  Has global and local index
+#   4. Comes with collate function
+
+# 1. Iteration
+# Proceed to investigate one of the built calipy_io objects, here list_io
+for io in list_io:
+    print(io)
+    print(io.indexer.global_index)
+
+# 2. Fetch by index
+# Access values (special if list and dict only have 1 element)
+single_io.value
+single_io.calipy_dict
+single_io.calipy_list
+single_io.data_tuple
+
+
+# 3. a) Associated Indexer
+# Content of indexer
+list_io.batch_dim_flattened
+list_io.indexer
+list_io.indexer.local_index
+list_io_sub = list_io[1:2]
+list_io_sub.indexer.data_source_name
+list_io_sub.indexer.index_tensor_dims
+
+# 3. b) Associated CalipyIndex
+# Content of specific IOIndexer
+list_io_sub.indexer.local_index.tuple
+list_io_sub.indexer.local_index.tensor
+list_io_sub.indexer.local_index.index_name_dict
+
+list_io_sub.indexer.global_index.tuple
+list_io_sub.indexer.global_index.tensor
+list_io_sub.indexer.global_index.index_name_dict
+
+# Iteration produces sub_io's
+for io in list_io:
+    print(io.indexer.global_index)
+    print(io.indexer.global_index.tensor)
+
+# 3. c) Index / IO interaction
+# subsampling and indexing: via intes, tuples, slices, and CalipyIndex
+sub_io_1 = list_io[0]
+sub_io_2 = list_io[1]
+sub_io_3 = list_io[1:3]
+
+sub_io_1.indexer.local_index
+sub_io_2.indexer.local_index
+sub_io_3.indexer.local_index
+
+sub_io_1.indexer.global_index
+sub_io_2.indexer.global_index
+sub_io_3.indexer.global_index
+
+global_index_1 = sub_io_1.indexer.global_index
+global_index_2 = sub_io_2.indexer.global_index
+global_index_3 = sub_io_3.indexer.global_index
+
+assert(list_io[global_index_1] == list_io[0])
+assert(list_io[global_index_2] == list_io[1])
+assert(list_io[global_index_3] == list_io[1:3])
+
+# 4. Collate function
+# Check collation functionality for autoreducing io s
+mean_dims = dim_assignment(['bd_1', 'ed_1'])
+var_dims = dim_assignment(['bd_1', 'ed_1'])
+
+mean_1 = CalipyTensor(torch.randn(3, 2), mean_dims)
+mean_2 = CalipyTensor(torch.randn(5, 2), mean_dims)
+var_1 = CalipyTensor(torch.randn(3, 2), var_dims)
+var_2 = CalipyTensor(torch.randn(5, 2), var_dims)
+
+io_obj = CalipyIO([
+    CalipyDict({'mean': mean_1, 'var': var_1}),
+    CalipyDict({'mean': mean_2, 'var': var_2})
+])
+
+collated_io = io_obj.collate()
+
+
+# Check indexing of tensors and compare to io_indexing
+tensor_A = torch.ones([5])
+tensor_A_dim = dim_assignment(['dim_1'])
+tensor_A_cp = CalipyTensor(tensor_A, tensor_A_dim)
+tensor_A_cp[0]
+
+tensor_B = torch.ones([5,2])
+tensor_B_dim = dim_assignment(['dim_1','dim_2'])
+tensor_B_cp = CalipyTensor(tensor_B, tensor_B_dim)
+tensor_B_cp[0,0]
+
+
+
+
 # # Create data for CalipyDict initialization
 # tensor_A = torch.ones(2, 3)
 # tensor_B = torch.ones(4, 5)
@@ -58,61 +189,7 @@ calipy_same_list = CalipyList(calipy_list)
 # dict_from_dict.as_datatuple()
 
 
-# Check indexing of tensors again
-aa = torch.ones([5])
-aa_dim = dim_assignment(['aa'])
-aa_cp = CalipyTensor(aa, aa_dim)
-aa_cp[0]
 
-bb = torch.ones([5,2])
-bb_dim = dim_assignment(['aa','bb'])
-bb_cp = CalipyTensor(bb, bb_dim)
-bb_cp[0,0]
-
-
-# Pass data into CalipyIO and investigate
-
-# Legal input types are None, single object, dict, CalipyDict, DataTuple, list,
-# CalipyList, CalipyIO. 
-
-# Build inputs
-none_input = None
-single_input = torch.tensor([1.0])
-dict_input = {'a': 1, 'b' : 2}
-CalipyDict_input = CalipyDict(dict_input)
-DataTuple_input = CalipyDict_input.as_datatuple()
-list_input = [dict_input, {'c' : 3}]
-CalipyList_input = CalipyList(list_input)
-CalipyIO_input = CalipyIO(dict_input)
-
-# Build CalipyIO's
-none_io = CalipyIO(none_input)
-single_io = CalipyIO(single_input)
-dict_io = CalipyIO(dict_input)
-CalipyDict_io = CalipyIO(CalipyDict_input)
-DataTuple_io = CalipyIO(DataTuple_input)
-list_io = CalipyIO(list_input)
-CalipyList_io = CalipyIO(CalipyList_input)
-CalipyIO_io = CalipyIO(CalipyIO_input)
-
-
-# Check properties
-print(single_io)
-none_io.is_null
-single_io.is_null
-
-# subsampling
-list_io[0]
-list_io[0:2]
-list_io[0].value
-
-# Functionality includes:
-#   1. Iteration
-#   2. Fetch by index
-#   3. Associated CalipyIndex
-#      -  Has global and local index
-#   4. Automatic reduction
-#   5. Comes with collate function
 
 
 

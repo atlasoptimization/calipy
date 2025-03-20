@@ -24,8 +24,9 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import torch
 from typing import Any
 from torch.utils.data import Dataset
-from calipy.core.tensor import CalipyTensor, CalipyIndex
+from calipy.core.tensor import CalipyTensor, CalipyIndex, IOIndexer
 from calipy.core.utils import dim_assignment, ensure_tuple
+from calipy.core.funs import calipy_cat
 
 
 
@@ -420,6 +421,10 @@ class CalipyDict(dict):
     dictionaries or single objects provided by the user towards e.g. the forward()
     method. Has idempotent property and leaves CalipyDict objects unchanged.
     
+    CalipyDict allows heterogeneous tensor shapes for flexible datasets. Keys
+    represent measurement identifiers ('mean', 'var', etc.); values are e.g. 
+    CalipyTensors with potentially differing shapes across CalipyDict instances.
+    
     :param data: The data being used to construct the CalipyDict. Data used for
         dictionary initialization can be:
           - None => empty dict
@@ -654,6 +659,10 @@ class CalipyDict(dict):
 
         return dict_sum
 
+    def __eq__(self, other):
+        if isinstance(other, CalipyDict):
+            return dict.__eq__(self, other)
+        return NotImplemented
         
     def __repr__(self):
         # Use dict's __repr__ to  represent content
@@ -683,23 +692,7 @@ class CalipyList(list):
     :type data: Any
     
     :return: An instance of CalipyList
-    :rtype: CalipyList
-
-    Example usage:
-
-    .. code-block:: python
-        
-        # Imports and definitions
-        import torch
-        from calipy.core.data import CalipyList
-           
-        
-        # Create data for CalipyList, check idempotency
-        calipy_list_empty = CalipyList()
-        calipy_list = CalipyList(data = ['a','b'])
-        calipy_same_list = CalipyList(calipy_list)
-
-    
+    :rtype: CalipyList    
     """
     
     def __new__(cls, data = None):
@@ -727,12 +720,51 @@ class CalipyList(list):
         # Else assume single element and append
         else:
             self.append(CalipyDict(data))
-    
+        # self.data = CalipyDict(data)
+
+    @property
+    def value(self) -> Any:
+        """
+        If there's exactly one item in this CalipyList, return it.
+        Otherwise, raise an error. This property allows single-output usage.
+        """
+        if len(self) != 1:
+            raise ValueError("CalipyList has {} items, cannot use .value. Use"\
+                    " bracket notation or iterate instead.".format(len(self)))
+            
+        return self[0]
+
     @property
     def is_null(self):
         """ Indicate if CalipyList only has one element and that one is trivial"""
         null_indicator = self[0].is_null and len(self) == 1
         return null_indicator
+    
+    def __getitem__(self, idx):
+        """ Returns new CalipyList based on integers or a list of integers. If
+        the index is an integer k, returns the k-th element; otherwise a new
+        CalipyList is created
+        
+        :param index: Identifier for determining which elements of self to compile
+            to a new CalipyList
+        :type index: Integer, list of Integers
+        :return: A new datacontainer with same functionality as self
+        :rtype: CalipyList
+        """
+        
+        if isinstance(idx, int):
+            return super().__getitem__(idx)
+        
+        elif isinstance(idx, (slice, tuple)):
+            return CalipyList(super().__getitem__(idx))
+        elif isinstance(idx, list):
+            new_list = [self[key] for key in idx]
+            return CalipyList(new_list)
+            
+    def __eq__(self, other):
+        if isinstance(other, CalipyList):
+            return list.__eq__(self, other)
+        return NotImplemented
         
     def __repr__(self):
         # Use dict's __repr__ to  represent content
@@ -776,18 +808,143 @@ class CalipyIO:
         
         # Imports and definitions
         import torch
+        from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+        from calipy.core.tensor import CalipyTensor
+        from calipy.core.utils import dim_assignment
+           
+        
+        # Create data for CalipyList
+        calipy_list_empty = CalipyList()
+        calipy_list = CalipyList(data = ['a','b'])
+        calipy_same_list = CalipyList(calipy_list)
+        
+        
+        # Pass data into CalipyIO and investigate
+        
+        # Legal input types are None, single object, dict, CalipyDict, DataTuple, list,
+        # CalipyList, CalipyIO. 
+        
+        # Build inputs
+        none_input = None
+        single_input = torch.tensor([1.0])
+        dict_input = {'a': 1, 'b' : 2}
+        CalipyDict_input = CalipyDict(dict_input)
+        DataTuple_input = CalipyDict_input.as_datatuple()
+        list_input = [dict_input, {'c' : 3}, {'d' : 4}]
+        CalipyList_input = CalipyList(list_input)
+        CalipyIO_input = CalipyIO(dict_input)
+        
+        # Build CalipyIO's
+        none_io = CalipyIO(none_input)
+        single_io = CalipyIO(single_input)
+        dict_io = CalipyIO(dict_input)
+        CalipyDict_io = CalipyIO(CalipyDict_input)
+        DataTuple_io = CalipyIO(DataTuple_input)
+        list_io = CalipyIO(list_input, name = 'io_from_list')
+        CalipyList_io = CalipyIO(CalipyList_input)
+        CalipyIO_io = CalipyIO(CalipyIO_input)
+        
+        
+        # Check properties
+        none_io.is_null
+        single_io.is_null
+        print(single_io)
+        
+            
+        # Functionality includes:
+        #   1. Iteration
+        #   2. Fetch by index
+        #   3. Associated CalipyIndex
+        #      -  Has global and local index
+        #   4. Comes with collate function
+        
+        # 1. Iteration
+        # Proceed to investigate one of the built calipy_io objects, here list_io
+        for io in list_io:
+            print(io)
+            print(io.indexer.global_index)
+        
+        # 2. Fetch by index
+        # Access values (special if list and dict only have 1 element)
+        single_io.value
+        single_io.calipy_dict
+        single_io.calipy_list
+        single_io.data_tuple
+        
+        
+        # 3. a) Associated Indexer
+        # Content of indexer
+        list_io.batch_dim_flattened
+        list_io.indexer
+        list_io.indexer.local_index
+        list_io_sub = list_io[1:2]
+        list_io_sub.indexer.data_source_name
+        list_io_sub.indexer.index_tensor_dims
+        
+        # 3. b) Associated CalipyIndex
+        # Content of specific IOIndexer
+        list_io_sub.indexer.local_index.tuple
+        list_io_sub.indexer.local_index.tensor
+        list_io_sub.indexer.local_index.index_name_dict
+        
+        list_io_sub.indexer.global_index.tuple
+        list_io_sub.indexer.global_index.tensor
+        list_io_sub.indexer.global_index.index_name_dict
+        
+        # Iteration produces sub_io's
+        for io in list_io:
+            print(io.indexer.global_index)
+            print(io.indexer.global_index.tensor)
+        
+        # 3. c) Index / IO interaction
+        # subsampling and indexing: via intes, tuples, slices, and CalipyIndex
+        sub_io_1 = list_io[0]
+        sub_io_2 = list_io[1]
+        sub_io_3 = list_io[1:3]
+        
+        sub_io_1.indexer.local_index
+        sub_io_2.indexer.local_index
+        sub_io_3.indexer.local_index
+        
+        sub_io_1.indexer.global_index
+        sub_io_2.indexer.global_index
+        sub_io_3.indexer.global_index
+        
+        global_index_1 = sub_io_1.indexer.global_index
+        global_index_2 = sub_io_2.indexer.global_index
+        global_index_3 = sub_io_3.indexer.global_index
+        
+        assert(list_io[global_index_1] == list_io[0])
+        assert(list_io[global_index_2] == list_io[1])
+        assert(list_io[global_index_3] == list_io[1:3])
+        
+        # 4. Collate function
+        # Check collation functionality for autoreducing io s
+        mean_dims = dim_assignment(['bd_1', 'ed_1'])
+        var_dims = dim_assignment(['bd_1', 'ed_1'])
+        
+        mean_1 = CalipyTensor(torch.randn(3, 2), mean_dims)
+        mean_2 = CalipyTensor(torch.randn(5, 2), mean_dims)
+        var_1 = CalipyTensor(torch.randn(3, 2), var_dims)
+        var_2 = CalipyTensor(torch.randn(5, 2), var_dims)
+        
+        io_obj = CalipyIO([
+            CalipyDict({'mean': mean_1, 'var': var_1}),
+            CalipyDict({'mean': mean_2, 'var': var_2})
+        ])
+        
+        collated_io = io_obj.collate()
 
-    
     """
     
-    def __new__(cls, data = None):
+    def __new__(cls, data = None, name = 'io_noname'):
         if isinstance(data, cls):
             instance =  data  # Idempotency on CalipyIO
         else:
             instance = super().__new__(cls)
         return instance
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, name = 'io_noname'):
         """
         Data used for CalipyIO initialization can be:
           - None => CalipyIO containing None
@@ -819,10 +976,14 @@ class CalipyIO:
         if self.is_reducible:
             self.reduce()
             
-        self.data = data
+        self.name = name
+        # self.data = data
         self.batch_dim_flattened = dim_assignment(['batch_dim_flattened'], 
             dim_descriptions = ['Flattened batch dimension used to index list elements'])
-            
+        
+        self._indexer_construct(self.batch_dim_flattened, name)        
+    
+    
     @property
     def is_null(self):
         """ Indicate if CalipyIO only has one element and that one is trivial"""
@@ -833,9 +994,6 @@ class CalipyIO:
     def is_reducible(self):
         pass
     
-    def __len__(self):
-        return len(self.calipy_list)
-
     @property
     def value(self) -> Any:
         """
@@ -846,14 +1004,53 @@ class CalipyIO:
             raise ValueError("CalipyIO has {} items, cannot use .value. Use"\
                     " bracket notation or iterate instead.".format(len(self)))
             
-        value = self.calipy_list[0].value
+        value = self.calipy_list[0]
         return value
         
-    def reduce(self):
-        pass
+    def collate(self):
+        """
+        Attempts to merge all CalipyDict elements in self.calipy_list into a single
+        CalipyDict by concatenating tensors along the first dimension. This method 
+        succeeds only if all CalipyDict elements have exactly matching keys and 
+        tensor dimensions (excluding the first dimension).
+        """
+        
+        if len(self.calipy_list) <= 1:
+            # Nothing to reduce
+            return self
     
+        # Check compatibility
+        first_dict = self.calipy_list[0]
+        keys = first_dict.keys()
+    
+        for d in self.calipy_list:
+            if set(d.keys()) != set(keys):
+                raise ValueError("Cannot reduce CalipyIO: keys mismatch across CalipyDicts.")
+    
+        # Concatenate tensors along the first dimension
+        collated_dict = {}
+        for key in keys:
+            tensors_to_concat = [d[key] for d in self.calipy_list]
+            
+            # Check shape compatibility (except first dimension)
+            tensor_shapes = [t.shape[1:] for t in tensors_to_concat]
+            if len(set(tensor_shapes)) > 1:
+                raise ValueError(f"Incompatible shapes for key '{key}': {tensor_shapes}")
+    
+            # Collate tensors
+            collated_tensor = calipy_cat(tensors_to_concat, dim=0)
+            collated_dict[key] = collated_tensor
+        
+        return CalipyIO(collated_dict)
+    
+
     def preprocess_for_node(self, nodestructure):
         pass
+    
+    def _indexer_construct(self, io_dims, name, silent = True):
+        """Constructs a TensorIndexer for the tensor."""
+        self.indexer = IOIndexer(self.calipy_list, io_dims, name)
+        return self if silent == False else None
 
     def __getitem__(self, index):
         """ Returns new CalipyIO based on either standard indexing quantities
@@ -896,41 +1093,46 @@ class CalipyIO:
             indextensor_shape = [len(sub_io)] + [selected_indices.shape[1]]
             indextensor = selected_indices.view(*indextensor_shape)
 
-            # sub_io.indexer.create_global_index(subsample_indextensor = indextensor, 
-            #                                           data_source_name = self.name)
+            sub_io.indexer.create_global_index(subsample_indextensor = indextensor, 
+                                                      data_source_name = self.name)
+            
             return sub_io
         
-        # Case 2: If index is CalipyIndex, use index.tuple for subsampling
+        # Case 2: If index is CalipyIndex, use index.tensor for subsampling
         elif type(index) is CalipyIndex:
             if index.is_empty:
-                subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
-                                            name = self.name)
+                sub_io = self
             else:
-                subtensor_cp = CalipyTensor(self.tensor[index.tuple], dims = self.dims,
-                                            name = self.name)
-            subtensor_cp.indexer.create_global_index(subsample_indextensor = index.tensor, 
-                                          data_source_name = self.name)
-            return subtensor_cp
+                index_list = index.tensor.view(-1).tolist()
+                sub_io = CalipyIO(self.calipy_list[index_list], name = self.name)
         
-        # # Case 3: TorchDimTuple based indexing
-        # elif type(index) is TorchdimTuple:
-        #     pass
-        
-        # Case 4: Passing None returns the full tensor
+        # Case 3: Passing None returns the full tensor
         elif type(index) is type(None) :
             subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
                             name = self.name)
             return subtensor_cp
         
-        # Case 5: Raise an error for unsupported types
+        # Case 4: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported index type: {type(index)}")
         
         return sub_io
         
+    
+    def __len__(self):
+        return len(self.calipy_list)
+    
+    def __iter__(self):
+        # Define iteration explicitly via indexing
+        for idx in range(len(self)):
+            yield self[idx]
+    
+    def __eq__(self, other):
+        if isinstance(other, CalipyIO):
+            return self.calipy_list == other.calipy_list
+        return NotImplemented
+    
     def __repr__(self):
-        # list_rep = [obj.__repr__() for obj in self.calipy_list]
-        # rep_string = list.__repr__(list_rep)
         rep_string = self.calipy_list.__repr__()
         return f"CalipyIO({rep_string})"
 
