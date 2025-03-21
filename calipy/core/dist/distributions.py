@@ -9,7 +9,7 @@ from calipy.core.tensor import CalipyTensor
 from calipy.core.base import NodeStructure, CalipyNode
 from calipy.core.utils import dim_assignment, InputSchema
 from calipy.core.primitives import sample
-from calipy.core.data import CalipyDict, CalipyIO
+from calipy.core.data import CalipyDict, CalipyIO, preprocess_args
 
 
 def build_default_nodestructure(class_name):
@@ -144,20 +144,20 @@ class CalipyDistribution(CalipyNode):
 
 
             def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
-                # wrap input_vars and observations to CalipyDict
-                input_vars_cp = CalipyIO(input_vars)
-                observations_cp = CalipyIO(observations)
+                # wrap input_vars and observations to CalipyIO
+                input_vars_io, observations_io, subsample_index_io = preprocess_args(input_vars,
+                                                            observations, subsample_index)
                 
                 # Formatting arguments
                 vec = kwargs.get('vectorizable', True)
-                ssi = subsample_index
-                obs = observations_cp
+                ssi = subsample_index_io
+                obs = observations_io
                 name = '{}__sample__{}'.format(self.id_short, self.name)
                 dims = self.node_structure.dims
                 
                 # Building pyro distribution
                 n_event_dims = len(self.node_structure.dims['event_dims'].sizes)
-                pyro_dist = self.create_pyro_dist(input_vars_cp).to_event(n_event_dims)
+                pyro_dist = self.create_pyro_dist(input_vars_io).to_event(n_event_dims)
  
                 # Sampling and compiling
                 calipy_sample = sample(name, pyro_dist, dims, observations = obs.value,

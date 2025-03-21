@@ -523,6 +523,26 @@ CT_expanded = CT_none.expand_to_dims(tensor_dims_bound)
 #   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
 
 
+# SPECIAL CREATION RULES FOR CALIPYTENSORS
+
+# Special creation rules for calipy tensors:
+#   i) If tensor is None, dims must be None. Produces null object
+#   ii) If tensor exists and dims are None. Produces calipy tensor with generic dims
+#   iii) If calipy tensor is passed as input. Produces the same calipy tensor
+#   iv) If calipy tensor is passd as input and some dims. Produces new calipy tensor with new dims.
+
+tensor_A = torch.ones([5,2])
+dims_A = dim_assignment(['bd', 'ed'])
+dims_A_alt = dim_assignment(['bd_alt', 'ed_alt'])
+tensor_A_cp = CalipyTensor(tensor_A, dims_A)
+
+tensor_cp_None = CalipyTensor(None)
+tensor_cp_default = CalipyTensor(tensor_A)
+tensor_cp_idempotent = CalipyTensor(tensor_A_cp)
+tensor_cp_alt = CalipyTensor(tensor_A_cp, dims_A_alt)
+print(tensor_cp_alt)
+
+
 
 # BASE CLASS EXPERIMENTATION
 # Base classes
@@ -803,7 +823,7 @@ for cp_dict in [dict_from_none, dict_from_dict, dict_from_tuple,
                 dict_from_calipy, dict_from_single]:
     print(cp_dict)
     
-dict_from_single.has_single_item()
+dict_from_single.has_single_item
 dict_from_single.value
 dict_from_dict.as_datatuple()
 

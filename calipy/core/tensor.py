@@ -1101,6 +1101,14 @@ class CalipyTensor:
     its wrapped torch. Tensor object. Can be sliced and indexed in the usual ways
     which produces another CalipyTensor whose indexer is inherited.
     
+    Special creation rules for calipy tensors:
+        i) If tensor is None, dims must be None. Produces null object
+        ii) If tensor exists and dims are None. Produces calipy tensor with generic dims
+        iii) If calipy tensor is passed as input. Produces the same calipy tensor
+        iv) If calipy tensor is passed as input and some dims. Produces new calipy
+            tensor with new dims.
+        v) It tensor exists and dims exist, produce regular calipy tensor.
+    
     :param tensor: The tensor which should be embedded into CalipyTensor
     :type tensor: torch.Tensor
     :param dims: A DimTuple containing the dimensions of the tensor or None
@@ -1278,28 +1286,80 @@ class CalipyTensor:
         CT_expanded = CT_none.expand_to_dims(tensor_dims_bound)
         # The following errors out, as intended: 
         #   CalipyIndex(torch.ones([1]), index_tensor_dims = None)
+        
+        
+        # Special creation rules for calipy tensors ---------------------------
+        #   i) If tensor is None, dims must be None. Produces null object
+        #   ii) If tensor exists and dims are None. Produces calipy tensor with generic dims
+        #   iii) If calipy tensor is passed as input. Produces the same calipy tensor
+        #   iv) If calipy tensor is passd as input and some dims. Produces new calipy tensor with new dims.
+        
+        tensor_A = torch.ones([5,2])
+        dims_A = dim_assignment(['bd', 'ed'])
+        dims_A_alt = dim_assignment(['bd_alt', 'ed_alt'])
+        tensor_A_cp = CalipyTensor(tensor_A, dims_A)
+        
+        tensor_cp_None = CalipyTensor(None)
+        tensor_cp_default = CalipyTensor(tensor_A)
+        tensor_cp_idempotent = CalipyTensor(tensor_A_cp)
+        tensor_cp_alt = CalipyTensor(tensor_A_cp, dims_A_alt)
+        print(tensor_cp_alt)
+        
     """
     
     __torch_function__ = True  # Not strictly necessary, but clarity
 
-    def __init__(self, tensor, dims = None, name = 'noname'):
+    
+
+
+    def __new__(cls, tensor, dims = None, name = 'tensor_noname'):
+        # Special creation rules for calipy tensors:
+        #   i) If tensor is None, dims must be None. Produces null object
+        #   ii) If tensor exists and dims are None. Produces calipy tensor with generic dims
+        #   iii) If calipy tensor is passed as input. Produces the same calipy tensor
+        #   iv) If calipy tensor is passed as input and some dims. Produces new calipy
+        #       tensor with new dims.
+        #   v) It tensor exists and dims exist, produce regular calipy tensor.
+        
+        if isinstance(tensor, cls) and dims == None:
+            # Idempotency: return tensor directly
+            return tensor
+            # if dims is None:
+        else:
+            # normal creation
+            instance = super().__new__(cls)
+            instance._init_args = (tensor, dims, name)
+            return instance
+    
+    
+    def __init__(self, tensor, dims = None, name = 'tensor_noname'):
         
         # Input checks
+        if isinstance(tensor, CalipyTensor) and dims == None:
+            # Initialization already done, avoid overwriting
+            return 
+        
         signature = [tensor is None, dims is None]
-        if signature == [True,False] or signature == [False,True]:
-            raise Exception('If tensor is None, also dims must be None and if ' \
-                            'tensor is not None, so must be the dims. But tensor '\
+        if signature == [True,False]:
+            raise Exception('If tensor is None, also dims must be None. But tensor '\
                             ' is None : {} and index_tensor_dims is None: {}'
                             .format(signature[0], signature[1]))
         
-        if not isinstance(tensor, (torch.Tensor, type(None))):
-            raise TypeError("tensor must be a torch.Tensor or None")
+        if not isinstance(tensor, (CalipyTensor, torch.Tensor, type(None))):
+            raise TypeError("tensor must be a CalipyTensor, torch.Tensor or None")
         if dims is not None and len(dims) != tensor.ndim:
             warnings.warn("Number of dims in DimTuple does not match tensor.ndim, setting dims=None.")
 
+        # Set up generic dims, if dims = None
+        if signature == [False, True]:
+            tensor_shape = tensor.shape
+            generic_dim_names = ['dim_{}'.format(k) for k in range(len(tensor_shape))]
+            generic_dim_descriptions = ['generic dimension nr {}'.format(k) for k in range(len(tensor_shape))]
+            dims = dim_assignment(generic_dim_names, dim_descriptions = generic_dim_descriptions)
+            
         # Set initial attributes
         self.name = name
-        self.tensor = tensor
+        self.tensor = tensor if not isinstance(tensor, CalipyTensor) else tensor.tensor
         self.dims = dims
         
         if self.tensor is not None:

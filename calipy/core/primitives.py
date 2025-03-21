@@ -21,6 +21,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 from pyro.distributions import constraints
 from calipy.core.tensor import CalipyTensor
+from calipy.core.data import CalipyIO, preprocess_args
 
 
 def param(name, init_tensor, dims, constraint = constraints.real, subsample_index = None):
@@ -101,17 +102,20 @@ def param(name, init_tensor, dims, constraint = constraints.real, subsample_inde
         
     """
     
+    ssi_io = CalipyIO(subsample_index)
+    
     # TODO Check event_dim argument
     param_tensor = pyro.param(name, init_tensor = init_tensor, constraint = constraint)
     param_cp = CalipyTensor(param_tensor, dims =  dims, name = name)
     
     # Subsample the CalipyTensor
-    if subsample_index == None:
-        subsample_index = param_cp.indexer.local_index
+    if ssi_io.is_null:
+        ssi = param_cp.indexer.local_index
+    else:
+        ssi = ssi_io.value
         
-    param_subsampled_cp = param_cp[subsample_index]
+    param_subsampled_cp = param_cp[ssi]
     
-
     return param_subsampled_cp
 
 param.__doc__ = param.__doc__ + pyro.param.__doc__
@@ -165,9 +169,11 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
         The sampled data, preserving batch and event dimensions.
     """
     
-    # Basic rename
-    obs = observations
-    ssi = subsample_index
+    # Basic preprocess and rename
+    input_vars_io, observations_io, subsample_index_io = preprocess_args(None,
+                                            observations, subsample_index)
+    obs = observations_io
+    ssi = subsample_index_io
     vec = vectorizable
     
     # Set up dimensions
@@ -188,7 +194,7 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
     plate_sizes = [size if size is not None else 1 for size in batch_dims.sizes]
     
     # Plate lengths of the subsamples or None if no subsampling.
-    ssi_bound_dims = ssi.bound_dims[batch_dims] if ssi is not None else []
+    ssi_bound_dims = ssi.bound_dims[batch_dims] if not ssi.is_null else []
     plate_ssi_lengths = [ssi_dim.size for ssi_dim in ssi_bound_dims]
     if len(plate_ssi_lengths) == 0:
         plate_ssi_lengths = [None] * len(batch_dims)
@@ -212,21 +218,21 @@ def sample(name, dist, dist_dims, observations=None, subsample_index=None, vecto
 
             
             # case [0,0] (obs, ssi)
-            if obs == None and ssi == None:
+            if obs.is_null and ssi.is_null :
                 current_obs = None
                 
             
             # case [0,1] (obs, ssi)
-            if obs == None and ssi is not None:
+            if obs.is_null and not ssi.is_null:
                 current_obs = None
         
             
             # case [1,0] (obs, ssi)
-            if obs is not None and ssi == None:
+            if not obs.is_null and ssi.is_null:
                 current_obs = observations.tensor
             
             # case [1,1] (obs, ssi)
-            if obs is not None and ssi is not None:
+            if not obs.is_null and not ssi.is_null:
                 pass
             
             # Handle multiple plates

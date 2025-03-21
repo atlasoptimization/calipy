@@ -53,7 +53,7 @@ import textwrap
 from functools import wraps
 import torchviz
 from calipy.core.utils import format_mro, InputSchema
-from calipy.core.data import DataTuple, CalipyDict, CalipyIO
+from calipy.core.data import DataTuple, CalipyDict, CalipyIO, preprocess_args
 from abc import ABC, ABCMeta, abstractmethod
 
 from types import MethodType
@@ -896,8 +896,8 @@ class CalipyProbModel(CalipyNode):
             raise ValueError("Either `input_data` and `output_data` must be provided, or `dataloader` must be set.")
     
         # Wrap input_data and output_data into CalipyDict
-        input_data = CalipyIO(input_data)
-        output_data = CalipyIO(output_data)
+        input_data_io, output_data_io, subsample_index_io = preprocess_args(input_data,
+                                        output_data, subsample_index = None)
         
         # Fetch optional arguments
         lr = optim_opts.get('learning_rate', 0.01)
@@ -929,7 +929,7 @@ class CalipyProbModel(CalipyNode):
         else:
             # Handle direct data input case
             for step in range(self.n_steps):
-                loss = self.svi.step(input_vars=input_data, observations=output_data)
+                loss = self.svi.step(input_vars=input_data_io, observations=output_data_io)
                 if step % self.n_steps_report == 0:
                     print(f'epoch: {step} ; loss : {loss}')
                 self.loss_sequence.append(loss)

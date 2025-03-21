@@ -161,19 +161,22 @@ renamed_io = list_io.rename_keys(rename_dict)
 
 
 
-# Check indexing of tensors and compare to io_indexing
-tensor_A = torch.ones([5])
-tensor_A_dim = dim_assignment(['dim_1'])
-tensor_A_cp = CalipyTensor(tensor_A, tensor_A_dim)
-tensor_A_cp[0]
+# Special creation rules for calipy tensors:
+#   i) If tensor is None, dims must be None. Produces null object
+#   ii) If tensor exists and dims are None. Produces calipy tensor with generic dims
+#   iii) If calipy tensor is passed as input. Produces the same calipy tensor
+#   iv) If calipy tensor is passd as input and some dims. Produces new calipy tensor with new dims.
 
-tensor_B = torch.ones([5,2])
-tensor_B_dim = dim_assignment(['dim_1','dim_2'])
-tensor_B_cp = CalipyTensor(tensor_B, tensor_B_dim)
-tensor_B_cp[0,0]
+tensor_A = torch.ones([5,2])
+dims_A = dim_assignment(['bd', 'ed'])
+dims_A_alt = dim_assignment(['bd_alt', 'ed_alt'])
+tensor_A_cp = CalipyTensor(tensor_A, dims_A)
 
-
-
+tensor_cp_None = CalipyTensor(None)
+tensor_cp_default = CalipyTensor(tensor_A)
+tensor_cp_idempotent = CalipyTensor(tensor_A_cp)
+tensor_cp_alt = CalipyTensor(tensor_A_cp, dims_A_alt)
+print(tensor_cp_alt)
 
 # # Create data for CalipyDict initialization
 # tensor_A = torch.ones(2, 3)
@@ -201,6 +204,16 @@ tensor_B_cp[0,0]
 
 
 
+# Check indexing of tensors and compare to io_indexing
+tensor_A = torch.ones([5])
+tensor_A_dim = dim_assignment(['dim_1'])
+tensor_A_cp = CalipyTensor(tensor_A, tensor_A_dim)
+tensor_A_cp[0]
+
+tensor_B = torch.ones([5,2])
+tensor_B_dim = dim_assignment(['dim_1','dim_2'])
+tensor_B_cp = CalipyTensor(tensor_B, tensor_B_dim)
+tensor_B_cp[0,0]
 
 
 

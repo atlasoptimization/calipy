@@ -1217,4 +1217,52 @@ class CalipyIO:
         rep_string = self.calipy_list.__repr__()
         return f"CalipyIO({rep_string})"
 
+def preprocess_args(input_vars, observations, subsample_index):
+    """ Function for preprocessing arguments to forward passes. Converts different
+    forms of input to CalipyIO objects reflecting a standardized form of inputs
+    and outputs. Typically just wraps input into CalipyIO.
 
+    :param input_vars: Input input_vars to some .forward() method call. Specific
+        contents depend on the node but typically None or a dict containing CalipyTensors
+        with keys as specified in the nodes' input_vars_schema
+    :type input_vars: None, single object, Dict, CalipyDict, list, CalipyList, 
+        or CalipyIO containing CalipyTensors.
+    :param observation:  Input observation to some .forward() method call. Specific
+        contents depend on the node but typically a dict containing CalipyTensors
+        with keys as specified in the nodes' observation_schema
+    :type observations: None, single object, Dict, CalipyDict, list, CalipyList,
+        or CalipyIO containing CalipyTensors.
+    :param sbsample_index: Input subsample_index to some .forward() method call. Specific
+        contents depend on the node but typically None if no subsampling happens
+        or of type Dict containing CalipyIndex objects in case of subsampling. 
+        The keys are as specified in the nodes' subsampling_schema
+    :type subsample_index: None, single object, Dict, CalipyDict, list, CalipyList,
+    
+    :return: A tuple containing instances of CalipyIO that represent input_vars,
+        observations, subsample_index in a way that forward methods can handle
+        them well and they are easily passable between nodes.
+    :rtype: tuple of CalipyIO
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+        from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+        from calipy.core.tensor import CalipyTensor
+    """
+    
+    input_vars_io = CalipyIO(data = input_vars, name = 'input_vars_preprocessed')
+    observations_io = CalipyIO(data = observations, name = 'observations_preprocessed')
+    subsample_index_io = CalipyIO(data = subsample_index, name = 'subsample_index_preprocessed')
+    
+    return input_vars_io, observations_io, subsample_index_io
+    
+    
+    
+    
+    
+    
+    
+    

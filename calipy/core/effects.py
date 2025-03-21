@@ -36,7 +36,7 @@ from calipy.core.base import CalipyNode, NodeStructure
 from calipy.core.tensor import CalipyTensor, CalipyIndex
 from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
 from calipy.core.base import NodeStructure
-from calipy.core.data import CalipyDict, CalipyIO
+from calipy.core.data import CalipyDict, CalipyIO, preprocess_args
 import calipy.core.dist as dist
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
@@ -468,12 +468,14 @@ class NoiseAddition(CalipyEffect):
         """
         
         # Wrap input_vars and observations
-        input_vars_cp = CalipyIO(input_vars)
-        observations_cp = CalipyIO(observations)
+        # input_vars_cp = CalipyIO(input_vars)
+        # observations_cp = CalipyIO(observations)
+        input_vars_io, observations_io, subsample_index_io = preprocess_args(input_vars,
+                                                            observations, subsample_index)
         
     
-        input_vars_normal = input_vars_cp.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
-        output = self.calipy_normal.forward(input_vars_normal, observations_cp, subsample_index)
+        input_vars_normal = input_vars_io.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
+        output = self.calipy_normal.forward(input_vars_normal, observations_io, subsample_index_io)
         
         return output
     
