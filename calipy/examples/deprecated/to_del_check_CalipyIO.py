@@ -80,10 +80,14 @@ for io in list_io:
 
 # 2. Fetch by index
 # Access values (special if list and dict only have 1 element)
+single_io.dict
 single_io.value
 single_io.calipy_dict
 single_io.calipy_list
 single_io.data_tuple
+single_io[0]
+single_io['__single__']
+list_io[0]['a']
 
 
 # 3. a) Associated Indexer
@@ -148,6 +152,13 @@ io_obj = CalipyIO([
 ])
 
 collated_io = io_obj.collate()
+
+# Rename all entries in the dicts in CalipyIO
+rename_dict = {'a' : 'new_a', 'b' : 'new_b'}
+renamed_io = list_io.rename_keys(rename_dict)
+
+
+
 
 
 # Check indexing of tensors and compare to io_indexing

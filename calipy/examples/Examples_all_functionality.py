@@ -770,6 +770,223 @@ help(noisy_output)
 
 
 
+
+# TEST CALIPYDICT, CALIPYLIST, CALIPYIO
+
+import torch
+from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+   
+
+# Create data for CalipyList
+calipy_list_empty = CalipyList()
+calipy_list = CalipyList(data = ['a','b'])
+calipy_same_list = CalipyList(calipy_list)
+
+
+# Create data for CalipyDict initialization
+tensor_A = torch.ones(2, 3)
+tensor_B = torch.ones(4, 5)
+names = ['tensor_A', 'tensor_B']
+values = [tensor_A, tensor_B]
+data_tuple = DataTuple(names, values)
+data_dict = {'tensor_A': tensor_A, 'tensor_B' : tensor_B}
+
+# Create CalipyDict objects
+dict_from_none = CalipyDict()
+dict_from_dict = CalipyDict(data_dict)
+dict_from_tuple = CalipyDict(data_tuple)
+dict_from_calipy = CalipyDict(dict_from_dict)
+dict_from_single = CalipyDict(tensor_A)
+
+# Print contents and investigate 
+for cp_dict in [dict_from_none, dict_from_dict, dict_from_tuple, 
+                dict_from_calipy, dict_from_single]:
+    print(cp_dict)
+    
+dict_from_single.has_single_item()
+dict_from_single.value
+dict_from_dict.as_datatuple()
+
+
+# Imports and definitions
+import torch
+from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+from calipy.core.tensor import CalipyTensor
+from calipy.core.utils import dim_assignment
+   
+
+# Create data for CalipyList
+calipy_list_empty = CalipyList()
+calipy_list = CalipyList(data = ['a','b'])
+calipy_same_list = CalipyList(calipy_list)
+
+
+# Pass data into CalipyIO and investigate
+
+# Legal input types are None, single object, dict, CalipyDict, DataTuple, list,
+# CalipyList, CalipyIO. 
+
+# Build inputs
+none_input = None
+single_input = torch.tensor([1.0])
+dict_input = {'a': 1, 'b' : 2}
+CalipyDict_input = CalipyDict(dict_input)
+DataTuple_input = CalipyDict_input.as_datatuple()
+list_input = [dict_input, {'c' : 3}, {'d' : 4}]
+CalipyList_input = CalipyList(list_input)
+CalipyIO_input = CalipyIO(dict_input)
+
+# Build CalipyIO's
+none_io = CalipyIO(none_input)
+single_io = CalipyIO(single_input)
+dict_io = CalipyIO(dict_input)
+CalipyDict_io = CalipyIO(CalipyDict_input)
+DataTuple_io = CalipyIO(DataTuple_input)
+list_io = CalipyIO(list_input, name = 'io_from_list')
+CalipyList_io = CalipyIO(CalipyList_input)
+CalipyIO_io = CalipyIO(CalipyIO_input)
+
+
+# Check properties
+none_io.is_null
+single_io.is_null
+print(single_io)
+
+    
+# Functionality includes:
+#   1. Iteration
+#   2. Fetch by index
+#   3. Associated CalipyIndex
+#      -  Has global and local index
+#   4. Comes with collate function
+
+# 1. Iteration
+# Proceed to investigate one of the built calipy_io objects, here list_io
+for io in list_io:
+    print(io)
+    print(io.indexer.global_index)
+
+# 2. Fetch by index
+# Access values (special if list and dict only have 1 element)
+single_io.dict
+single_io.value
+single_io.calipy_dict
+single_io.calipy_list
+single_io.data_tuple
+single_io['__single__']
+list_io[0]['a']
+
+# 3. a) Associated Indexer
+# Content of indexer
+list_io.batch_dim_flattened
+list_io.indexer
+list_io.indexer.local_index
+list_io_sub = list_io[1:2]
+list_io_sub.indexer.data_source_name
+list_io_sub.indexer.index_tensor_dims
+
+# 3. b) Associated CalipyIndex
+# Content of specific IOIndexer
+list_io_sub.indexer.local_index.tuple
+list_io_sub.indexer.local_index.tensor
+list_io_sub.indexer.local_index.index_name_dict
+
+list_io_sub.indexer.global_index.tuple
+list_io_sub.indexer.global_index.tensor
+list_io_sub.indexer.global_index.index_name_dict
+
+# Iteration produces sub_io's
+for io in list_io:
+    print(io.indexer.global_index)
+    print(io.indexer.global_index.tensor)
+
+# 3. c) Index / IO interaction
+# subsampling and indexing: via intes, tuples, slices, and CalipyIndex
+sub_io_1 = list_io[0]
+sub_io_2 = list_io[1]
+sub_io_3 = list_io[1:3]
+
+sub_io_1.indexer.local_index
+sub_io_2.indexer.local_index
+sub_io_3.indexer.local_index
+
+sub_io_1.indexer.global_index
+sub_io_2.indexer.global_index
+sub_io_3.indexer.global_index
+
+global_index_1 = sub_io_1.indexer.global_index
+global_index_2 = sub_io_2.indexer.global_index
+global_index_3 = sub_io_3.indexer.global_index
+
+assert(list_io[global_index_1] == list_io[0])
+assert(list_io[global_index_2] == list_io[1])
+assert(list_io[global_index_3] == list_io[1:3])
+
+# 4. Collate function
+# Check collation functionality for autoreducing io s
+mean_dims = dim_assignment(['bd_1', 'ed_1'])
+var_dims = dim_assignment(['bd_1', 'ed_1'])
+
+mean_1 = CalipyTensor(torch.randn(3, 2), mean_dims)
+mean_2 = CalipyTensor(torch.randn(5, 2), mean_dims)
+var_1 = CalipyTensor(torch.randn(3, 2), var_dims)
+var_2 = CalipyTensor(torch.randn(5, 2), var_dims)
+
+io_obj = CalipyIO([
+    CalipyDict({'mean': mean_1, 'var': var_1}),
+    CalipyDict({'mean': mean_2, 'var': var_2})
+])
+
+collated_io = io_obj.collate()
+
+# Rename all entries in the dicts in CalipyIO
+rename_dict = {'a' : 'new_a', 'b' : 'new_b'}
+renamed_io = list_io.rename_keys(rename_dict)
+
+
+# TEST DATASET AND DATALOADER
+
+
+
+# TEST SAMPLE FUNCTION
+
+# General distribution setup
+CalipyNormal = calipy.core.dist.Normal
+normal_ns = NodeStructure(CalipyNormal)
+calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
+
+dims_normal = normal_ns.dims['batch_dims'] + normal_ns.dims['event_dims']
+mean_cp = CalipyTensor(torch.zeros(dims_normal.sizes), dims_normal)
+sigma_cp = CalipyTensor(torch.ones(dims_normal.sizes), dims_normal)
+input_vars_normal = CalipyDict({'loc' : mean_cp, 'scale' : sigma_cp})
+pyro_normal = calipy_normal.create_pyro_dist(input_vars_normal).to_event(1)
+
+# Data generation
+data = torch.normal(10,1, [10,2])
+data_cp = CalipyTensor(data, dims_normal, 'data')
+data_ss, data_ssi = data_cp.indexer.simple_subsample(dims_normal[0],3)
+data_subsample_cp = data_ss[0]
+data_ssi = data_ssi[0]
+
+# Sample vectorizable, no observations, no subsample_indices
+vec = True
+obs = None
+ssi = None
+
+sample_result_100 = sample('Sample_100', pyro_normal, normal_ns.dims, observations = obs,
+                       subsample_index = ssi, vectorizable = vec)
+
+# Sample vectorizable, no observations, subsample_indices
+vec = True
+obs = None
+ssi = data_ssi
+
+sample_result_101 = sample('Sample_101', pyro_normal, normal_ns.dims, observations = obs,
+                       subsample_index = ssi, vectorizable = vec)
+
+
+
+
 # TEST SIMPLE CalipyProbModel
 
 # i) Imports and definitions

@@ -53,7 +53,7 @@ import textwrap
 from functools import wraps
 import torchviz
 from calipy.core.utils import format_mro, InputSchema
-from calipy.core.data import DataTuple, CalipyDict
+from calipy.core.data import DataTuple, CalipyDict, CalipyIO
 from abc import ABC, ABCMeta, abstractmethod
 
 from types import MethodType
@@ -500,6 +500,24 @@ class CalipyNode(ABC):
         self.id = self._generate_id()
         self.id_short = self._generate_id_short()
         
+    @classmethod
+    def check_node_structure(cls, node_structure):
+        """ Checks if the node_structure instance has all the keys and correct structure as the class template """
+        if hasattr(cls, 'default_nodestructure'):
+            default_ns = cls.default_nodestructure
+            missing_dim_keys = [key for key in default_ns.dims.keys() if key not in node_structure.dims.keys()]            
+            missing_keys = missing_dim_keys
+            if missing_keys:
+                return False, 'keys missing: {}'.format(missing_keys)
+            return True, 'all keys from default_node_structure present in node_structure'
+        else:
+            raise NotImplementedError("This class does not define an example_node_structure.")
+    
+    # @classmethod
+    # def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
+    #     """ Create a new NodeStructure based on basic_node_structure but with updated values """
+    #     new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
+    #     return new_node_structure
         
     def _generate_id(self):
         # Generate the ID including all relevant class counts in the MRO
@@ -534,28 +552,7 @@ class CalipyNode(ABC):
         output = self.forward(input_vars)
         comp_graph = torchviz.make_dot(output)
         return comp_graph
-    
-    
-    @classmethod
-    def check_node_structure(cls, node_structure):
-        """ Checks if the node_structure instance has all the keys and correct structure as the class template """
-        if hasattr(cls, 'default_nodestructure'):
-            default_ns = cls.default_nodestructure
-            missing_dim_keys = [key for key in default_ns.dims.keys() if key not in node_structure.dims.keys()]            
-            missing_keys = missing_dim_keys
-            if missing_keys:
-                return False, 'keys missing: {}'.format(missing_keys)
-            return True, 'all keys from default_node_structure present in node_structure'
-        else:
-            raise NotImplementedError("This class does not define an example_node_structure.")
-
-
-    # @classmethod
-    # def build_node_structure(cls, basic_node_structure, shape_updates, plate_stack_updates):
-    #     """ Create a new NodeStructure based on basic_node_structure but with updated values """
-    #     new_node_structure = basic_node_structure.update(shape_updates, plate_stack_updates)
-    #     return new_node_structure
-    
+        
     
     def __repr__(self):
         return "{}(type: {} name: {})".format(self.dtype, self.type,  self.name)
@@ -899,8 +896,8 @@ class CalipyProbModel(CalipyNode):
             raise ValueError("Either `input_data` and `output_data` must be provided, or `dataloader` must be set.")
     
         # Wrap input_data and output_data into CalipyDict
-        input_data = CalipyDict(input_data)
-        output_data = CalipyDict(output_data)
+        input_data = CalipyIO(input_data)
+        output_data = CalipyIO(output_data)
         
         # Fetch optional arguments
         lr = optim_opts.get('learning_rate', 0.01)

@@ -466,7 +466,7 @@ class CalipyDict(dict):
                         dict_from_calipy, dict_from_single]:
             print(cp_dict)
             
-        dict_from_single.has_single_item()
+        dict_from_single.has_single_item
         dict_from_single.value
         dict_from_dict.as_datatuple()
     
@@ -520,6 +520,7 @@ class CalipyDict(dict):
         null_indicator = self[list(self.keys())[0]] is  None and len(self) == 1
         return null_indicator
 
+    @property
     def has_single_item(self) -> bool:
         """
         :return: True if exactly one item is in this dict, else False.
@@ -541,10 +542,10 @@ class CalipyDict(dict):
         
         :param rename_dict: Dictionary s.t. for each key in rename_dict, key is in
             self.keys() with rename_dict[key] being the string that is the key
-            in the newly produced DataTuple.
+            in the newly produced CalipyDict.
         :type rename_dict: dict
-        :return: DataTuple the same values but with changed keys. 
-        :rtype: DataTuple
+        :return: CalipyDict with the same values but with changed keys. 
+        :rtype: CalipyDict
         """
         
         renamed_data_tuple = self.as_datatuple().rename_keys(rename_dict)
@@ -740,6 +741,13 @@ class CalipyList(list):
         null_indicator = self[0].is_null and len(self) == 1
         return null_indicator
     
+    @property
+    def has_single_item(self) -> bool:
+        """
+        :return: True if exactly one item is in this dict, else False.
+        """
+        return len(self) == 1
+    
     def __getitem__(self, idx):
         """ Returns new CalipyList based on integers or a list of integers. If
         the index is an integer k, returns the k-th element; otherwise a new
@@ -789,6 +797,13 @@ class CalipyIO:
     to wrapping once. CalipyIO objects are also the output of iterating through
     InhomogeneousDataLoader objects; i.e. datasets and subbatched datasets are
     represented in this way.
+    
+    Special access rules: 
+        - If calipy_io contains in its list a single dict, calipy_io.dict returns it
+        - If calipy_io contains in its list a single dict, calipy_io[key] returns
+            the corresponding value dict[key]
+        - If calipy_io contains in its list a single dict and in that dict a single
+            key, value pair, then calipy_io.value returns that value.
     
     :param data: The data being used to construct the CalipyDict. Data used for
         dictionary initialization can be:
@@ -866,10 +881,13 @@ class CalipyIO:
         
         # 2. Fetch by index
         # Access values (special if list and dict only have 1 element)
+        single_io.dict
         single_io.value
         single_io.calipy_dict
         single_io.calipy_list
         single_io.data_tuple
+        single_io['__single__']
+        list_io[0]['a']
         
         
         # 3. a) Associated Indexer
@@ -934,6 +952,10 @@ class CalipyIO:
         ])
         
         collated_io = io_obj.collate()
+        
+        # Rename all entries in the dicts in CalipyIO
+        rename_dict = {'a' : 'new_a', 'b' : 'new_b'}
+        renamed_io = list_io.rename_keys(rename_dict)
 
     """
     
@@ -995,18 +1017,57 @@ class CalipyIO:
         pass
     
     @property
-    def value(self) -> Any:
+    def dict(self) -> Any:
         """
-        If there's exactly one item in this CalipyIO, return it.
+        If there's exactly one dict in this CalipyIO, return it.
         Otherwise, raise an error. This property allows single-output usage.
         """
         if len(self.calipy_list) != 1:
-            raise ValueError("CalipyIO has {} items, cannot use .value. Use"\
+            raise ValueError("CalipyIO has {} items, cannot use .dict. Use"\
                     " bracket notation or iterate instead.".format(len(self)))
             
-        value = self.calipy_list[0]
+        cp_dict = self.calipy_list[0]
+        return cp_dict
+    
+    @property
+    def value(self) -> Any:
+        """
+        If there's exactly one dict in this CalipyIO and one entry in it return
+        the entry. Otherwise, raise an error. This property allows single-output usage.
+        """
+        
+        if not self.has_single_item:
+            raise ValueError("CalipyIO has {} items, cannot use .value. Use"\
+                    " bracket notation or iterate instead.".format(len(self)))
+        if not self.dict.has_single_item:
+            raise ValueError("CalipyIO.dict has {} items, cannot use .value. Use"\
+                    " bracket notation or iterate instead.".format(len(self.dict)))
+            
+        value = self.calipy_list[0].value
         return value
         
+    @property
+    def has_single_item(self) -> bool:
+        """
+        :return: True if exactly one item is in this io, else False.
+        """
+        return len(self) == 1
+    
+    def rename_keys(self, rename_dict):
+        """ 
+        Renames current keys in all the dicts to the ones given by rename_dict[key].
+        
+        :param rename_dict: Dictionary s.t. for each key in rename_dict, key is in
+            self.calipy_list[k]keys() with rename_dict[key] being the string that
+            is the key in the newly produced CalipyDict.
+        :type rename_dict: dict
+        :return: CalipyIO with the same values but with changed keys. 
+        :rtype: CalipyIO
+        """
+        list_renamed_datatuples = [self.calipy_list[k].as_datatuple().rename_keys(rename_dict)
+                                   for k in range(len(self))]
+        return CalipyIO(list_renamed_datatuples)
+    
     def collate(self):
         """
         Attempts to merge all CalipyDict elements in self.calipy_list into a single
@@ -1043,9 +1104,18 @@ class CalipyIO:
         
         return CalipyIO(collated_dict)
     
+    # Functionality for when only one dict is present
+    def as_datatuple(self) -> DataTuple:
+        """
+        Convert this CalipyDict into a DataTuple for dimension-aware operations
+        or other advanced uses.
+        """
+        
+        return self.dict.as_datatuple()
 
     def preprocess_for_node(self, nodestructure):
         pass
+    
     
     def _indexer_construct(self, io_dims, name, silent = True):
         """Constructs a TensorIndexer for the tensor."""
@@ -1067,6 +1137,14 @@ class CalipyIO:
         if self.is_null:
             return self
         
+        # Case 1: Standard indexing with ints return the corresponding list element
+        # if type(index) in (int):
+        #     # Return list element, the output is not calipy_io
+                    
+        #     # Create new CalipyIO by subsampling
+        #     list_element =self.calipy_list[index]
+        #     return list_element
+        
         # Case 1: Standard indexing
         if type(index) in (int, tuple, slice):
             old_index = ensure_tuple(index)
@@ -1074,11 +1152,7 @@ class CalipyIO:
             # Preserve singleton dimensions for integer indexing
             index = []
             for dim, idx in enumerate(old_index):
-                if isinstance(idx, int):  # Prevent dimension collapse
-                    # index.append(torch.tensor([idx]))  # Convert to a tensor list
-                    index.append(slice(idx, idx+1))  # Convert to slice to preserve singleton
-                else:
-                    index.append(idx)
+                index.append(idx)
             index = ensure_tuple(index) # Added recently, check full compatibility
                     
             # Create new CalipyIO by subsampling
@@ -1106,13 +1180,20 @@ class CalipyIO:
                 index_list = index.tensor.view(-1).tolist()
                 sub_io = CalipyIO(self.calipy_list[index_list], name = self.name)
         
-        # Case 3: Passing None returns the full tensor
-        elif type(index) is type(None) :
-            subtensor_cp = CalipyTensor(self.tensor, dims = self.dims,
-                            name = self.name)
-            return subtensor_cp
+        # Case 3: When index is string, try to access single dict
+        elif type(index) is str:
+            # Input check
+            if len(self.calipy_list) != 1:
+                raise ValueError("CalipyIO has {} items, cannot use dict-based "\
+                                 "indexing. Use bracket notation or iterate instead."
+                                 .format(len(self)))
+            return self.dict[index]
         
-        # Case 4: Raise an error for unsupported types
+        # Case 4: Passing None returns the full io
+        elif type(index) is type(None) :
+            return self
+        
+        # Case 5: Raise an error for unsupported types
         else:
             raise TypeError(f"Unsupported index type: {type(index)}")
         

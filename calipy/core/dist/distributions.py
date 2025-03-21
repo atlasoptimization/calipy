@@ -9,7 +9,7 @@ from calipy.core.tensor import CalipyTensor
 from calipy.core.base import NodeStructure, CalipyNode
 from calipy.core.utils import dim_assignment, InputSchema
 from calipy.core.primitives import sample
-from calipy.core.data import CalipyDict
+from calipy.core.data import CalipyDict, CalipyIO
 
 
 def build_default_nodestructure(class_name):
@@ -145,8 +145,8 @@ class CalipyDistribution(CalipyNode):
 
             def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
                 # wrap input_vars and observations to CalipyDict
-                input_vars_cp = CalipyDict(input_vars)
-                observations_cp = CalipyDict(observations)
+                input_vars_cp = CalipyIO(input_vars)
+                observations_cp = CalipyIO(observations)
                 
                 # Formatting arguments
                 vec = kwargs.get('vectorizable', True)
