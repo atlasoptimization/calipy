@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 The goal of this script is to employ calipy to model a simple measurement process 
-with a single unknown mean and known variance. The measurement procedure has
-been used to collect a single datasets, that features n_meas samples. Inference
-is performed to estimate the value of the underlying expected value.
+with a single unknown image observed multiple times. The measurement procedure has
+been used to collect n images, that feature n_y x n_x pixels. Inference is performed 
+to estimate the value of the underlying expected value.
 For this, do the following:
     1. Imports and definitions
     2. Simulate some data
@@ -14,7 +14,7 @@ For this, do the following:
     6. Analyse results and illustrate
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -32,13 +32,17 @@ import matplotlib.pyplot as plt
 
 # calipy
 import calipy
+from calipy.core.tensor import CalipyTensor
+from calipy.core.utils import dim_assignment
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition
 
 
 # ii) Definitions
 
-n_meas = 20
+n_images = 20
+n_x = 5
+n_y = 10
 
 
 
@@ -49,17 +53,20 @@ n_meas = 20
 
 # i) Set up sample distributions
 
-mu_true = torch.tensor(0.0)
+mu_x = torch.linspace(0, 1, n_x)
+mu_y = torch.linspace(0, 1, n_y)
+mu_yy, mu_xx = torch.meshgrid(mu_y, mu_x, indexing = 'ij')
+mu_true = mu_xx * mu_yy
 sigma_true = torch.tensor(0.1)
 
 
 # ii) Sample from distributions
 
 data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
-data = data_distribution.sample([n_meas])
+data = data_distribution.sample([n_images])
 
-# The data now is a tensor of shape [n_meas] and reflects measurements being
-# being taken of a single object with a single measurement device.
+# The data now is a tensor of shape [n_images, n_y, n_x] and reflects n_images
+# measurements being being taken of a single image with a single measurement device.
 
 # We now consider the data to be an outcome of measurement of some real world
 # object; consider the true underlying data generation process to be unknown
@@ -72,28 +79,26 @@ data = data_distribution.sample([n_meas])
 """
 
 
-# i) Set up dimensions for mean parameter mu
+# i) Set up dimensions
 
-# Setting up requires correctly specifying a NodeStructure object. You can get 
-# a template for the node_structure by calling generate_template() on the example
-# node_structure delivered with the class description.
-# Here we modify the output of UnknownParam.example_node_structure.generate_template()
+batch_dims = dim_assignment(['bd_1'], dim_sizes = [n_images])
+event_dims = dim_assignment(['ed_1'], dim_sizes = [])
+param_dims = dim_assignment(['pd_1', 'pd_2'], dim_sizes = [n_y, n_x])
+
+
+# ii) Set up dimensions for mean parameter mu
 
 # mu setup
-mu_ns = NodeStructure()
-mu_ns.set_shape('batch_shape', (), 'Independent values')
-mu_ns.set_shape('event_shape', (n_meas,), 'Repeated values')
+mu_ns = NodeStructure(UnknownParameter)
+mu_ns.set_dims(batch_dims = batch_dims, param_dims = param_dims)
 mu_object = UnknownParameter(mu_ns, name = 'mu')
 
 
 # iii) Set up the dimensions for noise addition
-# This requires not batch_shapes and event shapes but plate stacks instead - these
-# quantities determine conditional independence for stochastic objects. In our 
-# case, everything is independent since we prescribe i.i.d. noise.
-# Here we modify the output of NoiseAddition.example_node_structure.generate_template()
-noise_ns = NodeStructure()
-noise_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas, -1, 'independent noise 1')], 'Stack containing noise')
-noise_object = NoiseAddition(noise_ns)
+
+noise_ns = NodeStructure(NoiseAddition)
+noise_ns.set_dims(batch_dims = batch_dims + param_dims, event_dims = event_dims)
+noise_object = NoiseAddition(noise_ns, name = 'noise')
         
 
 
@@ -115,7 +120,10 @@ class DemoProbModel(CalipyProbModel):
     # Define model by forward passing
     def model(self, input_vars = None, observations = None):
         mu = self.mu_object.forward()       
-        output = self.noise_object.forward((mu, sigma_true), observations = observations)     
+
+        inputs = {'mean':mu, 'standard_deviation': sigma_true} 
+        output = self.noise_object.forward(input_vars = inputs,
+                                           observations = observations)
         
         return output
     
@@ -145,9 +153,9 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 # ii) Train the model
 
 input_data = None
-output_data = data
-optim_results = demo_probmodel.train(input_data, output_data, optim_opts)
-    
+data_cp = CalipyTensor(data, dims = batch_dims + param_dims)
+optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+
 
 
 """
@@ -166,23 +174,32 @@ plt.xlabel('epoch')
 
 for param, value in pyro.get_param_store().items():
     print(param, '\n', value)
-    
-print('True values of mu = ', mu_true)
-print('Results of taking empirical means for mu_1 = ', torch.mean(data))
 
+mu_mean = torch.mean(data, dim = 0)
+mu_calipy = pyro.get_param_store()['Node_1__param_mu'].detach()
+diff = mu_mean - mu_calipy    
 
+# iii) Create side-by-side plots
 
+fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+# Plot first image
+axes[0].imshow(mu_true, cmap='gray')
+axes[0].set_title('True mu')
+axes[0].axis('off')
 
+# Plot second image
+axes[1].imshow(mu_mean, cmap='gray')
+axes[1].set_title('LS estimation')
+axes[1].axis('off')
 
+# Plot third image
+axes[2].imshow(mu_calipy, cmap='gray')
+axes[2].set_title('calipy estimation')
+axes[2].axis('off')
 
-
-
-
-
-
-
-
-
+# Show the plot
+plt.tight_layout()
+plt.show()
 
 
 

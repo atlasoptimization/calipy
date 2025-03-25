@@ -1273,19 +1273,101 @@ class CalipyDataset(Dataset):
     :return: An instance of CalipyDataset, suitable for accessing datasets and
         passing them to DataLoader objects.
     :rtype: CalipyDataset
+    
+    The following scenarios need to be evaluated are covered by the dataset 
+    construction procedure:
+        i) (Input, Ouptut) =  (None, CalipyTensor)
+        ii) (Input, Ouptut) =  (Calipytensor, CalipyTensor)
+        iii) (Input, Ouptut) =  (None, dict(CalipyTensor))
+        iv) (Input, Output) = (dict(CalipyTensor), dict(CalipyTensor))
+        v) (Input, Ouptut) =  (None, list(dict(CalipyTensor)))
+        vi) (Input, Output) = (list(dict(CalipyTensor)), list(dict(CalipyTensor)))
+        vii) (Input, Output) = (None, list_mixed)
+        viii) (Input, Output) = (list_mixed, list_mixed)
+        
+    where list_mixed means a list of dicts with entries to keys sometimes being
+    None or of nonmatching shapes.
 
     Example usage:
 
     .. code-block:: python
         
-        # Imports and definitions
+
+        # i) Imports and definitions
         import torch
-        from calipy.core.data import CalipyDataset
-           
-
-        # Create data for CalipyDict initialization
-
+        import pyro        
+        from calipy.core.utils import dim_assignment
+        from calipy.core.data import  CalipyDataset, io_collate
+        from calipy.core.tensor import CalipyTensor
+        from torch.utils.data import DataLoader
+                
+        # Definitions        
+        n_meas = 2
+        n_event = 1
+        n_subbatch = 7
+        
     
+        # ii) Create data for dataset
+        
+        # Set up sample distributions
+        mu_true = torch.tensor(0.0)
+        sigma_true = torch.tensor(0.1)
+        
+        # Sample from distributions & wrap result
+        data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
+        data = data_distribution.sample([n_meas, n_event])
+        data_dims = dim_assignment(['bd_data', 'ed_data'], dim_sizes = [n_meas, n_event])
+        data_cp = CalipyTensor(data, data_dims, name = 'data')
+        
+        # dataset_inputs
+        data_none = None
+        data_ct = data_cp
+        data_cd = {'a': data_cp, 'b' : data_cp}
+        data_io = [data_cd, data_cd]
+        data_io_mixed = [data_cd, {'a' : None, 'b' : data_cp} , {'a': data_cp, 'b':None}, data_cd]
+        
+        
+        # iii) Build datasets
+        
+        # Build datasets and check
+        dataset_none_none = CalipyDataset(input_data = data_none, output_data = data_none)
+        dataset_none_ct = CalipyDataset(input_data = data_none, output_data = data_ct)
+        dataset_none_cd = CalipyDataset(input_data = data_none, output_data = data_cd)
+        dataset_none_io = CalipyDataset(input_data = data_none, output_data = data_io)
+        dataset_none_iomixed = CalipyDataset(input_data = data_none, output_data = data_io_mixed)
+        
+        dataset_ct_ct = CalipyDataset(input_data = data_ct, output_data = data_ct)
+        dataset_ct_cd = CalipyDataset(input_data = data_ct, output_data = data_cd)
+        dataset_ct_io = CalipyDataset(input_data = data_ct, output_data = data_io)
+        dataset_ct_iomixed = CalipyDataset(input_data = data_ct, output_data = data_io_mixed)
+        
+        dataset_cd_ct = CalipyDataset(input_data = data_cd, output_data = data_ct)
+        dataset_cd_cd = CalipyDataset(input_data = data_cd, output_data = data_cd)
+        dataset_cd_io = CalipyDataset(input_data = data_cd, output_data = data_io)
+        dataset_cd_iomixed = CalipyDataset(input_data = data_cd, output_data = data_io_mixed)
+        
+        dataset_io_ct = CalipyDataset(input_data = data_io, output_data = data_ct)
+        dataset_io_cd = CalipyDataset(input_data = data_io, output_data = data_cd)
+        dataset_io_io = CalipyDataset(input_data = data_io, output_data = data_io)
+        dataset_io_iomixed = CalipyDataset(input_data = data_io, output_data = data_io_mixed)
+        
+        dataset_iomixed_ct = CalipyDataset(input_data = data_io_mixed, output_data = data_ct)
+        dataset_iomixed_cd = CalipyDataset(input_data = data_io_mixed, output_data = data_cd)
+        dataset_iomixed_io = CalipyDataset(input_data = data_io_mixed, output_data = data_io)
+        dataset_iomixed_iomixed = CalipyDataset(input_data = data_io_mixed, output_data = data_io_mixed)
+        
+        
+        # iv) Build dataloader and subsample
+        
+        dataset = CalipyDataset(input_data = [None, data_ct, data_cd],
+                                output_data = [None, data_ct, data_cd] )
+        dataloader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=io_collate)
+        
+        # Iterate through the DataLoader
+        for batch_input, batch_output, batch_index in dataloader:
+            print(batch_input, batch_output, batch_index)
+        
+            
     """
     def __init__(self, input_data, output_data, homogeneous = False):
         
@@ -1420,7 +1502,6 @@ def io_collate(batch, reduce = False):
     
     # If reduce = True, stack contained tensors along first dimension
     if reduce  == True:
-        
     
         # Check input signatures
         bool_reduction_inputs = inputs_io.is_reducible()
@@ -1429,24 +1510,22 @@ def io_collate(batch, reduce = False):
         bool_reduction_data = bool_reduction_inputs*bool_reduction_outputs*bool_reduction_indices
         
         # compatibility reduce argument
-        if reduce == True and bool_reduction_data == False:
+        if bool_reduction_data == False:
             raise Exception("Attempting to reduce dataset io's to single dicts but not " \
                             "all of the are reducible. Reducibility: inputs: {}, outputs : {}, indices : {}"
                             .format(bool_reduction_inputs, bool_reduction_outputs, bool_reduction_indices) )
-        
-    
             
         # Construct new dictionaries
         output_dict = {}
-        output_keys = list_of_outputs[0].keys()
+        output_keys = outputs_io[0].dict.keys()
         for key in output_keys:
-            tensors_to_concat = [d[key] for d in list_of_outputs]
+            tensors_to_concat = [d[key] for d in outputs_io]
             output_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
             
         input_dict = {}
-        input_keys = list_of_inputs[0].keys()
+        input_keys = inputs_io[0].dict.keys()
         for key in input_keys:
-            tensors_to_concat = [d[key] for d in list_of_inputs]
+            tensors_to_concat = [d[key] for d in inputs_io]
             input_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
             
         

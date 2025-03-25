@@ -37,15 +37,12 @@ None or of nonmatching shapes.
 import torch
 import pyro
 
-import calipy
-from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, NoiseAddition
-from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple, CalipyDict, CalipyIO, CalipyDataset, io_collate
-from calipy.core.tensor import CalipyTensor, CalipyIndex
-from calipy.core.funs import calipy_cat
 
-from torch.utils.data import Dataset, DataLoader
+from calipy.core.utils import dim_assignment
+from calipy.core.data import  CalipyDataset, io_collate
+from calipy.core.tensor import CalipyTensor
+
+from torch.utils.data import DataLoader
 
 
 # ii) Definitions

@@ -14,7 +14,7 @@ For this, do the following:
     6. Analyse results and illustrate
 
 The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 """
 
 
@@ -34,12 +34,13 @@ import matplotlib.pyplot as plt
 import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition
+from calipy.core.utils import dim_assignment
+from calipy.core.tensor import CalipyTensor
 
 
 # ii) Definitions
 
 n_meas = 20
-
 
 
 """
@@ -59,7 +60,7 @@ data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
 data = data_distribution.sample([n_meas])
 
 # The data now is a tensor of shape [n_meas] and reflects measurements being
-# being taken of a single object with a single measurement device.
+# taken of a single object with a single measurement device.
 
 # We now consider the data to be an outcome of measurement of some real world
 # object; consider the true underlying data generation process to be unknown
@@ -72,28 +73,34 @@ data = data_distribution.sample([n_meas])
 """
 
 
-# i) Set up dimensions for mean parameter mu
+# i) Set up dimensions
+
+batch_dims = dim_assignment(['bd_1'], dim_sizes = [n_meas])
+event_dims = dim_assignment(['ed_1'], dim_sizes = [])
+param_dims = dim_assignment(['pd_1'], dim_sizes = [])
+
+
+# ii) Set up dimensions for mean parameter mu
 
 # Setting up requires correctly specifying a NodeStructure object. You can get 
 # a template for the node_structure by calling generate_template() on the example
-# node_structure delivered with the class description.
-# Here we modify the output of UnknownParam.example_node_structure.generate_template()
+# node_structure delivered with the class description. Here, we call the example
+# node structure, then set the dims; required dims that need to be provided can
+# be found via help(mu_ns.set_dims).
 
 # mu setup
-mu_ns = NodeStructure()
-mu_ns.set_shape('batch_shape', (), 'Independent values')
-mu_ns.set_shape('event_shape', (n_meas,), 'Repeated values')
+mu_ns = NodeStructure(UnknownParameter)
+mu_ns.set_dims(batch_dims = batch_dims, param_dims = param_dims,)
 mu_object = UnknownParameter(mu_ns, name = 'mu')
 
 
 # iii) Set up the dimensions for noise addition
-# This requires not batch_shapes and event shapes but plate stacks instead - these
-# quantities determine conditional independence for stochastic objects. In our 
-# case, everything is independent since we prescribe i.i.d. noise.
-# Here we modify the output of NoiseAddition.example_node_structure.generate_template()
-noise_ns = NodeStructure()
-noise_ns.set_plate_stack('noise_stack', [('batch_plate', n_meas, -1, 'independent noise 1')], 'Stack containing noise')
-noise_object = NoiseAddition(noise_ns)
+# This requires again the batch shapes and event shapes. They are used to set
+# up the dimensions in which the noise is i.i.d. and the dims in which it is
+# copied. Again, required keys can be found via help(noise_ns.set_dims).
+noise_ns = NodeStructure(NoiseAddition)
+noise_ns.set_dims(batch_dims = batch_dims, event_dims = event_dims)
+noise_object = NoiseAddition(noise_ns, name = 'noise')
         
 
 
@@ -115,7 +122,13 @@ class DemoProbModel(CalipyProbModel):
     # Define model by forward passing
     def model(self, input_vars = None, observations = None):
         mu = self.mu_object.forward()       
-        output = self.noise_object.forward((mu, sigma_true), observations = observations)     
+
+        # Dictionary/DataTuple input is converted to CalipyDict internally. It
+        # is also possible, to pass single element input_vars or observations;
+        # these are also autowrapped.
+        inputs = {'mean':mu, 'standard_deviation': sigma_true} 
+        output = self.noise_object.forward(input_vars = inputs,
+                                           observations = observations)
         
         return output
     
@@ -143,11 +156,15 @@ optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
 
 # ii) Train the model
-
+# When passed to any forward() method, input_vars and observations are wrapped
+# in CalipyDict. Passing data_cp is equivalent to passing CalipyTensor(data_cp).
+# Passing directly a CalipyDict is always ok, but in case of one-element
+# input_vars or observations, only passing that element and letting the autowrap
+# handle the rest can make code simpler to read.
 input_data = None
-output_data = data
-optim_results = demo_probmodel.train(input_data, output_data, optim_opts)
-    
+data_cp = CalipyTensor(data, dims = batch_dims + event_dims)
+optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+
 
 
 """

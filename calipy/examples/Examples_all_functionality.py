@@ -966,6 +966,81 @@ renamed_io = list_io.rename_keys(rename_dict)
 
 # TEST DATASET AND DATALOADER
 
+# i) Imports and definitions
+import torch
+import pyro        
+from calipy.core.utils import dim_assignment
+from calipy.core.data import  CalipyDataset, io_collate
+from calipy.core.tensor import CalipyTensor
+from torch.utils.data import DataLoader
+        
+# Definitions        
+n_meas = 2
+n_event = 1
+n_subbatch = 7
+
+
+# ii) Create data for dataset
+
+# Set up sample distributions
+mu_true = torch.tensor(0.0)
+sigma_true = torch.tensor(0.1)
+
+# Sample from distributions & wrap result
+data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
+data = data_distribution.sample([n_meas, n_event])
+data_dims = dim_assignment(['bd_data', 'ed_data'], dim_sizes = [n_meas, n_event])
+data_cp = CalipyTensor(data, data_dims, name = 'data')
+
+# dataset_inputs
+data_none = None
+data_ct = data_cp
+data_cd = {'a': data_cp, 'b' : data_cp}
+data_io = [data_cd, data_cd]
+data_io_mixed = [data_cd, {'a' : None, 'b' : data_cp} , {'a': data_cp, 'b':None}, data_cd]
+
+
+# iii) Build datasets
+
+# Build datasets and check
+dataset_none_none = CalipyDataset(input_data = data_none, output_data = data_none)
+dataset_none_ct = CalipyDataset(input_data = data_none, output_data = data_ct)
+dataset_none_cd = CalipyDataset(input_data = data_none, output_data = data_cd)
+dataset_none_io = CalipyDataset(input_data = data_none, output_data = data_io)
+dataset_none_iomixed = CalipyDataset(input_data = data_none, output_data = data_io_mixed)
+
+dataset_ct_ct = CalipyDataset(input_data = data_ct, output_data = data_ct)
+dataset_ct_cd = CalipyDataset(input_data = data_ct, output_data = data_cd)
+dataset_ct_io = CalipyDataset(input_data = data_ct, output_data = data_io)
+dataset_ct_iomixed = CalipyDataset(input_data = data_ct, output_data = data_io_mixed)
+
+dataset_cd_ct = CalipyDataset(input_data = data_cd, output_data = data_ct)
+dataset_cd_cd = CalipyDataset(input_data = data_cd, output_data = data_cd)
+dataset_cd_io = CalipyDataset(input_data = data_cd, output_data = data_io)
+dataset_cd_iomixed = CalipyDataset(input_data = data_cd, output_data = data_io_mixed)
+
+dataset_io_ct = CalipyDataset(input_data = data_io, output_data = data_ct)
+dataset_io_cd = CalipyDataset(input_data = data_io, output_data = data_cd)
+dataset_io_io = CalipyDataset(input_data = data_io, output_data = data_io)
+dataset_io_iomixed = CalipyDataset(input_data = data_io, output_data = data_io_mixed)
+
+dataset_iomixed_ct = CalipyDataset(input_data = data_io_mixed, output_data = data_ct)
+dataset_iomixed_cd = CalipyDataset(input_data = data_io_mixed, output_data = data_cd)
+dataset_iomixed_io = CalipyDataset(input_data = data_io_mixed, output_data = data_io)
+dataset_iomixed_iomixed = CalipyDataset(input_data = data_io_mixed, output_data = data_io_mixed)
+
+
+# iv) Build dataloader and subsample
+
+dataset = CalipyDataset(input_data = [None, data_ct, data_cd],
+                        output_data = [None, data_ct, data_cd] )
+dataloader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=io_collate)
+
+# Iterate through the DataLoader
+for batch_input, batch_output, batch_index in dataloader:
+    print(batch_input, batch_output, batch_index)
+    
+    
 
 
 # TEST SAMPLE FUNCTION
