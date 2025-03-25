@@ -949,7 +949,7 @@ io_obj = CalipyIO([
     CalipyDict({'mean': mean_2, 'var': var_2})
 ])
 
-collated_io = io_obj.collate()
+collated_io = io_obj.reduce_list()
 
 # Rename all entries in the dicts in CalipyIO
 rename_dict = {'a' : 'new_a', 'b' : 'new_b'}

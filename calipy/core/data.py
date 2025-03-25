@@ -951,7 +951,7 @@ class CalipyIO:
             CalipyDict({'mean': mean_2, 'var': var_2})
         ])
         
-        collated_io = io_obj.collate()
+        collated_io = io_obj.reduce_list()
         
         # Rename all entries in the dicts in CalipyIO
         rename_dict = {'a' : 'new_a', 'b' : 'new_b'}
@@ -995,8 +995,8 @@ class CalipyIO:
             self.data_tuple = self.calipy_dict.as_datatuple()
             self.calipy_list = CalipyList(CalipyDict(data))
         
-        if self.is_reducible:
-            self.reduce()
+        # if self.is_reducible:
+        #     self.reduce_list()
             
         self.name = name
         # self.data = data
@@ -1014,7 +1014,25 @@ class CalipyIO:
         
     @property
     def is_reducible(self):
-        pass
+        # Check compatibility
+        first_dict = self.calipy_list[0]
+        keys = first_dict.keys()
+        indicator_bool = 1
+    
+        for d in self.calipy_list:
+            if set(d.keys()) != set(keys):
+                indicator_bool = False
+                return indicator_bool
+            
+        for key in keys:
+            tensors_to_concat = [d[key] for d in self.calipy_list]
+            
+            # Check shape compatibility (except first dimension)
+            tensor_shapes = [t.shape[1:] if t is not None else None for t in tensors_to_concat]
+            if len(set(tensor_shapes)) > 1:
+                indicator_bool = False
+
+        return indicator_bool
     
     @property
     def dict(self) -> Any:
@@ -1068,7 +1086,7 @@ class CalipyIO:
                                    for k in range(len(self))]
         return CalipyIO(list_renamed_datatuples)
     
-    def collate(self):
+    def reduce_list(self):
         """
         Attempts to merge all CalipyDict elements in self.calipy_list into a single
         CalipyDict by concatenating tensors along the first dimension. This method 
@@ -1089,7 +1107,7 @@ class CalipyIO:
                 raise ValueError("Cannot reduce CalipyIO: keys mismatch across CalipyDicts.")
     
         # Concatenate tensors along the first dimension
-        collated_dict = {}
+        reduced_dict = {}
         for key in keys:
             tensors_to_concat = [d[key] for d in self.calipy_list]
             
@@ -1099,10 +1117,10 @@ class CalipyIO:
                 raise ValueError(f"Incompatible shapes for key '{key}': {tensor_shapes}")
     
             # Collate tensors
-            collated_tensor = calipy_cat(tensors_to_concat, dim=0)
-            collated_dict[key] = collated_tensor
+            reduced_tensor = calipy_cat(tensors_to_concat, dim=0)
+            reduced_dict[key] = reduced_tensor
         
-        return CalipyIO(collated_dict)
+        return CalipyIO(reduced_dict)
     
     # Functionality for when only one dict is present
     def as_datatuple(self) -> DataTuple:
@@ -1216,6 +1234,232 @@ class CalipyIO:
     def __repr__(self):
         rep_string = self.calipy_list.__repr__()
         return f"CalipyIO({rep_string})"
+    
+    
+    
+
+
+# Build CalipyDataset class that allows DataLoader to batch over multiple dimensions
+
+class CalipyDataset(Dataset):
+    """
+    CalipyDataset is a class mimicking the functionality of the Dataset class in
+    torch.utils.data but providing some streamlined prebuilt functions needed
+    in the context of calipy. This includes support for subsampling based on 
+    CalipyDict objects. Is meant to be subclassed for augmenting user specified
+    datasets with additional, calipy-ready functionality.    
+    
+    :param input_data: The input_data of the dataset reflecting the inputs to 
+        the model that evoke the corresponding outputs. Can be:
+          - None => No input data (no input)
+          - CalipyTensor => Single tensor (single input)
+          - CalipyDict => Dictionary containing CalipyTensors (multiple inputs)
+          - CalipyIO => List containing CalipyDict containing CalipyTensors 
+              (multiple inputs, possibly of inhomogeneous shape and type)
+    :type input_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
+    
+    :param output_data: The output_data of the dataset reflecting the outputs of 
+        the model evoked by the corresponding inputs. Can be:
+          - None => No output data (no output)
+          - CalipyTensor => Single tensor (single output)
+          - CalipyDict => Dictionary containing CalipyTensors (multiple outputs)
+          - CalipyIO => List containing CalipyDict containing CalipyTensors 
+              (multiple inputs, possibly of inhomogeneous shape and type)
+    :type output_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
+    :param batch_dims: A DimTuple object defining the batch dimensions among 
+        which flattening and subsampling is performed.
+    :type batch_dims: DimTuple
+    
+    :return: An instance of CalipyDataset, suitable for accessing datasets and
+        passing them to DataLoader objects.
+    :rtype: CalipyDataset
+
+    Example usage:
+
+    .. code-block:: python
+        
+        # Imports and definitions
+        import torch
+        from calipy.core.data import CalipyDataset
+           
+
+        # Create data for CalipyDict initialization
+
+    
+    """
+    def __init__(self, input_data, output_data, homogeneous = False):
+        
+        # Preprocess I/O data
+        self.input_type = type(input_data)
+        self.output_type = type(output_data)
+        self.input_data = CalipyIO(input_data)
+        self.output_data = CalipyIO(output_data)
+        self.homogeneous = homogeneous
+        self.data = {'input_data' : input_data, 'output_data' :  output_data}
+        
+        # Error diagnostics
+        self.valid_dataset_types = [CalipyTensor, CalipyDict, CalipyIO, type(None), list, dict]
+        if self.input_type not in self.valid_dataset_types :
+            raise(Exception('input_type must be one of {}; is {}'.format(self.valid_dataset_types, self.input_type)))
+        if self.output_type not in self.valid_dataset_types :
+            raise(Exception('output_type must be one of {}; is {}'.format(self.valid_dataset_types, self.output_type)))
+            
+    
+    def infer_length(self, query_data):
+        # Infer the batch length of input_data or output_data
+        len_data = {key: query_data[key].shape[0] if query_data[key] is not None else None 
+                    for key in query_data.keys()}
+        return len_data
+                    
+
+    def __len__(self):
+        # return the length of the dataset, i.e. the number of CalipyIO list entries
+        return  max(len(self.input_data.calipy_list), len(self.output_data.calipy_list))
+        
+
+    def __getitem__(self, idx):
+        # Handle the case where idx is a single integer
+        input_data_idx = self.input_data[idx] if self.input_data is not None else None
+        output_data_idx = self.output_data[idx] if self.output_data is not None else None
+        data_dict = {'input' : CalipyIO(input_data_idx), 'output' : CalipyIO(output_data_idx),
+                     'index' :  CalipyIO(torch.tensor([idx]))}
+        
+        return data_dict
+    
+    # def __repr__(self):
+    #     input_rep = 
+    #     output_rep = 
+    #     len_rep = len(self)
+    #     rep_string = "\n len : {len_rep}, \n input : {input_rep}, \n output : {output_rep}"
+    #     return f"CalipyDataset({rep_string})"
+        
+    def __repr__(self):
+        # Recursively format objects with neat indentation
+        def short_repr(obj, indent=0, max_items=3):
+            pad = '  ' * indent
+    
+            if isinstance(obj, (list, CalipyList)):
+                n = len(obj)
+                if n == 0:
+                    return '[]'
+                if n <= max_items:
+                    elems = ',\n'.join(short_repr(el, indent + 1) for el in obj)
+                else:
+                    elems = ',\n'.join(short_repr(el, indent + 1) for el in obj[:2])
+                    elems += f',\n{pad}  ...\n' + short_repr(obj[-1], indent + 1)
+                return '[\n' + elems + f'\n{pad}]'
+    
+            elif isinstance(obj, (dict, CalipyDict)):
+                items = []
+                for idx, (k, v) in enumerate(obj.items()):
+                    v_repr = short_repr(v, indent + 1)
+                    key_repr = f"{pad}  {k}: {v_repr}" if idx > 0 else f"{k}: {v_repr}"
+                    items.append(key_repr)
+                return '    { ' + ', \n'.join(items) + ' }'
+    
+            elif isinstance(obj, torch.Tensor):
+                return f'torch.Tensor(shape={list(obj.shape)})'
+            elif isinstance(obj,  CalipyTensor):
+                return f'CalipyTensor(shape={list(obj.shape)})'
+    
+            elif obj is None:
+                return 'None'
+    
+            else:
+                return type(obj).__name__
+    
+        input_rep = short_repr(self.input_data.calipy_list, indent=2)
+        output_rep = short_repr(self.output_data.calipy_list, indent=2)
+        len_rep = len(self)
+    
+        rep_string = (
+            f"CalipyDataset(\n"
+            f"  len: {len_rep},\n \n"
+            f"  input: {input_rep},\n \n"
+            f"  output: {output_rep}\n"
+            f")"
+        )
+    
+        return rep_string
+
+# Custom collate function that collates ios together by concatenating contained
+# list elements into a longer list aroung which a new new CalipyIO object is built.
+# This new CalipyIO object contains a list of dicts.
+# If reduce = True, list elements are aimed to be stacked themselves (e.g. tensors
+# along their first dimensions) to create a single dict containing stacked elements.
+
+def io_collate(batch, reduce = False):
+    """ Custom collate function that collates ios together by concatenating contained
+    list elements into a longer list aroung which a new new CalipyIO object is built.
+    This new CalipyIO object contains a list of dicts.
+    If reduce = True, list elements are aimed to be stacked themselves (e.g. tensors
+                                                                        along their first dimensions) to create a single dict containing stacked elements.
+    Used primarily as collate function for the DataLoader
+    to perform automatized subsampling.
+    :param batch: A list of CalipyDiIO containing info on input_vars, observations, and
+        corresponding index that was used to produce them via dataset.__getitem__[idx]
+    :type batch: list of CalipyIO
+        
+    :return: An instance of CalipyIO, where multiple CalipyDict objects are 
+        collated together either into a list of dicts or into a single calipy_io
+        containing stacked CalipyTensors.
+    :rtype: CalipyIO
+    """
+    
+    
+        
+    # If reduce = False, just concatenate the lists inside the IO's
+    if reduce  == False:
+        # Untangle batch list
+        list_of_dicts = batch
+        inputs_io = CalipyIO([batch_dict['input'].dict for batch_dict in list_of_dicts])
+        outputs_io = CalipyIO([batch_dict['output'].dict for batch_dict in list_of_dicts] )
+        indices_io = CalipyIO([batch_dict['index'].dict for batch_dict in list_of_dicts])        
+    
+    
+    
+    # If reduce = True, stack contained tensors along first dimension
+    if reduce  == True:
+        
+    
+        # Check input signatures
+        bool_reduction_inputs = inputs_io.is_reducible()
+        bool_reduction_outputs = outputs_io.is_reducible()
+        bool_reduction_indices = indices_io.is_reducible()
+        bool_reduction_data = bool_reduction_inputs*bool_reduction_outputs*bool_reduction_indices
+        
+        # compatibility reduce argument
+        if reduce == True and bool_reduction_data == False:
+            raise Exception("Attempting to reduce dataset io's to single dicts but not " \
+                            "all of the are reducible. Reducibility: inputs: {}, outputs : {}, indices : {}"
+                            .format(bool_reduction_inputs, bool_reduction_outputs, bool_reduction_indices) )
+        
+    
+            
+        # Construct new dictionaries
+        output_dict = {}
+        output_keys = list_of_outputs[0].keys()
+        for key in output_keys:
+            tensors_to_concat = [d[key] for d in list_of_outputs]
+            output_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
+            
+        input_dict = {}
+        input_keys = list_of_inputs[0].keys()
+        for key in input_keys:
+            tensors_to_concat = [d[key] for d in list_of_inputs]
+            input_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
+            
+        
+        flattened_batch_dim = list_of_indices[0][0]
+        index_dim = dim_assignment(['index_dim'])
+        indices_to_concat = torch.cat([d[1] for d in list_of_indices], dim = 0).reshape([-1,1])
+        ssi = CalipyIndex(indices_to_concat, flattened_batch_dim + index_dim, name = 'subsample_index')
+        
+    
+    return  inputs_io, outputs_io, indices_io
+
+
+    
 
 def preprocess_args(input_vars, observations, subsample_index):
     """ Function for preprocessing arguments to forward passes. Converts different
@@ -1261,8 +1505,190 @@ def preprocess_args(input_vars, observations, subsample_index):
     
     
     
+
+    
+# ORIGINAL MULTIFUNCTIONAL DATASET VERSIONS
+
+
+# # Build CalipyDataset class that allows DataLoader to batch over multiple dimensions
+
+# class CalipyDataset(Dataset):
+#     """
+#     CalipyDataset is a class mimicking the functionality of the Dataset class in
+#     torch.utils.data but providing some streamlined prebuilt functions needed
+#     in the context of calipy. This includes support for subsampling based on 
+#     CalipyDict objects. Is meant to be subclassed for augmenting user specified
+#     datasets with additional, calipy-ready functionality.    
+    
+#     :param input_data: The input_data of the dataset reflecting the inputs to 
+#         the model that evoke the corresponding outputs. Can be:
+#           - None => No input data (no input)
+#           - CalipyTensor => Single tensor (single input)
+#           - CalipyDict => Dictionary containing CalipyTensors (multiple inputs)
+#           - CalipyIO => List containing CalipyDict containing CalipyTensors 
+#               (multiple inputs, possibly of inhomogeneous shape and type)
+#     :type input_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
+    
+#     :param output_data: The output_data of the dataset reflecting the outputs of 
+#         the model evoked by the corresponding inputs. Can be:
+#           - None => No output data (no output)
+#           - CalipyTensor => Single tensor (single output)
+#           - CalipyDict => Dictionary containing CalipyTensors (multiple outputs)
+#           - CalipyIO => List containing CalipyDict containing CalipyTensors 
+#               (multiple inputs, possibly of inhomogeneous shape and type)
+#     :type output_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
+#     :param batch_dims: A DimTuple object defining the batch dimensions among 
+#         which flattening and subsampling is performed.
+#     :type batch_dims: DimTuple
+    
+#     :return: An instance of CalipyDataset, suitable for accessing datasets and
+#         passing them to DataLoader objects.
+#     :rtype: CalipyDataset
+
+#     Example usage:
+
+#     .. code-block:: python
+        
+#         # Imports and definitions
+#         import torch
+#         from calipy.core.data import CalipyDataset
+           
+
+#         # Create data for CalipyDict initialization
+
+    
+#     """
+#     def __init__(self, input_data, output_data, batch_dims, homogeneous = False):
+        
+#         # Preprocess I/O data
+#         self.batch_dims = batch_dims
+#         self.input_type = type(input_data)
+#         self.output_type = type(output_data)
+#         self.input_data = CalipyIO(input_data)
+#         self.output_data = CalipyIO(output_data)
+#         self.homogeneous = homogeneous
+#         self.data = {'input_data' : input_data, 'output_data' :  output_data}
+        
+#         # Error diagnostics
+#         self.valid_dataset_types = [CalipyTensor, CalipyDict, CalipyIO, type(None)]
+#         if self.input_type not in self.valid_dataset_types :
+#             raise(Exception('input_type must be one of {}; is {}'.format(self.valid_dataset_types, self.input_type)))
+#         if self.output_type not in self.valid_dataset_types :
+#             raise(Exception('output_type must be one of {}; is {}'.format(self.valid_dataset_types, self.output_type)))
+        
+#         # # Lengths and flattened data
+#         # self.flattened_input = self.flatten(self.input_data)
+#         # self.flattened_output = self.flatten(self.output_data)
+#         # self.len_input_data = self.infer_length(self.flattened_input)
+#         # self.len_output_data = self.infer_length(self.flattened_output)
     
     
+#     def infer_length(self, query_data):
+#         # Infer the batch length of input_data or output_data
+#         len_data = {key: query_data[key].shape[0] if query_data[key] is not None else None 
+#                     for key in query_data.keys()}
+#         return len_data
+        
+#     def flatten(self, io_data):
+#         # This function returns a CalipyIO of tensors, where the first dimension
+#         # is the (only) batch dimension and for each key in calipy_dict.keys(),
+#         # CalipyDict[key][k, ...] is the kth datapoint in the dataset. The input
+#         # arg io_data is a CalipyDict of CalipyTensors.
+        
+#         # i) Do the flattening
+#         data_flattened = {}
+#         for key, value in io_data.items():
+#             data_flattened[key] = value.flatten(self.batch_dims, 'batch_dim_flattened') if value is not None else None
+#         self.batch_dim_flattened = dim_assignment(['batch_dim_flattened'])
+        
+#         # ii) Check if flattening consistent
+#         batch_dims_sizes = {key : value.dims[['batch_dim_flattened']].sizes if value is not None else [] 
+#                              for key, value in data_flattened.items()}
+#         first_dim_size = batch_dims_sizes[list(batch_dims_sizes.keys())[0]]
+#         if not all([dim_sizes == first_dim_size for key, dim_sizes in batch_dims_sizes.items()]):
+#             raise(Exception('For flattening, all DimTuples batch_dims must be of ' \
+#                             'same size for all keys but are {} for keys {}'.format(batch_dims_sizes,list(batch_dims_sizes.keys()))))
+                
+
+#     def __len__(self):
+#         # return the length of the dataset, i.e. the number of independent event samples
+#         # return self.batch_length_total
+#         return  self.batch_length[0]
+        
+
+#     def __getitem__(self, idx):
+#         # Handle the case where idx is a single integer
+#         bd_flat = self.batch_dim_flattened
+#         input_data_idx = self.flattened_input.subsample_tensors(bd_flat, [idx]) if self.flattened_input is not None else None
+#         output_data_idx = self.flattened_output.subsample_tensors(bd_flat, [idx]) if self.flattened_output is not None else None
+#         data_dict = {'input' : CalipyIO(input_data_idx), 'output' : CalipyIO(output_data_idx),
+#                      'index' : (bd_flat, torch.tensor([idx]))}
+        
+#         return data_dict
+
+
+
+# # Custom collate function that collates dicts together by stacking contained 
+# # tensors along their batch dimension (which is assumed to have the name of
+# # 'batch_dim_flattened').
+
+# def io_collate(batch, reduce = False):
+#     """ Custom collate function that collates ios together by stacking contained 
+#     tensors along their batch dimension (which is assumed to have the name of
+#     'batch_dim_flattened'). Used primarily as collate function for the DataLoader
+#     to perform automatized subsampling.
+#     :param batch: A list of CalipyDict containing info on input_vars, observations, and
+#         corresponding index that was used to produce them via dataset.__getitem__[idx]
+#     :type batch: list of CalipyDict
+        
+#     :return: An instance of CalipyDict, where multiple CalipyDict objects are 
+#         collated together into a calipy_dict containing stacked CalipyTensors.
+#     :rtype: CalipyDict
+#     """
+    
+#     # Untangle batch list
+#     list_of_dicts = batch
+#     inputs_io = CalipyIO([batch_dict['input'] for batch_dict in list_of_dicts])
+#     outputs_io = CalipyIO([batch_dict['output'] for batch_dict in list_of_dicts] )
+#     indices_io = CalipyIO([batch_dict['index'] for batch_dict in list_of_dicts])
+    
+#     # Check input signatures
+#     bool_reduction_inputs = inputs_io.is_reducible()
+#     bool_reduction_outputs = outputs_io.is_reducible()
+#     bool_reduction_indices = indices_io.is_reducible()
+#     bool_reduction_data = bool_reduction_inputs*bool_reduction_outputs*bool_reduction_indices
+    
+#     # compatibility reduce argument
+#     if reduce == True and bool_reduction_data == False:
+#         raise Exception("Attempting to reduce dataset io's to single dicts but not " \
+#                         "all of the are reducible. Reducibility: inputs: {}, outputs : {}, indices : {}"
+#                         .format(bool_reduction_inputs, bool_reduction_outputs, bool_reduction_indices) )
+    
+#     # If reduce = False, just concatenate the lists inside the IO's
+#     if reduce  == False:
+#         pass
+        
+#     # Construct new dictionaries
+#     output_dict = {}
+#     output_keys = list_of_outputs[0].keys()
+#     for key in output_keys:
+#         tensors_to_concat = [d[key] for d in list_of_outputs]
+#         output_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
+        
+#     input_dict = {}
+#     input_keys = list_of_inputs[0].keys()
+#     for key in input_keys:
+#         tensors_to_concat = [d[key] for d in list_of_inputs]
+#         input_dict[key] = calipy_cat(tensors_to_concat, dim = 0)
+        
+    
+#     flattened_batch_dim = list_of_indices[0][0]
+#     index_dim = dim_assignment(['index_dim'])
+#     indices_to_concat = torch.cat([d[1] for d in list_of_indices], dim = 0).reshape([-1,1])
+#     ssi = CalipyIndex(indices_to_concat, flattened_batch_dim + index_dim, name = 'subsample_index')
+    
+    
+#     return  input_dict, output_dict, ssi
     
     
     

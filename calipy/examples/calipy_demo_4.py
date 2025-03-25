@@ -37,7 +37,7 @@ import calipy
 from calipy.core.base import NodeStructure, CalipyProbModel
 from calipy.core.effects import UnknownParameter, NoiseAddition
 from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple, CalipyDict
+from calipy.core.data import DataTuple, CalipyDict, CalipyIO
 from calipy.core.tensor import CalipyTensor, CalipyIndex
 from calipy.core.funs import calipy_cat
 
@@ -74,14 +74,18 @@ class CalipyDataset(Dataset):
           - None => No input data (no input)
           - CalipyTensor => Single tensor (single input)
           - CalipyDict => Dictionary containing CalipyTensors (multiple inputs)
-    :type input_data: NoneType, Tensor, CalipyDict
+          - CalipyIO => List containing CalipyDict containing CalipyTensors 
+              (multiple inputs, possibly of inhomogeneous shape and type)
+    :type input_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
     
     :param output_data: The output_data of the dataset reflecting the outputs of 
         the model evoked by the corresponding inputs. Can be:
           - None => No output data (no output)
           - CalipyTensor => Single tensor (single output)
           - CalipyDict => Dictionary containing CalipyTensors (multiple outputs)
-    :type output_data: NoneType, Tensor, CalipyDict
+          - CalipyIO => List containing CalipyDict containing CalipyTensors 
+              (multiple inputs, possibly of inhomogeneous shape and type)
+    :type output_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
     :param batch_dims: A DimTuple object defining the batch dimensions among 
         which flattening and subsampling is performed.
     :type batch_dims: DimTuple
@@ -103,18 +107,18 @@ class CalipyDataset(Dataset):
 
     
     """
-    def __init__(self, input_data, output_data, batch_dims):
+    def __init__(self, input_data, output_data, batch_dims, homogeneous = False):
         
         # Preprocess I/O data
         self.batch_dims = batch_dims
         self.input_type = type(input_data)
         self.output_type = type(output_data)
-        self.input_data = CalipyDict(input_data)
-        self.output_data = CalipyDict(output_data)
-        self.data = CalipyDict({'input_data' : input_data, 'output_data' :  output_data})
+        self.input_data = CalipyIO(input_data)
+        self.output_data = CalipyIO(output_data)
+        self.data = {'input_data' : input_data, 'output_data' :  output_data}
         
         # Error diagnostics
-        self.valid_dataset_types = [CalipyTensor, CalipyDict, type(None)]
+        self.valid_dataset_types = [CalipyTensor, CalipyDict, CalipyIO, type(None)]
         if self.input_type not in self.valid_dataset_types :
             raise(Exception('input_type must be one of {}; is {}'.format(self.valid_dataset_types, self.input_type)))
         if self.output_type not in self.valid_dataset_types :
@@ -134,7 +138,7 @@ class CalipyDataset(Dataset):
         return len_data
         
     def flatten(self, io_data):
-        # This function returns a CalipyDict of tensors, where the first dimension
+        # This function returns a CalipyIO of tensors, where the first dimension
         # is the (only) batch dimension and for each key in calipy_dict.keys(),
         # CalipyDict[key][k, ...] is the kth datapoint in the dataset. The input
         # arg io_data is a CalipyDict of CalipyTensors.
@@ -237,9 +241,10 @@ class CalipyDataset(Dataset):
         bd_flat = self.batch_dim_flattened
         input_data_idx = self.flattened_input.subsample_tensors(bd_flat, [idx]) if self.flattened_input is not None else None
         output_data_idx = self.flattened_output.subsample_tensors(bd_flat, [idx]) if self.flattened_output is not None else None
-        data_dict = {'input' : input_data_idx, 'output' : output_data_idx, 'index' : (bd_flat, torch.tensor([idx]))}
+        data_dict = {'input' : CalipyIO(input_data_idx), 'output' : CalipyIO(output_data_idx),
+                     'index' : (bd_flat, torch.tensor([idx]))}
         
-        return CalipyDict(data_dict)
+        return data_dict
 
 
 
@@ -247,8 +252,8 @@ class CalipyDataset(Dataset):
 # tensors along their batch dimension (which is assumed to have the name of
 # 'batch_dim_flattened').
 
-def dict_collate(batch):
-    """ Custom collate function that collates dicts together by stacking contained 
+def dict_collate(batch, reduce = False):
+    """ Custom collate function that collates ios together by stacking contained 
     tensors along their batch dimension (which is assumed to have the name of
     'batch_dim_flattened'). Used primarily as collate function for the DataLoader
     to perform automatized subsampling.
@@ -263,14 +268,27 @@ def dict_collate(batch):
     
     # Untangle batch list
     list_of_dicts = batch
-    list_of_inputs = [batch_dict['input'] for batch_dict in list_of_dicts]
-    list_of_outputs =[batch_dict['output'] for batch_dict in list_of_dicts] 
-    list_of_indices = [batch_dict['index'] for batch_dict in list_of_dicts]
+    inputs_io = CalipyIO([batch_dict['input'] for batch_dict in list_of_dicts])
+    outputs_io = CalipyIO([batch_dict['output'] for batch_dict in list_of_dicts] )
+    indices_io = CalipyIO([batch_dict['index'] for batch_dict in list_of_dicts])
     
     # Check input signatures
+    bool_reduction_inputs = inputs_io.is_reducible()
+    bool_reduction_outputs = outputs_io.is_reducible()
+    bool_reduction_indices = indices_io.is_reducible()
+    bool_reduction_data = bool_reduction_inputs*bool_reduction_outputs*bool_reduction_indices
     
+    # compatibility reduce argument
+    if reduce == True and bool_reduction_data == False:
+        raise Exception("Attempting to reduce dataset io's to single dicts but not " \
+                        "all of the are reducible. Reducibility: inputs: {}, outputs : {}, indices : {}"
+                        .format(bool_reduction_inputs, bool_reduction_outputs, bool_reduction_indices) )
+    
+    # If reduce = False, just concatenate the lists inside the IO's
+    if reduce  == False:
+        
+        
     # Construct new dictionaries
-    
     output_dict = {}
     output_keys = list_of_outputs[0].keys()
     for key in output_keys:
