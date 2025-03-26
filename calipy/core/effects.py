@@ -59,7 +59,7 @@ class CalipyEffect(CalipyNode):
     """
     
     
-    def __init__(self, type = None, name = None, info = None):
+    def __init__(self, type = None, name = None, info = None, **kwargs):
         
         # Basic infos
         super().__init__(node_type = type, node_name = name, info_dict = info)
@@ -94,7 +94,7 @@ class CalipyQuantity(CalipyNode):
     that reflects this, quantities are local and cannot be shared between effects.
     """
     
-    def __init__(self, type = None, name = None, info = None):
+    def __init__(self, type = None, name = None, info = None, **kwargs):
         
         # Basic infos
         super().__init__(node_type = type, node_name = name, info_dict = info)
@@ -203,7 +203,7 @@ class UnknownParameter(CalipyQuantity):
         self.dims = self.batch_dims + self.param_dims
         
         self.constraint = constraint
-        self.init_tensor = torch.ones(self.param_dims.sizes)
+        self.init_tensor = kwargs.get('init_tensor', torch.ones(self.param_dims.sizes))
         
     # Forward pass is initializing and passing parameter
     def forward(self, input_vars = None, observations = None, subsample_index = None, **kwargs):

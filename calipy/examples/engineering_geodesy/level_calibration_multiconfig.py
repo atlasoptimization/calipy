@@ -57,7 +57,8 @@ from calipy.core.data import CalipyIO
 
 # ii) Definitions
 
-n_config = 2 # number of configurations
+n_config = 5 # number of configurations
+
 def set_seed(seed=42):
     torch.manual_seed(seed)
     pyro.set_rng_seed(seed)
@@ -84,9 +85,9 @@ sigma_true = torch.tensor(0.001)
 
 # Config specific params
 hI_true = torch.normal(1, 0.1, [n_config])
-l_A = torch.tensor([[30], [0]])
-l_B = torch.tensor([[30], [60]])
-l_mat = torch.hstack([l_A, l_B])
+l_A = torch.normal(20, 3, [n_config])
+l_B = torch.normal(20, 3, [n_config])
+l_mat = torch.vstack([l_A, l_B]).T
 
 # Distribution params
 y_A_true = hI_true
@@ -127,7 +128,7 @@ dim_3 = dim_assignment(['dim_3'], dim_sizes = [])
 # alpha setup
 alpha_ns = NodeStructure(UnknownParameter)
 alpha_ns.set_dims(batch_dims = dim_1 + dim_2, param_dims = dim_3)
-alpha_object = UnknownParameter(alpha_ns, name = 'alpha', init_tensor = torch.tensor(0.01))
+alpha_object = UnknownParameter(alpha_ns, name = 'alpha')
 
 
 # hI setup
@@ -199,9 +200,9 @@ demo_probmodel = DemoProbModel()
 
 # i) Set up optimization
 
-adam = pyro.optim.NAdam({"lr": 1})
+adam = pyro.optim.NAdam({"lr": 0.1})
 elbo = pyro.infer.Trace_ELBO()
-n_steps = 1000
+n_steps = 5000
 
 optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
 
@@ -215,11 +216,6 @@ optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opt
 
 # iii) Solve via handcrafted equations
 
-dh_ls = data[0,0] - data[0,1]
-tan_a_ls = (1/60)*(dh_ls - (data[1,0] - data[1,1]))
-alpha_ls = torch.atan(tan_a_ls)
-hI_ls = torch.tensor([[data[0,0] - tan_a_ls * l_A[0]],
-                      [data[1,0] - tan_a_ls * l_A[1]]])
 
 
 """
@@ -240,7 +236,7 @@ for param, value in pyro.get_param_store().items():
     print(param, '\n', value)
     
 print('True values \n alpha : {} \n dh : {} \n hI : {}'.format(alpha_true, dh_true, hI_true))
-print('Values estimated by least squares \n alpha : {} \n dh : {} \n hI : {}'.format(alpha_ls,  dh_ls, hI_ls))
+
 
 
 

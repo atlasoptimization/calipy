@@ -95,10 +95,10 @@ param_dims = dim_assignment(['pd_1'], dim_sizes = [])
 # node structure, then set the dims; required dims that need to be provided can
 # be found via help(mu_ns.set_dims).
 
-# mu setup
+# theta setup
 theta_ns = NodeStructure(UnknownParameter)
 theta_ns.set_dims(batch_dims = batch_dims, param_dims = param_dims,)
-theta_object = UnknownParameter(theta_ns, name = 'mu')
+theta_object = UnknownParameter(theta_ns, name = 'theta')
 
 
 # iii) Set up the dimensions for noise addition

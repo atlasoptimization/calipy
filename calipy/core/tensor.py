@@ -1636,7 +1636,8 @@ class CalipyTensor:
         
         # List compatible function cases
         reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
-        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat']
+        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat', 'tan']
+        permutation_fun_list = ['permute', 'transpose']
         
         result_shape = result.shape
 
@@ -1692,7 +1693,14 @@ class CalipyTensor:
                     return input_dims
                 else:
                     return None
-
+                
+        # Handle permutation type ops like permute and transpose
+        elif func_name in permutation_fun_list:
+            if func is torch.transpose:
+                new_dims = DimTuple([input_dims[1], input_dims[0]]) 
+            
+            return new_dims
+            
         # By default, return None and possibly warn
         else: 
             warnings.warn(f"No dimension logic implemented for {func_name}, setting dims to None.")
@@ -1915,3 +1923,16 @@ class CalipyTensor:
     def __str__(self):
         return f"CalipyTensor({str(self.tensor)}, dims={self.dims})"
     
+    
+    @property
+    def T(self):       
+        # Perform actual transpose
+        transposed_tensor = self.tensor.T
+
+        # Adjust dims accordingly (swap last two dimensions)
+        if len(self.dims) != 2:
+            raise ValueError("Cannot transpose tensor with fewer or more than 2 dims.")
+
+        new_dims = DimTuple([self.dims[-1], self.dims[-2]])
+
+        return CalipyTensor(transposed_tensor, new_dims, name = self.name)
