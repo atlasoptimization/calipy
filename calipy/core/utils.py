@@ -624,6 +624,7 @@ class DimTuple(tuple):
         names = [obj.name for obj in input_tuple]
         duplicates = {name for name in names if names.count(name) > 1}
         if duplicates: raise ValueError(f"Duplicate names found: {', '.join(duplicates)}")
+        obj.is_generic = False
         return obj
 
     @property

@@ -1092,7 +1092,461 @@ def preprocess_args(args, kwargs):
     
         
 #     return unwrapped_args, unwrapped_kwargs
+  
+def build_dim_supersequence(seq1, seq2):
+    """
+    Builds a minimal supersequence of dimension names that contains seq1 and seq2
+    as subsequences in the same relative order. Names that appear in both sequences
+    are placed (and unified) only once, if they appear in a non-contradictory order.
+
+    If no valid ordering is possible (e.g., seq1 = [dim1, dim2] and seq2 = [dim2, dim1]),
+    this raises a ValueError.
+
+    :param seq1: The first dimension name sequence (list of strings).
+    :type seq1: list[str]
+    :param seq2: The second dimension name sequence (list of strings).
+    :type seq2: list[str]
+
+    :return: A minimal supersequence (list of strings) that includes seq1 and seq2
+             in order, unifying repeated names.
+    :rtype: list[str]
+
+    Example usage:
+
+    .. code-block:: python
+
+        # Good case:
+        seq1 = ['dim1','dim2']
+        seq2 = ['dim2','dim3']
+        supersequence = build_dim_supersequence(seq1, seq2)
+        # => supersequence = ['dim1','dim2','dim3','dim4']
+        
+        # More complicated case
+        seq1 = ['dim1', 'dim2', 'dim4']
+        seq2 = ['dim2',  'dim3', 'dim4']
+        supersequence = build_dim_supersequence(seq1, seq2)
+        # => supersequence  = ['dim1', 'dim2', 'dim3', 'dim4']
+        
+        # Even more complicated case:
+        seq1 = ['dim1', 'dim2', 'dim4', 'dim5']
+        seq2 = ['dim2',  'dim3', 'dim4', 'dim6']
+        supersequence = build_dim_supersequence(seq1, seq2)
+        # => supersequence  = ['dim1', 'dim2', 'dim3', 'dim4', 'dim5', 'dim6']  
+
+        # Contradiction:
+        seq1 = ['dim1','dim2']
+        seq2 = ['dim2','dim1']
+        supersequence = build_dim_supersequence(seq1, seq2)
+        # => raises ValueError
+    """
+    # Indices into each sequence
+    i1, i2 = 0, 0
+    n1, n2 = len(seq1), len(seq2)
+
+    result = []
+    used = set()  # track dimension names already added
+
+    # Helper function to see if 'name' appears in seq2 from index j2 forward
+    def _appears_later(name, seq, start):
+        try:
+            return seq.index(name, start)
+        except ValueError:
+            return -1  # doesn't appear
+
+    while i1 < n1 or i2 < n2:
+        # If both sequences still have elements:
+        if i1 < n1 and i2 < n2:
+            name1 = seq1[i1]
+            name2 = seq2[i2]
+
+            if name1 == name2:
+                # Both sequences match on this dimension
+                if name1 in used:
+                    # Already added => contradictory? or skip it?
+                    raise ValueError(f"Dimension '{name1}' reappears in contradictory order.")
+                result.append(name1)
+                used.add(name1)
+                i1 += 1
+                i2 += 1
+
+            else:
+                # Different dimension names => we must decide which to place next
+                # We'll do a look-ahead approach:
+                #   - if name1 does NOT appear later in seq2 => must place name1 now
+                #   - else if name2 does NOT appear later in seq1 => must place name2 now
+                #   - else pick whichever appears first to keep the supersequence minimal
+
+                idx_later_1 = _appears_later(name1, seq2, i2)
+                idx_later_2 = _appears_later(name2, seq1, i1)
+
+                if idx_later_1 == -1:
+                    # name1 doesn't appear in seq2 anymore => place name1 now
+                    if name1 in used:
+                        raise ValueError(f"Dimension '{name1}' reappears in contradictory order.")
+                    result.append(name1)
+                    used.add(name1)
+                    i1 += 1
+
+                elif idx_later_2 == -1:
+                    # name2 doesn't appear in seq1 anymore => place name2 now
+                    if name2 in used:
+                        raise ValueError(f"Dimension '{name2}' reappears in contradictory order.")
+                    result.append(name2)
+                    used.add(name2)
+                    i2 += 1
+
+                else:
+                    # Both appear later => pick the one whose next occurrence is earlier
+                    # This is a standard minimal supersequence strategy
+                    if idx_later_1 < idx_later_2:
+                        # name1 is about to unify sooner => place name1
+                        if name1 in used:
+                            raise ValueError(f"Dimension '{name1}' reappears in contradictory order.")
+                        result.append(name1)
+                        used.add(name1)
+                        i1 += 1
+                    else:
+                        # name2 merges sooner or tie => place name2
+                        if name2 in used:
+                            raise ValueError(f"Dimension '{name2}' reappears in contradictory order.")
+                        result.append(name2)
+                        used.add(name2)
+                        i2 += 1
+
+        elif i1 < n1:
+            # Only seq1 has items left
+            name1 = seq1[i1]
+            if name1 in used:
+                raise ValueError(f"Dimension '{name1}' reappears in contradictory order.")
+            result.append(name1)
+            used.add(name1)
+            i1 += 1
+
+        else:
+            # Only seq2 has items left
+            name2 = seq2[i2]
+            if name2 in used:
+                raise ValueError(f"Dimension '{name2}' reappears in contradictory order.")
+            result.append(name2)
+            used.add(name2)
+            i2 += 1
+
+    # Final check: ensure seq1 and seq2 are indeed subsequences (in order)
+    if not _is_subsequence(seq1, result):
+        raise ValueError("seq1 is not a subsequence of the final supersequence.")
+    if not _is_subsequence(seq2, result):
+        raise ValueError("seq2 is not a subsequence of the final supersequence.")
+
+    return result
+
+def _is_subsequence(small, big):
+    """
+    Checks if the list 'small' is a subsequence (in order) of 'big'.
+    """
+    idx_small = 0
+    for item in big:
+        if idx_small < len(small) and small[idx_small] == item:
+            idx_small += 1
+        if idx_small == len(small):
+            return True
+    return (idx_small == len(small))
+
+
+
+def broadcast_dims(dims_1, dims_2):
+    """
+    Check if DimTuples ``dims_1`` and ``dims_2`` can be broadcasted together and,
+    if so, produces a new DimTuple that employs PyTorch's broadcasting logic on
+    extended dims. Unlike a simple right-to-left alignment, this version explicitly
+    pads DimTuples towards a consistent superDimTuple with dims of size=1 where
+    dims need to be injected for consistency. Then pytorchs broadcasting functionality
+    is called on the extended shapes.
+
+    This helps avoid the scenario where the last dimension of one tensor is
+    matched with the first dimension of another just because of naive negative
+    indexing. We thereby do not fully emulate how PyTorch handles missing dims
+    but achieve a more dimension aware broadcast.
     
+    Steps:
+      1) Merge dimension name sequences into a minimal supersequence.
+      2) Expand each DimTuple to that full name list, filling size=1
+         for missing dims.
+      3) Let PyTorch do shape-based broadcasting.
+      4) Build a final DimTuple from the broadcasted shape, reusing
+         dimension names from the supersequence.
+
+    :param dims_1: The first DimTuple to broadcast, or None/empty to indicate no dims.
+    :type dims_1: DimTuple or None
+
+    :param dims_2: The second DimTuple to broadcast, or None/empty to indicate no dims.
+    :type dims_2: DimTuple or None
+
+    :return: A DimTuple reflecting the broadcasted shape if compatible, otherwise None.
+    :rtype: DimTuple or None
+
+    Example usage:
+
+    .. code-block:: python
+
+        import torch
+        from calipy.core.tensor import CalipyTensor, broadcast_dims
+        from calipy.core.utils import Dim, DimTuple, dim_assignment
+
+        # Suppose we have:
+        #   c_cp of shape [2, 1], dims=('dim1','dim2')
+        #   b_cp of shape [2],    dims=('dim1',)
+        # This function ensures the second tensor is padded to [1,2],
+        # then does standard broadcasting, leading to final shape [2,2].
+        # We unify dimension names accordingly.
+    """
+
+    # Handle None or empty dimension tuples
+    if not dims_1 or len(dims_1) == 0:
+        return dims_2
+    if not dims_2 or len(dims_2) == 0:
+        return dims_1
+
+    # 1) Collect names and sizes
+    shape1 = dims_1.sizes
+    shape2 = dims_2.sizes
+    nameseq1 = dims_1.names
+    nameseq2 = dims_2.names
+    
+    # 2) Build minimal supersequence, or raise error if contradictory
+    try:
+        superseq = build_dim_supersequence(nameseq1, nameseq2)
+    except ValueError as e:
+        print(f"Dimension name conflict: {e}")
+        return None
+    
+    # 3) Expand each DimTuple to match superseq
+    #    We'll produce shape arrays for each DimTuple of length len(superseq).
+    shapeA = []
+    shapeB = []
+    descA = []
+    descB = []
+
+    # Build dict {name -> size} for quick lookup
+    dims_dict_1 = {dims_1[i].name: dims_1[i].size for i in range(len(dims_1))}
+    dims_dict_2 = {dims_2[i].name: dims_2[i].size for i in range(len(dims_2))}
+    # Build dict {name -> desc} for quick lookup
+    dims_dict_desc_1 = {dims_1[i].name: dims_1[i].description for i in range(len(dims_1))}
+    dims_dict_desc_2 = {dims_2[i].name: dims_2[i].description for i in range(len(dims_2))}
+
+    for name in superseq:
+        sizeA = dims_dict_1.get(name, 1)  # default to size=1 if missing
+        sizeB = dims_dict_2.get(name, 1)
+        shapeA.append(sizeA)
+        shapeB.append(sizeB)
+        descA.append(dims_dict_desc_1.get(name, None))
+        descB.append(dims_dict_desc_2.get(name, None))
+
+    # 4) Let PyTorch do numeric broadcasting
+    try:
+        bcastA = torch.broadcast_shapes(tuple(shapeA), tuple(shapeB))
+    except RuntimeError:
+        return None  # Incompatible numeric shapes
+    
+    # bcastA is the final broadcast shape => length = len(superseq)
+    len_super = len(superseq)
+
+    # 5) Rebuild a new DimTuple with the same dimension names in superseq
+    #    and the sizes from bcastA
+
+    # We'll now iterate left-to-right, per PyTorch's conceptual alignment
+    result_dims = []
+
+    # Check if either is generic
+    ignore_names_1 = getattr(dims_1, 'is_generic', False)
+    ignore_names_2 = getattr(dims_2, 'is_generic', False)
+
+    for i in range(len_super):
+        name1 = superseq[i]
+        size1 = shapeA[i]
+        desc1 = descA[i]
+        
+        name2 = superseq[i]
+        size2 = shapeB[i]
+        desc2 = descB[i]
+        
+        b_size = bcastA[i]
+
+        # Possibly ignore names if is_generic
+        if ignore_names_1:
+            name1 = None
+        if ignore_names_2:
+            name2 = None
+
+        # Attempt to unify names
+        chosen_name = None
+        chosen_desc = None
+
+        if name1 == name2 and name1 is not None:
+            chosen_name = name1
+            chosen_desc = desc1 or desc2
+        elif size1 == 1 and name2:
+            chosen_name = name2
+            chosen_desc = desc2
+        elif size2 == 1 and name1:
+            chosen_name = name1
+            chosen_desc = desc1
+        else:
+            # fallback
+            chosen_name = f'auto_dim_{i}'
+            chosen_desc = f'generic dimension nr {i}'
+
+        result_dims.append((chosen_name, b_size, chosen_desc))
+
+    # Build final DimTuple
+    final_names = [rd[0] for rd in result_dims]
+    final_sizes = [rd[1] for rd in result_dims]
+    final_descs = [rd[2] for rd in result_dims]
+
+    # e.g. if you have a dim_assignment function that takes names, sizes, desc
+    new_dimtuple = dim_assignment(final_names, final_sizes, dim_descriptions=final_descs)
+
+    # If both were generic, the result is also generic
+    new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
+
+    return new_dimtuple
+
+
+
+
+
+# def broadcast_dims(dim_1, dim_2):
+#     """
+#     Check if DimTuples ``dim_1`` and ``dim_2`` can be broadcasted together and, if so,
+#     produce a new DimTuple that respects PyTorch's broadcasting logic.
+#     Unlike a simple right-to-left alignment, this version explicitly **pads
+#     shorter DimTuples from the LEFT** with size=1 and optional dimension names
+#     before iterating from left to right, mirroring PyTorch's actual shape
+#     alignment.
+
+#     This helps avoid the scenario where the last dimension of one tensor is
+#     matched with the first dimension of another just because of naive negative
+#     indexing. We thereby better emulate how PyTorch truly handles missing dims.
+
+#     :param dim_1: The first DimTuple to broadcast, or None/empty to indicate no dims.
+#     :type dim_1: DimTuple or None
+
+#     :param dim_2: The second DimTuple to broadcast, or None/empty to indicate no dims.
+#     :type dim_2: DimTuple or None
+
+#     :return: A DimTuple reflecting the broadcasted shape if compatible, otherwise None.
+#     :rtype: DimTuple or None
+
+#     Example usage:
+
+#     .. code-block:: python
+
+#         import torch
+#         from calipy.core.tensor import CalipyTensor, broadcast_dims
+#         from calipy.core.utils import Dim, DimTuple, dim_assignment
+
+#         # Suppose we have:
+#         #   c_cp of shape [2, 1], dims=('dim1','dim2')
+#         #   b_cp of shape [2],    dims=('dim1',)
+#         # This function ensures the second tensor is padded to [1,2],
+#         # then does standard broadcasting, leading to final shape [2,2].
+#         # We unify dimension names accordingly.
+#     """
+
+#     # Handle None or empty dimension tuples
+#     if not dim_1 or len(dim_1) == 0:
+#         return dim_2
+#     if not dim_2 or len(dim_2) == 0:
+#         return dim_1
+
+#     shape1 = dim_1.sizes
+#     shape2 = dim_2.sizes
+
+#     # Attempt to broadcast shapes using PyTorch first
+#     try:
+#         broadcast_shape = torch.broadcast_shapes(shape1, shape2)
+#     except RuntimeError:
+#         return None  # Incompatible shapes
+
+#     max_len = len(broadcast_shape)
+#     len1, len2 = len(dim_1), len(dim_2)
+
+#     # Pad left with size=1 if shorter, so both become length max_len
+#     # We'll store (name, size, description) in lists.
+#     def pad_left(dtuple, needed_len):
+#         """
+#         Return a list of (name, size, desc) of length needed_len.
+#         If dtuple is shorter, we prepend (None, 1, None) dims.
+#         """
+#         padded = []
+#         diff = needed_len - len(dtuple)
+#         # Prepend
+#         for _ in range(diff):
+#             padded.append((None, 1, None))
+#         # Then existing dims
+#         for dim in dtuple:
+#             nm = dim.name
+#             sz = dim.size
+#             ds = getattr(dim, 'description', None)
+#             padded.append((nm, sz, ds))
+#         return padded
+
+#     padded1 = pad_left(dim_1, max_len)
+#     padded2 = pad_left(dim_2, max_len)
+
+#     # We'll now iterate left-to-right, per PyTorch's conceptual alignment
+#     result_dims = []
+
+#     # Check if either is generic
+#     ignore_names_1 = getattr(dim_1, 'is_generic', False)
+#     ignore_names_2 = getattr(dim_2, 'is_generic', False)
+
+#     for i in range(max_len):
+#         name1, size1, desc1 = padded1[i]
+#         name2, size2, desc2 = padded2[i]
+#         b_size = broadcast_shape[i]
+
+#         # Possibly ignore names if is_generic
+#         if ignore_names_1:
+#             name1 = None
+#         if ignore_names_2:
+#             name2 = None
+
+#         # Attempt to unify names
+#         chosen_name = None
+#         chosen_desc = None
+
+#         if name1 == name2 and name1 is not None:
+#             chosen_name = name1
+#             chosen_desc = desc1 or desc2
+#         elif size1 == 1 and name2:
+#             chosen_name = name2
+#             chosen_desc = desc2
+#         elif size2 == 1 and name1:
+#             chosen_name = name1
+#             chosen_desc = desc1
+#         else:
+#             # fallback
+#             chosen_name = f'auto_dim_{i}'
+#             chosen_desc = f'generic dimension nr {i}'
+
+#         result_dims.append((chosen_name, b_size, chosen_desc))
+
+#     # Build final DimTuple
+#     final_names = [rd[0] for rd in result_dims]
+#     final_sizes = [rd[1] for rd in result_dims]
+#     final_descs = [rd[2] for rd in result_dims]
+
+#     # e.g. if you have a dim_assignment function that takes names, sizes, desc
+#     new_dimtuple = dim_assignment(final_names, final_sizes, dim_descriptions=final_descs)
+
+#     # If both were generic, the result is also generic
+#     new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
+
+#     return new_dimtuple
+
+
+  
+
 
 class CalipyTensor:
     """
@@ -1351,16 +1805,21 @@ class CalipyTensor:
             warnings.warn("Number of dims in DimTuple does not match tensor.ndim, setting dims=None.")
 
         # Set up generic dims, if dims = None
+        self.generic_dims = False
         if signature == [False, True]:
             tensor_shape = tensor.shape
-            generic_dim_names = ['dim_{}'.format(k) for k in range(len(tensor_shape))]
+            generic_dim_names = ['auto_dim_{}'.format(k) for k in range(len(tensor_shape))]
             generic_dim_descriptions = ['generic dimension nr {}'.format(k) for k in range(len(tensor_shape))]
-            dims = dim_assignment(generic_dim_names, dim_descriptions = generic_dim_descriptions)
+            dims = dim_assignment(generic_dim_names, dim_sizes = list(tensor_shape), 
+                                  dim_descriptions = generic_dim_descriptions)
+            dims.is_generic = True
+            self.generic_dims = True
             
         # Set initial attributes
         self.name = name
         self.tensor = tensor if not isinstance(tensor, CalipyTensor) else tensor.tensor
         self.dims = dims
+        self.bound_dims = dims.bind(self.tensor.shape)
         
         if self.tensor is not None:
             self._indexer_construct(dims, name)
@@ -1370,6 +1829,11 @@ class CalipyTensor:
         """Indicates if the Index is null and will not perform any subsampling
         just returning the orginal tensor"""
         return self.tensor == None
+    
+    
+    
+    
+    
     
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs={}):
@@ -1395,6 +1859,134 @@ class CalipyTensor:
             return tuple(CalipyTensor(r, new_dims) if isinstance(r, torch.Tensor) else r for r in result)
         else:
             return result
+
+
+    def _compute_new_dims(self, func, orig_args, orig_kwargs, result):
+        # A placeholder method that decides how dims change after an operation.
+        # We'll handle a few common cases:
+        # - Elementwise ops (torch.add): If broadcast occurred, attempt to broadcast dims.
+        # - Reductions (torch.sum): Remove the reduced dimension.
+        # - Otherwise: set dims=None by default.
+        
+        # List compatible function cases
+        reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
+        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat', 'tan', 'cos']
+        permutation_fun_list = ['permute', 'transpose']
+        
+        result_shape = result.shape
+
+        if not isinstance(result, torch.Tensor):
+            # Non-tensor result doesn't have dims
+            return None
+
+        # Extract dims from the first CalipyTensor in orig_args for reference
+        input_dims = None
+        for a in orig_args:
+            if isinstance(a, CalipyTensor):
+                input_dims = a.dims
+                break
+
+        # If no input had dims, no dims in output
+        if input_dims is None:
+            return_dims = dim_assignment(['return_dim'], dim_sizes = result_shape)
+
+        # Example rules:
+        func_name = func.__name__
+
+        # Handle reduction-like ops:
+        if func_name in reduction_fun_list:
+            # If dim specified and it's a CalipyDim -> int conversion done
+            # If dim not specified, all dims reduced -> dims=None
+            dims_reduce_indices = orig_kwargs.get('dim', None)
+            dims_reduce = self.dims[dims_reduce_indices]
+            if dims_reduce is None:
+                # Summation over all dims results in scalar or reduced shape with no dims
+                return_dims = dim_assignment(['trivial_dim'], dim_sizes = [0])
+            else:
+                # If dim is CalipyDim, remove that dim from input_dims
+                # If dim is DimTuple, remove all those dims from input_dims
+                dims_reduce_names = [dims_reduce.name] if isinstance(dims_reduce, CalipyDim) else dims_reduce.names
+                return_dims = input_dims.delete_dims(dims_reduce_names)
+                
+
+
+        # Handle elementwise ops like add, mul:
+        elif func_name in elementwise_fun_list:
+            # If multiple CalipyTensors involved, attempt to broadcast dims
+            # Let's find all CalipyTensors and try broadcasting dims
+            calipy_tensors = [a for a in orig_args if isinstance(a, CalipyTensor)]
+            # For simplicity, assume two inputs:
+            if len(calipy_tensors) == 2:
+                dims1 = calipy_tensors[0].dims
+                dims2 = calipy_tensors[1].dims
+                # new_dims = self._broadcast_dims(dims1, dims2, result.shape)
+                new_dims = broadcast_dims(dims1, dims2)
+                return new_dims
+            else:
+                # If only one input with dims, keep them if shapes match, else None
+                if input_dims is not None and len(input_dims) == result.ndim:
+                    return input_dims
+                else:
+                    return None
+                
+        # Handle permutation type ops like permute and transpose
+        elif func_name in permutation_fun_list:
+            if func is torch.transpose:
+                new_dims = DimTuple([input_dims[1], input_dims[0]]) 
+            
+            return new_dims
+            
+        # By default, return None and possibly warn
+        else: 
+            warnings.warn(f"No dimension logic implemented for {func_name}, setting dims to None.")
+        return return_dims
+
+    # def _broadcast_dims(self, dims1, dims2, result_shape):
+    #     # Attempt to reconcile dims1 and dims2 according to broadcasting
+    #     # Basic logic:
+    #     # - If one of dim1, dims2 is None, copy the other
+    #     # - If both have same length and each dimension matches, keep dims.
+    #     # - If both have some common dims, inject missing dims of size 1.
+    #     # - If shapes differ in ways that can't be mapped to dims easily, dims=None.
+        
+    #     # Case 1: one of dims is unspecified
+    #     if dims1 is not None and dims2 is None:
+    #         dims2 = dims1
+    #     if dims1 is None and dims2 is not None:
+    #         dims1 = dims2
+
+    #     # Case 2: dims line up 1 to 1
+    #     # Convert dims to lists
+    #     d1, d2 = list(dims1), list(dims2)
+    #     # Check length differences
+    #     if len(d1) != len(d2):
+    #         # Try to align by rightmost dimensions
+    #         # For simplicity if rank differs, set dims=None
+    #         return None
+
+    #     # Check element-wise compatibility
+    #     # If sizes differ and not broadcastable (one of them must be 1), dims=None
+    #     for (dim_a, dim_b, size_r) in zip(d1, d2, result_shape):
+    #         # If sizes differ and none is 1, dims=None
+    #         if dim_a.size != dim_b.size:
+    #             if dim_a.size != 1 and dim_b.size != 1:
+    #                 return None
+    #         # Update dim size to result size if ambiguous
+    #         # If one dimension is 1, we can inherit the other's name and size
+    #         # If both differ and one is 1, use the non-1 dimension's name and size
+    #     # If we get here, let's pick dims from the first input or adapt sizes
+    #     # This is simplistic: if broadcasting changed sizes, adapt them
+    #     # Real logic might need to carefully assign names.
+    #     # For now, assume result_shape matches after broadcast and assign dims from first input with updated sizes
+    #     new_dims = []
+    #     for i, d in enumerate(d1):
+    #         new_dims.append(CalipyDim(d.name, size=result_shape[i]))
+    #     return DimTuple(new_dims)
+    
+    
+    
+    
+    
 
     def _indexer_construct(self, tensor_dims, name, silent = True):
         """Constructs a TensorIndexer for the tensor."""
@@ -1627,126 +2219,6 @@ class CalipyTensor:
         return tensor_element_cp
     
 
-    def _compute_new_dims(self, func, orig_args, orig_kwargs, result):
-        # A placeholder method that decides how dims change after an operation.
-        # We'll handle a few common cases:
-        # - Elementwise ops (torch.add): If broadcast occurred, attempt to broadcast dims.
-        # - Reductions (torch.sum): Remove the reduced dimension.
-        # - Otherwise: set dims=None by default.
-        
-        # List compatible function cases
-        reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
-        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat', 'tan']
-        permutation_fun_list = ['permute', 'transpose']
-        
-        result_shape = result.shape
-
-        if not isinstance(result, torch.Tensor):
-            # Non-tensor result doesn't have dims
-            return None
-
-        # Extract dims from the first CalipyTensor in orig_args for reference
-        input_dims = None
-        for a in orig_args:
-            if isinstance(a, CalipyTensor):
-                input_dims = a.dims
-                break
-
-        # If no input had dims, no dims in output
-        if input_dims is None:
-            return_dims = dim_assignment(['return_dim'], dim_sizes = result_shape)
-
-        # Example rules:
-        func_name = func.__name__
-
-        # Handle reduction-like ops:
-        if func_name in reduction_fun_list:
-            # If dim specified and it's a CalipyDim -> int conversion done
-            # If dim not specified, all dims reduced -> dims=None
-            dims_reduce_indices = orig_kwargs.get('dim', None)
-            dims_reduce = self.dims[dims_reduce_indices]
-            if dims_reduce is None:
-                # Summation over all dims results in scalar or reduced shape with no dims
-                return_dims = dim_assignment(['trivial_dim'], dim_sizes = [0])
-            else:
-                # If dim is CalipyDim, remove that dim from input_dims
-                # If dim is DimTuple, remove all those dims from input_dims
-                dims_reduce_names = [dims_reduce.name] if isinstance(dims_reduce, CalipyDim) else dims_reduce.names
-                return_dims = input_dims.delete_dims(dims_reduce_names)
-                
-
-
-        # Handle elementwise ops like add, mul:
-        elif func_name in elementwise_fun_list:
-            # If multiple CalipyTensors involved, attempt to broadcast dims
-            # Let's find all CalipyTensors and try broadcasting dims
-            calipy_tensors = [a for a in orig_args if isinstance(a, CalipyTensor)]
-            # For simplicity, assume two inputs:
-            if len(calipy_tensors) == 2:
-                dims1 = calipy_tensors[0].dims
-                dims2 = calipy_tensors[1].dims
-                new_dims = self._broadcast_dims(dims1, dims2, result.shape)
-                return new_dims
-            else:
-                # If only one input with dims, keep them if shapes match, else None
-                if input_dims is not None and len(input_dims) == result.ndim:
-                    return input_dims
-                else:
-                    return None
-                
-        # Handle permutation type ops like permute and transpose
-        elif func_name in permutation_fun_list:
-            if func is torch.transpose:
-                new_dims = DimTuple([input_dims[1], input_dims[0]]) 
-            
-            return new_dims
-            
-        # By default, return None and possibly warn
-        else: 
-            warnings.warn(f"No dimension logic implemented for {func_name}, setting dims to None.")
-        return return_dims
-
-    def _broadcast_dims(self, dims1, dims2, result_shape):
-        # Attempt to reconcile dims1 and dims2 according to broadcasting
-        # Basic logic:
-        # - If one of dim1, dims2 is None, copy the other
-        # - If both have same length and each dimension matches, keep dims.
-        # - If both have some common dims, inject missing dims of size 1.
-        # - If shapes differ in ways that can't be mapped to dims easily, dims=None.
-        
-        # Case 1: one of dims is unspecified
-        if dims1 is not None and dims2 is None:
-            dims2 = dims1
-        if dims1 is None and dims2 is not None:
-            dims1 = dims2
-
-        # Case 2: dims line up 1 to 1
-        # Convert dims to lists
-        d1, d2 = list(dims1), list(dims2)
-        # Check length differences
-        if len(d1) != len(d2):
-            # Try to align by rightmost dimensions
-            # For simplicity if rank differs, set dims=None
-            return None
-
-        # Check element-wise compatibility
-        # If sizes differ and not broadcastable (one of them must be 1), dims=None
-        for (dim_a, dim_b, size_r) in zip(d1, d2, result_shape):
-            # If sizes differ and none is 1, dims=None
-            if dim_a.size != dim_b.size:
-                if dim_a.size != 1 and dim_b.size != 1:
-                    return None
-            # Update dim size to result size if ambiguous
-            # If one dimension is 1, we can inherit the other's name and size
-            # If both differ and one is 1, use the non-1 dimension's name and size
-        # If we get here, let's pick dims from the first input or adapt sizes
-        # This is simplistic: if broadcasting changed sizes, adapt them
-        # Real logic might need to carefully assign names.
-        # For now, assume result_shape matches after broadcast and assign dims from first input with updated sizes
-        new_dims = []
-        for i, d in enumerate(d1):
-            new_dims.append(CalipyDim(d.name, size=result_shape[i]))
-        return DimTuple(new_dims)
     
     def __getitem__(self, index):
         """ Returns new CalipyTensor based on either standard indexing quantities
@@ -1844,11 +2316,11 @@ class CalipyTensor:
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        if not isinstance(other, CalipyTensor):
+        if not isinstance(other, (CalipyTensor, torch.tensor, int)):
             return NotImplemented
 
         if self.dims != other.dims:
-            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+            raise ValueError("Both CalipyTensors must have the same dims for elementwise multiplication.")
 
         result = torch.mul(self, other)
         
@@ -1886,11 +2358,11 @@ class CalipyTensor:
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        if not isinstance(other, CalipyTensor):
-            return NotImplemented
+        # if not isinstance(other, CalipyTensor):
+        #     return NotImplemented
 
-        if self.dims != other.dims:
-            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
+        # if self.dims != other.dims:
+        #     raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
 
         result = torch.add(self, other)
 
@@ -1936,3 +2408,6 @@ class CalipyTensor:
         new_dims = DimTuple([self.dims[-1], self.dims[-2]])
 
         return CalipyTensor(transposed_tensor, new_dims, name = self.name)
+    
+    
+    
