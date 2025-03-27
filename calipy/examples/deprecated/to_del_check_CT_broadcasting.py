@@ -45,37 +45,38 @@ d_cp = CalipyTensor(d, dim_1 + dim_2)
 e_cp = CalipyTensor(e, dim_1 + dim_2 + dim_3)
 
 
+# build broadcasted dims
+dims_aa = broadcast_dims(a_cp.bound_dims, a_cp.bound_dims)[2]
+dims_ab = broadcast_dims(a_cp.bound_dims, b_cp.bound_dims)[2]
+dims_ac = broadcast_dims(a_cp.bound_dims, c_cp.bound_dims)[2]
+dims_ad = broadcast_dims(a_cp.bound_dims, d_cp.bound_dims)[2]
+dims_ae = broadcast_dims(a_cp.bound_dims, e_cp.bound_dims)[2]
+
+dims_ba = broadcast_dims(b_cp.bound_dims, a_cp.bound_dims)[2]
+dims_bb = broadcast_dims(b_cp.bound_dims, b_cp.bound_dims)[2]
+dims_bc = broadcast_dims(b_cp.bound_dims, c_cp.bound_dims)[2]
+dims_bd = broadcast_dims(b_cp.bound_dims, d_cp.bound_dims)[2]
+dims_be = broadcast_dims(b_cp.bound_dims, e_cp.bound_dims)[2]
+
+dims_ca = broadcast_dims(c_cp.bound_dims, a_cp.bound_dims)[2]
+dims_cb = broadcast_dims(c_cp.bound_dims, b_cp.bound_dims)[2]
+dims_cc = broadcast_dims(c_cp.bound_dims, c_cp.bound_dims)[2]
+dims_cd = broadcast_dims(c_cp.bound_dims, d_cp.bound_dims)[2]
+dims_ce = broadcast_dims(c_cp.bound_dims, e_cp.bound_dims)[2]
+
+dims_da = broadcast_dims(d_cp.bound_dims, a_cp.bound_dims)[2]
+dims_db = broadcast_dims(d_cp.bound_dims, b_cp.bound_dims)[2]
+dims_dc = broadcast_dims(d_cp.bound_dims, c_cp.bound_dims)[2]
+dims_dd = broadcast_dims(d_cp.bound_dims, d_cp.bound_dims)[2]
+dims_de = broadcast_dims(d_cp.bound_dims, e_cp.bound_dims)[2]
+
+dims_ea = broadcast_dims(e_cp.bound_dims, a_cp.bound_dims)[2]
+dims_eb = broadcast_dims(e_cp.bound_dims, b_cp.bound_dims)[2]
+dims_ec = broadcast_dims(e_cp.bound_dims, c_cp.bound_dims)[2]
+dims_ed = broadcast_dims(e_cp.bound_dims, d_cp.bound_dims)[2]
+dims_ee = broadcast_dims(e_cp.bound_dims, e_cp.bound_dims)[2]
+
 # Check broadcasted dims
-dims_aa = broadcast_dims(a_cp.bound_dims, a_cp.bound_dims)
-dims_ab = broadcast_dims(a_cp.bound_dims, b_cp.bound_dims)
-dims_ac = broadcast_dims(a_cp.bound_dims, c_cp.bound_dims)
-dims_ad = broadcast_dims(a_cp.bound_dims, d_cp.bound_dims)
-dims_ae = broadcast_dims(a_cp.bound_dims, e_cp.bound_dims)
-
-dims_ba = broadcast_dims(b_cp.bound_dims, a_cp.bound_dims)
-dims_bb = broadcast_dims(b_cp.bound_dims, b_cp.bound_dims)
-dims_bc = broadcast_dims(b_cp.bound_dims, c_cp.bound_dims)
-dims_bd = broadcast_dims(b_cp.bound_dims, d_cp.bound_dims)
-dims_be = broadcast_dims(b_cp.bound_dims, e_cp.bound_dims)
-
-dims_ca = broadcast_dims(c_cp.bound_dims, a_cp.bound_dims)
-dims_cb = broadcast_dims(c_cp.bound_dims, b_cp.bound_dims)
-dims_cc = broadcast_dims(c_cp.bound_dims, c_cp.bound_dims)
-dims_cd = broadcast_dims(c_cp.bound_dims, d_cp.bound_dims)
-dims_ce = broadcast_dims(c_cp.bound_dims, e_cp.bound_dims)
-
-dims_da = broadcast_dims(d_cp.bound_dims, a_cp.bound_dims)
-dims_db = broadcast_dims(d_cp.bound_dims, b_cp.bound_dims)
-dims_dc = broadcast_dims(d_cp.bound_dims, c_cp.bound_dims)
-dims_dd = broadcast_dims(d_cp.bound_dims, d_cp.bound_dims)
-dims_de = broadcast_dims(d_cp.bound_dims, e_cp.bound_dims)
-
-dims_ea = broadcast_dims(e_cp.bound_dims, a_cp.bound_dims)
-dims_eb = broadcast_dims(e_cp.bound_dims, b_cp.bound_dims)
-dims_ec = broadcast_dims(e_cp.bound_dims, c_cp.bound_dims)
-dims_ed = broadcast_dims(e_cp.bound_dims, d_cp.bound_dims)
-dims_ee = broadcast_dims(e_cp.bound_dims, e_cp.bound_dims)
-
 assert(dims_aa.sizes == [])
 assert(dims_ab.sizes == [2])
 assert(dims_ac.sizes == [2,1])
@@ -112,13 +113,17 @@ assert(dims_ee.sizes == [2,3,4])
 # Interleaved dims : Finding dim, supersequence then extending to it
 dims_p = dim_assignment(['dim_2', 'dim_3'], [3,4])
 dims_q = dim_assignment(['dim_1', 'dim_2', 'dim_4'], [2,3,5])
-dims_pq = dims_ee = broadcast_dims(dims_p, dims_q)
-# Should deliver dim of shape [2,3,4,5]
+dims_pq = broadcast_dims(dims_p, dims_q)
+
+assert(dims_pq[2].sizes == [2,3,4,5]) # Should deliver result dim of shape [2,3,4,5]
+assert(dims_pq[0].sizes == [1,3,4,1]) # Should deliver expanded dim_1 of shape [1,3,4,1]
+assert(dims_pq[1].sizes == [2,3,1,5]) # Should deliver expanded dim_2 of shape [2,3,1,5]
 
 # Check correctness of elementwise operations on CalipyTensors
 
 # Addition +
 
+# Build sums
 add_aa = a_cp + a_cp
 add_ab = a_cp + b_cp
 add_ac = a_cp + c_cp
@@ -148,6 +153,38 @@ add_eb = e_cp + b_cp
 add_ec = e_cp + c_cp
 add_ed = e_cp + d_cp
 add_ee = e_cp + e_cp
+
+# Check dims of sums
+assert(add_aa.bound_dims.sizes == dims_aa.sizes)
+assert(add_ab.bound_dims.sizes == dims_ab.sizes)
+assert(add_ac.bound_dims.sizes == dims_ac.sizes)
+assert(add_ad.bound_dims.sizes == dims_ad.sizes)
+assert(add_ae.bound_dims.sizes == dims_ae.sizes)
+
+assert(add_ba.bound_dims.sizes == dims_ba.sizes)
+assert(add_bb.bound_dims.sizes == dims_bb.sizes)
+assert(add_bc.bound_dims.sizes == dims_bc.sizes)
+assert(add_bd.bound_dims.sizes == dims_bd.sizes)
+assert(add_be.bound_dims.sizes == dims_be.sizes)
+
+assert(add_ca.bound_dims.sizes == dims_ca.sizes)
+assert(add_cb.bound_dims.sizes == dims_cb.sizes)
+assert(add_cc.bound_dims.sizes == dims_cc.sizes)
+assert(add_cd.bound_dims.sizes == dims_cd.sizes)
+assert(add_ce.bound_dims.sizes == dims_ce.sizes)
+
+assert(add_da.bound_dims.sizes == dims_da.sizes)
+assert(add_db.bound_dims.sizes == dims_db.sizes)
+assert(add_dc.bound_dims.sizes == dims_dc.sizes)
+assert(add_dd.bound_dims.sizes == dims_dd.sizes)
+assert(add_de.bound_dims.sizes == dims_de.sizes)
+
+assert(add_ea.bound_dims.sizes == dims_ea.sizes)
+assert(add_eb.bound_dims.sizes == dims_eb.sizes)
+assert(add_ec.bound_dims.sizes == dims_ec.sizes)
+assert(add_ed.bound_dims.sizes == dims_ed.sizes)
+assert(add_ee.bound_dims.sizes == dims_ee.sizes)
+
 
 # Multiplication *
 

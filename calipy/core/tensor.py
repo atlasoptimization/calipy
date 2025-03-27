@@ -1300,11 +1300,11 @@ def broadcast_dims(dims_1, dims_2):
         # We unify dimension names accordingly.
     """
 
-    # Handle None or empty dimension tuples
-    if not dims_1 or len(dims_1) == 0:
-        return dims_2
-    if not dims_2 or len(dims_2) == 0:
-        return dims_1
+    # # Handle None or empty dimension tuples
+    # if not dims_1 or len(dims_1) == 0:
+    #     return dims_2
+    # if not dims_2 or len(dims_2) == 0:
+    #     return dims_1
 
     # 1) Collect names and sizes
     shape1 = dims_1.sizes
@@ -1340,6 +1340,10 @@ def broadcast_dims(dims_1, dims_2):
         shapeB.append(sizeB)
         descA.append(dims_dict_desc_1.get(name, None))
         descB.append(dims_dict_desc_2.get(name, None))
+
+    dims_1_extended = dim_assignment(superseq, shapeA, descA)
+    dims_2_extended = dim_assignment(superseq, shapeB, descB)
+
 
     # 4) Let PyTorch do numeric broadcasting
     try:
@@ -1408,142 +1412,7 @@ def broadcast_dims(dims_1, dims_2):
     # If both were generic, the result is also generic
     new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
 
-    return new_dimtuple
-
-
-
-
-
-# def broadcast_dims(dim_1, dim_2):
-#     """
-#     Check if DimTuples ``dim_1`` and ``dim_2`` can be broadcasted together and, if so,
-#     produce a new DimTuple that respects PyTorch's broadcasting logic.
-#     Unlike a simple right-to-left alignment, this version explicitly **pads
-#     shorter DimTuples from the LEFT** with size=1 and optional dimension names
-#     before iterating from left to right, mirroring PyTorch's actual shape
-#     alignment.
-
-#     This helps avoid the scenario where the last dimension of one tensor is
-#     matched with the first dimension of another just because of naive negative
-#     indexing. We thereby better emulate how PyTorch truly handles missing dims.
-
-#     :param dim_1: The first DimTuple to broadcast, or None/empty to indicate no dims.
-#     :type dim_1: DimTuple or None
-
-#     :param dim_2: The second DimTuple to broadcast, or None/empty to indicate no dims.
-#     :type dim_2: DimTuple or None
-
-#     :return: A DimTuple reflecting the broadcasted shape if compatible, otherwise None.
-#     :rtype: DimTuple or None
-
-#     Example usage:
-
-#     .. code-block:: python
-
-#         import torch
-#         from calipy.core.tensor import CalipyTensor, broadcast_dims
-#         from calipy.core.utils import Dim, DimTuple, dim_assignment
-
-#         # Suppose we have:
-#         #   c_cp of shape [2, 1], dims=('dim1','dim2')
-#         #   b_cp of shape [2],    dims=('dim1',)
-#         # This function ensures the second tensor is padded to [1,2],
-#         # then does standard broadcasting, leading to final shape [2,2].
-#         # We unify dimension names accordingly.
-#     """
-
-#     # Handle None or empty dimension tuples
-#     if not dim_1 or len(dim_1) == 0:
-#         return dim_2
-#     if not dim_2 or len(dim_2) == 0:
-#         return dim_1
-
-#     shape1 = dim_1.sizes
-#     shape2 = dim_2.sizes
-
-#     # Attempt to broadcast shapes using PyTorch first
-#     try:
-#         broadcast_shape = torch.broadcast_shapes(shape1, shape2)
-#     except RuntimeError:
-#         return None  # Incompatible shapes
-
-#     max_len = len(broadcast_shape)
-#     len1, len2 = len(dim_1), len(dim_2)
-
-#     # Pad left with size=1 if shorter, so both become length max_len
-#     # We'll store (name, size, description) in lists.
-#     def pad_left(dtuple, needed_len):
-#         """
-#         Return a list of (name, size, desc) of length needed_len.
-#         If dtuple is shorter, we prepend (None, 1, None) dims.
-#         """
-#         padded = []
-#         diff = needed_len - len(dtuple)
-#         # Prepend
-#         for _ in range(diff):
-#             padded.append((None, 1, None))
-#         # Then existing dims
-#         for dim in dtuple:
-#             nm = dim.name
-#             sz = dim.size
-#             ds = getattr(dim, 'description', None)
-#             padded.append((nm, sz, ds))
-#         return padded
-
-#     padded1 = pad_left(dim_1, max_len)
-#     padded2 = pad_left(dim_2, max_len)
-
-#     # We'll now iterate left-to-right, per PyTorch's conceptual alignment
-#     result_dims = []
-
-#     # Check if either is generic
-#     ignore_names_1 = getattr(dim_1, 'is_generic', False)
-#     ignore_names_2 = getattr(dim_2, 'is_generic', False)
-
-#     for i in range(max_len):
-#         name1, size1, desc1 = padded1[i]
-#         name2, size2, desc2 = padded2[i]
-#         b_size = broadcast_shape[i]
-
-#         # Possibly ignore names if is_generic
-#         if ignore_names_1:
-#             name1 = None
-#         if ignore_names_2:
-#             name2 = None
-
-#         # Attempt to unify names
-#         chosen_name = None
-#         chosen_desc = None
-
-#         if name1 == name2 and name1 is not None:
-#             chosen_name = name1
-#             chosen_desc = desc1 or desc2
-#         elif size1 == 1 and name2:
-#             chosen_name = name2
-#             chosen_desc = desc2
-#         elif size2 == 1 and name1:
-#             chosen_name = name1
-#             chosen_desc = desc1
-#         else:
-#             # fallback
-#             chosen_name = f'auto_dim_{i}'
-#             chosen_desc = f'generic dimension nr {i}'
-
-#         result_dims.append((chosen_name, b_size, chosen_desc))
-
-#     # Build final DimTuple
-#     final_names = [rd[0] for rd in result_dims]
-#     final_sizes = [rd[1] for rd in result_dims]
-#     final_descs = [rd[2] for rd in result_dims]
-
-#     # e.g. if you have a dim_assignment function that takes names, sizes, desc
-#     new_dimtuple = dim_assignment(final_names, final_sizes, dim_descriptions=final_descs)
-
-#     # If both were generic, the result is also generic
-#     new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
-
-#     return new_dimtuple
-
+    return dims_1_extended, dims_2_extended, new_dimtuple
 
   
 
@@ -1920,7 +1789,7 @@ class CalipyTensor:
                 dims1 = calipy_tensors[0].dims
                 dims2 = calipy_tensors[1].dims
                 # new_dims = self._broadcast_dims(dims1, dims2, result.shape)
-                new_dims = broadcast_dims(dims1, dims2)
+                new_dims = broadcast_dims(dims1, dims2)[2]
                 return new_dims
             else:
                 # If only one input with dims, keep them if shapes match, else None
@@ -2364,8 +2233,9 @@ class CalipyTensor:
         # if self.dims != other.dims:
         #     raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
 
-        result = torch.add(self, other)
-
+        dims_1_expanded, dims_2_expanded, new_dims = broadcast_dims(self.dims, other.dims)
+        result = torch.add(self.expand_to_dims(dims_1_expanded),
+                           other.expand_to_dims(dims_2_expanded))
         return result
     
     def __sub__(self, other):
