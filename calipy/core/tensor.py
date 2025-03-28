@@ -1306,111 +1306,202 @@ def broadcast_dims(dims_1, dims_2):
     # if not dims_2 or len(dims_2) == 0:
     #     return dims_1
 
+    generic_1 = dims_1.is_generic
+    generic_2 = dims_2.is_generic
+    
     # 1) Collect names and sizes
     shape1 = dims_1.sizes
     shape2 = dims_2.sizes
     nameseq1 = dims_1.names
     nameseq2 = dims_2.names
     
-    # 2) Build minimal supersequence, or raise error if contradictory
-    try:
-        superseq = build_dim_supersequence(nameseq1, nameseq2)
-    except ValueError as e:
-        print(f"Dimension name conflict: {e}")
-        return None
+   
     
-    # 3) Expand each DimTuple to match superseq
-    #    We'll produce shape arrays for each DimTuple of length len(superseq).
-    shapeA = []
-    shapeB = []
-    descA = []
-    descB = []
-
-    # Build dict {name -> size} for quick lookup
-    dims_dict_1 = {dims_1[i].name: dims_1[i].size for i in range(len(dims_1))}
-    dims_dict_2 = {dims_2[i].name: dims_2[i].size for i in range(len(dims_2))}
-    # Build dict {name -> desc} for quick lookup
-    dims_dict_desc_1 = {dims_1[i].name: dims_1[i].description for i in range(len(dims_1))}
-    dims_dict_desc_2 = {dims_2[i].name: dims_2[i].description for i in range(len(dims_2))}
-
-    for name in superseq:
-        sizeA = dims_dict_1.get(name, 1)  # default to size=1 if missing
-        sizeB = dims_dict_2.get(name, 1)
-        shapeA.append(sizeA)
-        shapeB.append(sizeB)
-        descA.append(dims_dict_desc_1.get(name, None))
-        descB.append(dims_dict_desc_2.get(name, None))
-
-    dims_1_extended = dim_assignment(superseq, shapeA, descA)
-    dims_2_extended = dim_assignment(superseq, shapeB, descB)
-
-
-    # 4) Let PyTorch do numeric broadcasting
-    try:
-        bcastA = torch.broadcast_shapes(tuple(shapeA), tuple(shapeB))
-    except RuntimeError:
-        return None  # Incompatible numeric shapes
+    if generic_1 or generic_2:
+        
+        """
+        1. If One or both dims are generic, use pytorch standard broadcasting
+        """        
+        
+        # Attempt to broadcast shapes using PyTorch
+        try:
+            broadcast_shape = torch.broadcast_shapes(shape1, shape2)
+        except RuntimeError:
+            # Incompatible shapes
+            return None
     
-    # bcastA is the final broadcast shape => length = len(superseq)
-    len_super = len(superseq)
-
-    # 5) Rebuild a new DimTuple with the same dimension names in superseq
-    #    and the sizes from bcastA
-
-    # We'll now iterate left-to-right, per PyTorch's conceptual alignment
-    result_dims = []
-
-    # Check if either is generic
-    ignore_names_1 = getattr(dims_1, 'is_generic', False)
-    ignore_names_2 = getattr(dims_2, 'is_generic', False)
-
-    for i in range(len_super):
-        name1 = superseq[i]
-        size1 = shapeA[i]
-        desc1 = descA[i]
-        
-        name2 = superseq[i]
-        size2 = shapeB[i]
-        desc2 = descB[i]
-        
-        b_size = bcastA[i]
-
-        # Possibly ignore names if is_generic
-        if ignore_names_1:
-            name1 = None
-        if ignore_names_2:
-            name2 = None
-
-        # Attempt to unify names
-        chosen_name = None
-        chosen_desc = None
-
-        if name1 == name2 and name1 is not None:
-            chosen_name = name1
-            chosen_desc = desc1 or desc2
-        elif size1 == 1 and name2:
-            chosen_name = name2
-            chosen_desc = desc2
-        elif size2 == 1 and name1:
-            chosen_name = name1
-            chosen_desc = desc1
+        len1, len2 = len(dims_1), len(dims_2)
+        max_len = len(broadcast_shape)
+    
+        # Prepare result
+        result_dims_names = []
+        result_dims_sizes = []
+        result_dims_descriptions = []
+    
+        for i in range(-1, -max_len - 1, -1):
+            idx1 = i if -i <= len1 else None
+            idx2 = i if -i <= len2 else None
+    
+            size1 = shape1[idx1] if idx1 is not None else 1
+            size2 = shape2[idx2] if idx2 is not None else 1
+            b_size = broadcast_shape[i]  # final broadcasted size
+    
+            # Retrieve names if present
+            name1 = dims_1[idx1].name if (idx1 is not None) else None
+            name2 = dims_2[idx2].name if (idx2 is not None) else None
+            desc1 = dims_1[idx1].description if (idx1 is not None) else None
+            desc2 = dims_2[idx2].description if (idx2 is not None) else None
+    
+           # If either DimTuple is generic, we ignore dimension names from that side
+            ignore_name1 = getattr(dims_1, 'is_generic', False)
+            ignore_name2 = getattr(dims_2, 'is_generic', False)
+            if ignore_name1:
+                name1 = None
+            if ignore_name2:
+                name2 = None
+    
+            chosen_name = None
+            # 1) If both sides have the same name (and not None), keep it.
+            if name1 == name2 and name1 is not None:
+                chosen_name = name1
+                chosen_desc = desc1
+            # 2) Otherwise, if one side is size=1 and the other has a valid name
+            elif size1 == 1 and name2:
+                chosen_name = name2
+                chosen_desc = desc2
+            elif size2 == 1 and name1:
+                chosen_name = name1
+                chosen_desc = desc1
+            else:
+                # 3) Fallback if no name found or conflict
+                chosen_name = f'auto_dim_{max_len + i}'
+                chosen_desc = 'generic dimension nr {}'.format(max_len + i)
+    
+            result_dims_names.append(chosen_name)
+            result_dims_sizes.append(b_size)
+            result_dims_descriptions.append(chosen_desc)
+    
+        # Return the new DimTuple. 
+        dims_1_extended = dims_1
+        dims_2_extended = dims_2
+        result_dims_names.reverse()
+        result_dims_sizes.reverse()
+        result_dims_descriptions.reverse()
+        new_dimtuple = dim_assignment(result_dims_names, result_dims_sizes, 
+                                      dim_descriptions = result_dims_descriptions)
+    
+        # Optionally set is_generic if both sides were generic
+        if getattr(dims_1, 'is_generic', False) and getattr(dims_2, 'is_generic', False):
+            new_dimtuple.is_generic = True
         else:
-            # fallback
-            chosen_name = f'auto_dim_{i}'
-            chosen_desc = f'generic dimension nr {i}'
-
-        result_dims.append((chosen_name, b_size, chosen_desc))
-
-    # Build final DimTuple
-    final_names = [rd[0] for rd in result_dims]
-    final_sizes = [rd[1] for rd in result_dims]
-    final_descs = [rd[2] for rd in result_dims]
-
-    # e.g. if you have a dim_assignment function that takes names, sizes, desc
-    new_dimtuple = dim_assignment(final_names, final_sizes, dim_descriptions=final_descs)
-
-    # If both were generic, the result is also generic
-    new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
+            new_dimtuple.is_generic = False
+            
+    
+    
+    else:
+        """
+            2. If both tensors are CalipyTensors, use dim-aware broadcasting
+        """
+        
+        # 2) Build minimal supersequence, or raise error if contradictory
+        try:
+            superseq = build_dim_supersequence(nameseq1, nameseq2)
+        except ValueError as e:
+            print(f"Dimension name conflict: {e}")
+            return None
+        
+        # 3) Expand each DimTuple to match superseq
+        #    We'll produce shape arrays for each DimTuple of length len(superseq).
+        shapeA = []
+        shapeB = []
+        descA = []
+        descB = []
+    
+        # Build dict {name -> size} for quick lookup
+        dims_dict_1 = {dims_1[i].name: dims_1[i].size for i in range(len(dims_1))}
+        dims_dict_2 = {dims_2[i].name: dims_2[i].size for i in range(len(dims_2))}
+        # Build dict {name -> desc} for quick lookup
+        dims_dict_desc_1 = {dims_1[i].name: dims_1[i].description for i in range(len(dims_1))}
+        dims_dict_desc_2 = {dims_2[i].name: dims_2[i].description for i in range(len(dims_2))}
+    
+        for name in superseq:
+            sizeA = dims_dict_1.get(name, 1)  # default to size=1 if missing
+            sizeB = dims_dict_2.get(name, 1)
+            shapeA.append(sizeA)
+            shapeB.append(sizeB)
+            descA.append(dims_dict_desc_1.get(name, None))
+            descB.append(dims_dict_desc_2.get(name, None))
+    
+        dims_1_extended = dim_assignment(superseq, shapeA, descA)
+        dims_2_extended = dim_assignment(superseq, shapeB, descB)
+    
+    
+        # 4) Let PyTorch do numeric broadcasting
+        try:
+            bcastA = torch.broadcast_shapes(tuple(shapeA), tuple(shapeB))
+        except RuntimeError:
+            return None  # Incompatible numeric shapes
+        
+        # bcastA is the final broadcast shape => length = len(superseq)
+        len_super = len(superseq)
+    
+        # 5) Rebuild a new DimTuple with the same dimension names in superseq
+        #    and the sizes from bcastA
+    
+        # We'll now iterate left-to-right, per PyTorch's conceptual alignment
+        result_dims = []
+    
+        # Check if either is generic
+        ignore_names_1 = getattr(dims_1, 'is_generic', False)
+        ignore_names_2 = getattr(dims_2, 'is_generic', False)
+    
+        for i in range(len_super):
+            name1 = superseq[i]
+            size1 = shapeA[i]
+            desc1 = descA[i]
+            
+            name2 = superseq[i]
+            size2 = shapeB[i]
+            desc2 = descB[i]
+            
+            b_size = bcastA[i]
+    
+            # Possibly ignore names if is_generic
+            if ignore_names_1:
+                name1 = None
+            if ignore_names_2:
+                name2 = None
+    
+            # Attempt to unify names
+            chosen_name = None
+            chosen_desc = None
+    
+            if name1 == name2 and name1 is not None:
+                chosen_name = name1
+                chosen_desc = desc1 or desc2
+            elif size1 == 1 and name2:
+                chosen_name = name2
+                chosen_desc = desc2
+            elif size2 == 1 and name1:
+                chosen_name = name1
+                chosen_desc = desc1
+            else:
+                # fallback
+                chosen_name = f'auto_dim_{i}'
+                chosen_desc = f'generic dimension nr {i}'
+    
+            result_dims.append((chosen_name, b_size, chosen_desc))
+    
+        # Build final DimTuple
+        final_names = [rd[0] for rd in result_dims]
+        final_sizes = [rd[1] for rd in result_dims]
+        final_descs = [rd[2] for rd in result_dims]
+    
+        # e.g. if you have a dim_assignment function that takes names, sizes, desc
+        new_dimtuple = dim_assignment(final_names, final_sizes, dim_descriptions=final_descs)
+    
+        # If both were generic, the result is also generic
+        new_dimtuple.is_generic = (ignore_names_1 and ignore_names_2)
 
     return dims_1_extended, dims_2_extended, new_dimtuple
 
@@ -1689,6 +1780,7 @@ class CalipyTensor:
         self.tensor = tensor if not isinstance(tensor, CalipyTensor) else tensor.tensor
         self.dims = dims
         self.bound_dims = dims.bind(self.tensor.shape)
+        self.bound_dims.is_generic = self.dims.is_generic
         
         if self.tensor is not None:
             self._indexer_construct(dims, name)

@@ -8,7 +8,14 @@ This includes checking the correctness of multiple operation classes:
     3. Multiplication, addition, ...  between CT and numerical classes int, float,  ..
     3. Multiplication, addition, ...  between CT and torch.Tensor class
     
-    
+There are two broadcasting mechanisms: If an elementwise operation is performed
+on a CalipyTensor and a regular torch.tensor, pytorch broadcasting rules are
+applied and the new result will have dims from the CalipyTensor and possibly some
+autodims. If an elementwise operation is applied to two CalipyTensors, the shortest
+possible supersequence of dims is constructed that contain dims_1 and dims_2 as
+subsequences; then dims_1 and dims_2 are extended to match that supersequence and 
+bdroadcasted via torch. In short, this second, dimension aware approach, aligns
+dims by name before using standard broadcasting.
 """
 
 import torch
@@ -45,7 +52,7 @@ d_cp = CalipyTensor(d, dim_1 + dim_2)
 e_cp = CalipyTensor(e, dim_1 + dim_2 + dim_3)
 
 
-# build broadcasted dims
+# build broadcasted dims of CalipyTensors
 dims_aa = broadcast_dims(a_cp.bound_dims, a_cp.bound_dims)[2]
 dims_ab = broadcast_dims(a_cp.bound_dims, b_cp.bound_dims)[2]
 dims_ac = broadcast_dims(a_cp.bound_dims, c_cp.bound_dims)[2]
@@ -123,7 +130,7 @@ assert(dims_pq[1].sizes == [2,3,1,5]) # Should deliver expanded dim_2 of shape [
 
 # Addition +
 
-# Build sums
+# Build sums of two CalipyTensors
 add_aa = a_cp + a_cp
 add_ab = a_cp + b_cp
 add_ac = a_cp + c_cp
@@ -186,9 +193,141 @@ assert(add_ed.bound_dims.sizes == dims_ed.sizes)
 assert(add_ee.bound_dims.sizes == dims_ee.sizes)
 
 
+
 # Multiplication *
 
 # Division /
+
+
+
+# Now do the same for tensors with generic dimensions or standard torch tensors
+# Under the hood, torch.tensors a are wrapped in a_cp = CalipyTensor(a) which 
+# produces a CalipyTensor with generic dims, so the expressions a_cp + b_cp and
+# CalipyTensor(a) + b_cp are equal.
+# The results are equivalent to what standard pytorch produces during broadcasting
+
+# Invoke CalipyTensors
+a_gcp = CalipyTensor(a)
+b_gcp = CalipyTensor(b)
+c_gcp = CalipyTensor(c)
+d_gcp = CalipyTensor(d)
+e_gcp = CalipyTensor(e)
+
+
+# build broadcasted dims of CalipyTensors
+dims_aag = broadcast_dims(a_cp.bound_dims, a_gcp.bound_dims)[2]
+dims_abg = broadcast_dims(a_cp.bound_dims, b_gcp.bound_dims)[2]
+dims_acg = broadcast_dims(a_cp.bound_dims, c_gcp.bound_dims)[2]
+dims_adg = broadcast_dims(a_cp.bound_dims, d_gcp.bound_dims)[2]
+dims_aeg = broadcast_dims(a_cp.bound_dims, e_gcp.bound_dims)[2]
+
+dims_bag = broadcast_dims(b_cp.bound_dims, a_gcp.bound_dims)[2]
+dims_bbg = broadcast_dims(b_cp.bound_dims, b_gcp.bound_dims)[2]
+dims_bcg = broadcast_dims(b_cp.bound_dims, c_gcp.bound_dims)[2]
+# dims_bdg = broadcast_dims(b_cp.bound_dims, d_gcp.bound_dims)[2] # Not broadcastable: [2], [2,3]
+# dims_beg = broadcast_dims(b_cp.bound_dims, e_gcp.bound_dims)[2] # Not broadcastable: [2], [2,3,4]
+
+dims_cag = broadcast_dims(c_cp.bound_dims, a_gcp.bound_dims)[2]
+dims_cbg = broadcast_dims(c_cp.bound_dims, b_gcp.bound_dims)[2]
+dims_ccg = broadcast_dims(c_cp.bound_dims, c_gcp.bound_dims)[2]
+dims_cdg = broadcast_dims(c_cp.bound_dims, d_gcp.bound_dims)[2]
+# dims_ceg = broadcast_dims(c_cp.bound_dims, e_gcp.bound_dims)[2] # Not broadcastable: [2,1], [2,3,4]
+
+dims_dag = broadcast_dims(d_cp.bound_dims, a_gcp.bound_dims)[2]
+# dims_dbg = broadcast_dims(d_cp.bound_dims, b_gcp.bound_dims)[2] # Not broadcastable: [2,3], [2]
+dims_dcg = broadcast_dims(d_cp.bound_dims, c_gcp.bound_dims)[2]
+dims_ddg = broadcast_dims(d_cp.bound_dims, d_gcp.bound_dims)[2]
+# dims_deg = broadcast_dims(d_cp.bound_dims, e_gcp.bound_dims)[2] # Not broadcastable: [2,3], [2,3,4]
+
+dims_eag = broadcast_dims(e_cp.bound_dims, a_gcp.bound_dims)[2]
+# dims_ebg = broadcast_dims(e_cp.bound_dims, b_gcp.bound_dims)[2] # Not broadcastable: [2,3,4], [2]
+# dims_ecg = broadcast_dims(e_cp.bound_dims, c_gcp.bound_dims)[2] # Not broadcastable: [2,3,4], [2,1]
+# dims_edg = broadcast_dims(e_cp.bound_dims, d_gcp.bound_dims)[2] # Not broadcastable: [2,3,4], [2,3]
+dims_eeg = broadcast_dims(e_cp.bound_dims, e_gcp.bound_dims)[2]
+
+
+# Check broadcasted dims
+assert(dims_aag.sizes == [])
+assert(dims_abg.sizes == [2])
+assert(dims_acg.sizes == [2,1])
+assert(dims_adg.sizes == [2,3])
+assert(dims_aeg.sizes == [2,3,4])
+
+assert(dims_bag.sizes == [2])
+assert(dims_bbg.sizes == [2])
+
+# Different from cp broadcasting since matching from right means extension of
+# [2,1] by [2] to [2,2]
+assert(dims_bcg.sizes == [2,2]) 
+
+assert(dims_cag.sizes == [2,1])
+assert(dims_cbg.sizes == [2,2]) # Different: [2,1] by [2] -> [2,2]
+assert(dims_ccg.sizes == [2,1])
+assert(dims_cdg.sizes == [2,3])
+
+assert(dims_dag.sizes == [2,3])
+assert(dims_dcg.sizes == [2,3])
+assert(dims_ddg.sizes == [2,3])
+
+assert(dims_eag.sizes == [2,3,4])
+assert(dims_eeg.sizes == [2,3,4])
+
+
+# Build sums of CalipyTensors with torch.tensors
+add_aat = a_cp + a
+add_abt = a_cp + b
+add_act = a_cp + c
+add_adt = a_cp + d
+add_aet = a_cp + e
+
+add_bat = b_cp + a
+add_bbt = b_cp + b
+add_bct = b_cp + c
+# add_bdt = b_cp + d # Not broadcastable: [2], [2,3]
+# add_bet = b_cp + e # Not broadcastable: [2], [2,3,4]
+
+add_cat = c_cp + a
+add_cbt = c_cp + b
+add_cct = c_cp + c
+add_cdt = c_cp + d
+# add_cet = c_cp + e # Not broadcastable: [2,1], [2,3,4]
+
+add_dat = d_cp + a
+# add_dbt = d_cp + b # Not broadcastable: [2,3], [2]
+add_dct = d_cp + c
+add_ddt = d_cp + d
+# add_det = d_cp + e # Not broadcastable: [2,3], [2,3,4]
+
+add_eat = e_cp + a
+# add_ebt = e_cp + b # Not broadcastable: [2,3,4], [2]
+# add_ect = e_cp + c # Not broadcastable: [2,3,4], [2,1]
+# add_edt = e_cp + d # Not broadcastable: [2,3,4], [2,3]
+add_eet = e_cp + e
+
+# Check dims of sums
+assert(add_aat.bound_dims.sizes == dims_aag.sizes)
+assert(add_abt.bound_dims.sizes == dims_abg.sizes)
+assert(add_act.bound_dims.sizes == dims_acg.sizes)
+assert(add_adt.bound_dims.sizes == dims_adg.sizes)
+assert(add_aet.bound_dims.sizes == dims_aeg.sizes)
+
+assert(add_bat.bound_dims.sizes == dims_bag.sizes)
+assert(add_bbt.bound_dims.sizes == dims_bbg.sizes)
+assert(add_bct.bound_dims.sizes == dims_bcg.sizes)
+
+assert(add_cat.bound_dims.sizes == dims_cag.sizes)
+assert(add_cbt.bound_dims.sizes == dims_cbg.sizes)
+assert(add_cct.bound_dims.sizes == dims_ccg.sizes)
+assert(add_cdt.bound_dims.sizes == dims_cdg.sizes)
+
+assert(add_dat.bound_dims.sizes == dims_dag.sizes)
+assert(add_dct.bound_dims.sizes == dims_dcg.sizes)
+assert(add_ddt.bound_dims.sizes == dims_ddg.sizes)
+
+assert(add_eat.bound_dims.sizes == dims_eag.sizes)
+assert(add_eet.bound_dims.sizes == dims_eeg.sizes)
+
+
 
 
 
