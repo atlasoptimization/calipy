@@ -31,6 +31,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 import torch
+import numpy
 import math
 import pandas as pd
 import warnings
@@ -1759,10 +1760,16 @@ class CalipyTensor:
                             ' is None : {} and index_tensor_dims is None: {}'
                             .format(signature[0], signature[1]))
         
-        if not isinstance(tensor, (CalipyTensor, torch.Tensor, type(None))):
-            raise TypeError("tensor must be a CalipyTensor, torch.Tensor or None")
+        if not isinstance(tensor, (CalipyTensor, torch.Tensor, float, int, type(None))):
+            raise TypeError("tensor must be a CalipyTensor, torch.Tensor, float, int, or None")
         if dims is not None and len(dims) != tensor.ndim:
             warnings.warn("Number of dims in DimTuple does not match tensor.ndim, setting dims=None.")
+
+        # If tensor is np.ndarray, float, or int, wrap into torch.tensor
+        if isinstance(tensor, (float, int)):
+            tensor = torch.tensor(tensor)
+
+
 
         # Set up generic dims, if dims = None
         self.generic_dims = False
@@ -2266,69 +2273,115 @@ class CalipyTensor:
         # Delegate attribute access to underlying tensor if not found
         return getattr(self.tensor, name)
     
+    
     def __mul__(self, other):
         """ 
         Overloads the * operator to work on CalipyTensor objects.
         
-        :param other: The CalipyTensor or torch.tensor to multiply.
-        :type other: CalipyTensor or torch.tensor
-        :return: A new Calipytensor with elements from each tensor multiplied elementwise.
-            Operation supports broadcasting.
+        :param other: The object to to multiply to this CalipyTensor.
+        :type other: CalipyTensor, torch.tensor, float, int
+        :return: A new CalipyTensor with elements from self and other broadcasted
+            and multiplied elementwise.
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        if not isinstance(other, (CalipyTensor, torch.tensor, int)):
+        
+        # Check input
+        if not isinstance(other, (CalipyTensor, torch.Tensor, float, int)):
             return NotImplemented
 
-        if self.dims != other.dims:
-            raise ValueError("Both CalipyTensors must have the same dims for elementwise multiplication.")
-
-        result = torch.mul(self, other)
+        other_calipy = CalipyTensor(other)
+        broadcast_result = broadcast_dims(self.bound_dims, other_calipy.bound_dims)
         
+        # Check broadcasting
+        if broadcast_result is None:
+            raise Exception('CalipyTensor and object not broadcastable, dims_1 = {}' 
+                            ' with shapes {}, dims_2 = {} with shapes {}'
+                            .format(self.dims, self.bound_dims.sizes, 
+                                    other_calipy.dims, other_calipy.bound_dims.sizes))
+        
+        # Perform operation on bdoadcasted inputs
+        dims_1_expanded, dims_2_expanded, new_dims = broadcast_result
+        result = torch.mul(self.expand_to_dims(dims_1_expanded),
+                           other_calipy.expand_to_dims(dims_2_expanded))
         return result
     
-    def __div__(self, other):
+    def __rmul__(self, other):
+        return self.__mul__(other)
+    
+    
+    def __truediv__(self, other):
         """ 
         Overloads the / operator to work on CalipyTensor objects.
         
-        :param other: The CalipyTensor or torch.tensor used to divide self.
-        :type other: CalipyTensor or torch.tensor
-        :return: A new Calipytensor with elements from self divided elementwise by elements from other.
-            Operation supports broadcasting.
+        :param other: The object to to divide this CalipyTensor.
+        :type other: CalipyTensor, torch.tensor, float, int
+        :return: A new CalipyTensor with elements from self and other broadcasted
+            and divided self/other elementwise.
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        if not isinstance(other, CalipyTensor):
+        
+        # Check input
+        if not isinstance(other, (CalipyTensor, torch.Tensor, float, int)):
             return NotImplemented
 
-        if self.dims != other.dims:
-            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
-
-        result = torch.div(self, other)
+        other_calipy = CalipyTensor(other)
+        broadcast_result = broadcast_dims(self.bound_dims, other_calipy.bound_dims)
         
+        # Check broadcasting
+        if broadcast_result is None:
+            raise Exception('CalipyTensor and object not broadcastable, dims_1 = {}' 
+                            ' with shapes {}, dims_2 = {} with shapes {}'
+                            .format(self.dims, self.bound_dims.sizes, 
+                                    other_calipy.dims, other_calipy.bound_dims.sizes))
+        
+        # Perform operation on bdoadcasted inputs
+        dims_1_expanded, dims_2_expanded, new_dims = broadcast_result
+        result = torch.div(self.expand_to_dims(dims_1_expanded),
+                           other_calipy.expand_to_dims(dims_2_expanded))
         return result
+    
+    def __rtruediv__(self, other):
+        other_calipy = CalipyTensor(other)
+        return other_calipy.__truediv__(self)
     
     
     def __add__(self, other):
         """ 
         Overloads the + operator to work on CalipyTensor objects.
         
-        :param other: The CalipyTensor to add.
-        :type other: CalipyTensor
-        :return: A new Calipytensor with elements from each tensor added elementwise.
+        :param other: The object to to add to this CalipyTensor.
+        :type other: CalipyTensor, torch.tensor, float, int
+        :return: A new CalipyTensor with elements from self and other broadcasted
+            andadded elementwise.
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        # if not isinstance(other, CalipyTensor):
-        #     return NotImplemented
+        
+        # Check input
+        if not isinstance(other, (CalipyTensor, torch.Tensor, float, int)):
+            return NotImplemented
 
-        # if self.dims != other.dims:
-        #     raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
-
-        dims_1_expanded, dims_2_expanded, new_dims = broadcast_dims(self.dims, other.dims)
+        other_calipy = CalipyTensor(other)
+        broadcast_result = broadcast_dims(self.bound_dims, other_calipy.bound_dims)
+        
+        # Check broadcasting
+        if broadcast_result is None:
+            raise Exception('CalipyTensor and object not broadcastable, dims_1 = {}' 
+                            ' with shapes {}, dims_2 = {} with shapes {}'
+                            .format(self.dims, self.bound_dims.sizes, 
+                                    other_calipy.dims, other_calipy.bound_dims.sizes))
+        
+        # Perform operation on bdoadcasted inputs
+        dims_1_expanded, dims_2_expanded, new_dims = broadcast_result
         result = torch.add(self.expand_to_dims(dims_1_expanded),
-                           other.expand_to_dims(dims_2_expanded))
+                           other_calipy.expand_to_dims(dims_2_expanded))
         return result
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+    
     
     def __sub__(self, other):
         """ 

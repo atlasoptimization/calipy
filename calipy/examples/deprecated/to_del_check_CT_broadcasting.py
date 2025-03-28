@@ -91,13 +91,16 @@ assert(dims_ad.sizes == [2,3])
 assert(dims_ae.sizes == [2,3,4])
 
 assert(dims_ba.sizes == [2])
+# Different from pytorch broadcasting since matching by dims means extension of
+# [dim1] by [dim1, dim2] to [dim1, dim2] with sizes [2,1]:
+#   [dim1, dim2] : [2,1] by [dim1] [2] -> [dim1, dim2] [2,1]
 assert(dims_bb.sizes == [2])
 assert(dims_bc.sizes == [2,1])
 assert(dims_bd.sizes == [2,3])
 assert(dims_be.sizes == [2,3,4])
 
 assert(dims_ca.sizes == [2,1])
-assert(dims_cb.sizes == [2,1])
+assert(dims_cb.sizes == [2,1]) # Different: [dim1, dim2] : [2,1] by [dim1] [2] -> [dim1, dim2] [2,1]
 assert(dims_cc.sizes == [2,1])
 assert(dims_cd.sizes == [2,3])
 assert(dims_ce.sizes == [2,3,4])
@@ -194,9 +197,133 @@ assert(add_ee.bound_dims.sizes == dims_ee.sizes)
 
 
 
-# Multiplication *
+# Multiplication * of CalipyTensors
 
-# Division /
+mult_aa = a_cp * a_cp
+mult_ab = a_cp * b_cp
+mult_ac = a_cp * c_cp
+mult_ad = a_cp * d_cp
+mult_ae = a_cp * e_cp
+
+mult_ba = b_cp * a_cp
+mult_bb = b_cp * b_cp
+mult_bc = b_cp * c_cp
+mult_bd = b_cp * d_cp
+mult_be = b_cp * e_cp
+
+mult_ca = c_cp * a_cp
+mult_cb = c_cp * b_cp
+mult_cc = c_cp * c_cp
+mult_cd = c_cp * d_cp
+mult_ce = c_cp * e_cp
+
+mult_da = d_cp * a_cp
+mult_db = d_cp * b_cp
+mult_dc = d_cp * c_cp
+mult_dd = d_cp * d_cp
+mult_de = d_cp * e_cp
+
+mult_ea = e_cp * a_cp
+mult_eb = e_cp * b_cp
+mult_ec = e_cp * c_cp
+mult_ed = e_cp * d_cp
+mult_ee = e_cp * e_cp
+
+# Check dims of products
+assert(mult_aa.bound_dims.sizes == dims_aa.sizes)
+assert(mult_ab.bound_dims.sizes == dims_ab.sizes)
+assert(mult_ac.bound_dims.sizes == dims_ac.sizes)
+assert(mult_ad.bound_dims.sizes == dims_ad.sizes)
+assert(mult_ae.bound_dims.sizes == dims_ae.sizes)
+
+assert(mult_ba.bound_dims.sizes == dims_ba.sizes)
+assert(mult_bb.bound_dims.sizes == dims_bb.sizes)
+assert(mult_bc.bound_dims.sizes == dims_bc.sizes)
+assert(mult_bd.bound_dims.sizes == dims_bd.sizes)
+assert(mult_be.bound_dims.sizes == dims_be.sizes)
+
+assert(mult_ca.bound_dims.sizes == dims_ca.sizes)
+assert(mult_cb.bound_dims.sizes == dims_cb.sizes)
+assert(mult_cc.bound_dims.sizes == dims_cc.sizes)
+assert(mult_cd.bound_dims.sizes == dims_cd.sizes)
+assert(mult_ce.bound_dims.sizes == dims_ce.sizes)
+
+assert(mult_da.bound_dims.sizes == dims_da.sizes)
+assert(mult_db.bound_dims.sizes == dims_db.sizes)
+assert(mult_dc.bound_dims.sizes == dims_dc.sizes)
+assert(mult_dd.bound_dims.sizes == dims_dd.sizes)
+assert(mult_de.bound_dims.sizes == dims_de.sizes)
+
+assert(mult_ea.bound_dims.sizes == dims_ea.sizes)
+assert(mult_eb.bound_dims.sizes == dims_eb.sizes)
+assert(mult_ec.bound_dims.sizes == dims_ec.sizes)
+assert(mult_ed.bound_dims.sizes == dims_ed.sizes)
+assert(mult_ee.bound_dims.sizes == dims_ee.sizes)
+
+
+
+# Division / of CalipyTensors
+
+div_aa = a_cp / a_cp
+div_ab = a_cp / b_cp
+div_ac = a_cp / c_cp
+div_ad = a_cp / d_cp
+div_ae = a_cp / e_cp
+
+div_ba = b_cp / a_cp
+div_bb = b_cp / b_cp
+div_bc = b_cp / c_cp
+div_bd = b_cp / d_cp
+div_be = b_cp / e_cp
+
+div_ca = c_cp / a_cp
+div_cb = c_cp / b_cp
+div_cc = c_cp / c_cp
+div_cd = c_cp / d_cp
+div_ce = c_cp / e_cp
+
+div_da = d_cp / a_cp
+div_db = d_cp / b_cp
+div_dc = d_cp / c_cp
+div_dd = d_cp / d_cp
+div_de = d_cp / e_cp
+
+div_ea = e_cp / a_cp
+div_eb = e_cp / b_cp
+div_ec = e_cp / c_cp
+div_ed = e_cp / d_cp
+div_ee = e_cp / e_cp
+
+# Check dims of products
+assert(div_aa.bound_dims.sizes == dims_aa.sizes)
+assert(div_ab.bound_dims.sizes == dims_ab.sizes)
+assert(div_ac.bound_dims.sizes == dims_ac.sizes)
+assert(div_ad.bound_dims.sizes == dims_ad.sizes)
+assert(div_ae.bound_dims.sizes == dims_ae.sizes)
+
+assert(div_ba.bound_dims.sizes == dims_ba.sizes)
+assert(div_bb.bound_dims.sizes == dims_bb.sizes)
+assert(div_bc.bound_dims.sizes == dims_bc.sizes)
+assert(div_bd.bound_dims.sizes == dims_bd.sizes)
+assert(div_be.bound_dims.sizes == dims_be.sizes)
+
+assert(div_ca.bound_dims.sizes == dims_ca.sizes)
+assert(div_cb.bound_dims.sizes == dims_cb.sizes)
+assert(div_cc.bound_dims.sizes == dims_cc.sizes)
+assert(div_cd.bound_dims.sizes == dims_cd.sizes)
+assert(div_ce.bound_dims.sizes == dims_ce.sizes)
+
+assert(div_da.bound_dims.sizes == dims_da.sizes)
+assert(div_db.bound_dims.sizes == dims_db.sizes)
+assert(div_dc.bound_dims.sizes == dims_dc.sizes)
+assert(div_dd.bound_dims.sizes == dims_dd.sizes)
+assert(div_de.bound_dims.sizes == dims_de.sizes)
+
+assert(div_ea.bound_dims.sizes == dims_ea.sizes)
+assert(div_eb.bound_dims.sizes == dims_eb.sizes)
+assert(div_ec.bound_dims.sizes == dims_ec.sizes)
+assert(div_ed.bound_dims.sizes == dims_ed.sizes)
+assert(div_ee.bound_dims.sizes == dims_ee.sizes)
 
 
 
@@ -327,7 +454,48 @@ assert(add_ddt.bound_dims.sizes == dims_ddg.sizes)
 assert(add_eat.bound_dims.sizes == dims_eag.sizes)
 assert(add_eet.bound_dims.sizes == dims_eeg.sizes)
 
+# Left addition and right addition are equal since by definition in CalipyTensor.__add__
+# we have __add__(self, other) = __radd__(self, other)
+
+assert(((a_cp + e_cp).tensor == (e_cp + a_cp).tensor).all())
+
+# Addition, Multplication, Division also works naturally with Python integer and floats
+
+# Addition
+2 + b_cp
+b_cp + 2
+2.0 + b_cp
+b_cp + 2.0
+torch.tensor(np.ones([2])) + b_cp
+b_cp + torch.tensor(np.ones([2]))
+
+# Multiplication
+2 * b_cp
+b_cp * 2
+2.0 * b_cp
+b_cp * 2.0
+torch.tensor(np.ones([2])) * b_cp
+b_cp * torch.tensor(np.ones([2]))
+
+# Division
+2 / b_cp
+b_cp / 2
+2.0 / b_cp
+b_cp / 2.0
+torch.tensor(2*np.ones([2])) / b_cp
+b_cp / torch.tensor(2*np.ones([2]))
 
 
+# Numpy arrays behave different because they have their own __add__ methods.
+b_cp + np.ones([2]) # This works partially
+# np.ones([2]) + b_cp # This errors out since addition not defined in np
+b_cp * np.ones([2]) # This works partially
+# np.ones([2]) * b_cp # This errors out since addition not defined in np
+b_cp / np.ones([2]) # This works partially
+# np.ones([2]) / b_cp # This errors out since addition not defined in np
 
+# If the tensors cannot be broadcasted together, an exception is raised:
+# d_cp + CalipyTensor(torch.ones([20,20]) , dim_assignment(['dim_1', 'dim_2'])) # Shape mismatch
+# d_cp + CalipyTensor(torch.ones([20,20]) , dim_assignment(['dim_2', 'dim_1'])) # Dim order mismatch
 
+# Similar things hold also for multiplication and division.
