@@ -1366,11 +1366,11 @@ def broadcast_dims(dims_1, dims_2):
             if name1 == name2 and name1 is not None:
                 chosen_name = name1
                 chosen_desc = desc1
-            # 2) Otherwise, if one side is size=1 and the other has a valid name
-            elif size1 == 1 and name2:
+            # 2) Otherwise, if one side has a valid name, take that one
+            elif name2:
                 chosen_name = name2
                 chosen_desc = desc2
-            elif size2 == 1 and name1:
+            elif name1:
                 chosen_name = name1
                 chosen_desc = desc1
             else:
@@ -2387,19 +2387,15 @@ class CalipyTensor:
         """ 
         Overloads the - operator to work on CalipyTensor objects.
         
-        :param other: The CalipyTensor to add.
-        :type other: CalipyTensor
-        :return: A new Calipytensor with elements from each tensor added elementwise.
+        :param other: The object to to subtract from this CalipyTensor.
+        :type other: CalipyTensor, torch.tensor, float, int
+        :return: A new CalipyTensor with elements from self and other broadcasted
+            and the subtracted elementwise.
         :rtype: CalipyTensor
         :raises ValueError: If both self and other are not broadcastable.
         """
-        if not isinstance(other, CalipyTensor):
-            return NotImplemented
 
-        if self.dims != other.dims:
-            raise ValueError("Both CalpyTensors must have the same dims for elementwise addition.")
-
-        result = torch.sub(self, other)
+        result = self.__add__(-1 * other)
 
         return result
         

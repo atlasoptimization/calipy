@@ -128,12 +128,12 @@ dim_3 = dim_assignment(['dim_3'], dim_sizes = [])
 # c setup
 c_ns = NodeStructure(UnknownParameter)
 c_ns.set_dims(batch_dims = dim_1 + dim_2, param_dims = dim_3)
-c_object = UnknownParameter(c_ns, name = 'c', init_tensor = torch.tensor(0.01))
+c_object = UnknownParameter(c_ns, name = 'c', init_tensor = torch.tensor(0.1))
 
 # i setup
 i_ns = NodeStructure(UnknownParameter)
 i_ns.set_dims(batch_dims = dim_1 + dim_2, param_dims = dim_3)
-i_object = UnknownParameter(i_ns, name = 'i')
+i_object = UnknownParameter(i_ns, name = 'i', init_tensor = torch.tensor(0.1))
 
 
 # iii) Set up the dimensions for noise addition
@@ -198,7 +198,7 @@ demo_probmodel = DemoProbModel()
 
 # i) Set up optimization
 
-adam = pyro.optim.NAdam({"lr": 1})
+adam = pyro.optim.NAdam({"lr": 0.01})
 elbo = pyro.infer.Trace_ELBO()
 n_steps = 1000
 
@@ -214,11 +214,14 @@ optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opt
 
 # iii) Solve via handcrafted equations
 
-# dh_ls = data[0,0] - data[0,1]
-# tan_a_ls = (1/60)*(dh_ls - (data[1,0] - data[1,1]))
-# alpha_ls = torch.atan(tan_a_ls)
-# hI_ls = torch.tensor([[data[0,0] - tan_a_ls * l_A[0]],
-#                       [data[1,0] - tan_a_ls * l_A[1]]])
+# first measurement
+gamma_c_ls = 0.5*(data[0,1] - data[0,0] - torch.pi)
+c_ls = gamma_c_ls * torch.cos(beta_true[0])
+
+# second measurement
+gamma_c_hat = c_ls / torch.cos(beta_true[1])
+gamma_i_ls = 0.5* ( data[1,1] - data[1,0] - torch.pi - 2*gamma_c_hat)
+i_ls = gamma_i_ls/torch.tan(beta_true[1])
 
 
 """
@@ -239,7 +242,7 @@ for param, value in pyro.get_param_store().items():
     print(param, '\n', value)
     
 print('True values \n c : {} \n i : {}'.format(c_true, i_true))
-# print('Values estimated by least squares \n c : {} \n i : {}'.format(c_ls, i_ls))
+print('Values estimated by least squares \n c : {} \n i : {}'.format(c_ls, i_ls))
 
 
 
