@@ -1838,7 +1838,8 @@ class CalipyTensor:
         
         # List compatible function cases
         reduction_fun_list = ['sum', 'mean', 'prod', 'max', 'min']
-        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat', 'tan', 'cos']
+        elementwise_fun_list = ['add', 'mul', 'sub', 'div', 'cat', 'tan', 'cos',
+                                'exp']
         permutation_fun_list = ['permute', 'transpose']
         
         result_shape = result.shape
@@ -2398,6 +2399,11 @@ class CalipyTensor:
         result = self.__add__(-1 * other)
 
         return result
+    
+    def __neg__(self):
+        """Implement unary negation (-self) for CalipyTensor."""
+        return -1*self
+    
         
     def __repr__(self):
         shape = self.shape if not self.is_null else []

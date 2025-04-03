@@ -162,7 +162,7 @@ class CalipyDistribution(CalipyNode):
                 # Sampling and compiling
                 calipy_sample = sample(name, pyro_dist, dims, observations = obs.value,
                                        subsample_index = ssi, vectorizable = vec)
-                return CalipyDict(calipy_sample)
+                return CalipyIO(calipy_sample)
 
         # Set class metadata
         Subclass.__name__ = dist_name

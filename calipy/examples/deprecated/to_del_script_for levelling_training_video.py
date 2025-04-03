@@ -117,6 +117,7 @@ ground_truth_residuals = data_distribution.sample([n_gt]).numpy()
 gt_resid_00 = ground_truth_residuals[:,0,0]
 
 
+
 """
     3. Load and customize effects
 """
