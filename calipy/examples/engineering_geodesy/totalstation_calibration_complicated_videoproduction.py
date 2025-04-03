@@ -106,8 +106,8 @@ Delta_T = T - T0
 Delta_P = P - P0
 
 # Distance drift time
-coeff_time_1 = 0.005
-coeff_time_2 = 5
+coeff_time_1 = 0.01
+coeff_time_2 = 1
 delta_d_t_true = coeff_time_1 * torch.exp(-coeff_time_2*time)
 
 # Distance drift meteo
@@ -197,7 +197,7 @@ i_object = UnknownParameter(i_ns, name = 'i', init_tensor = torch.tensor([0.05])
 coeffs_t_ns = NodeStructure(UnknownParameter)
 coeffs_t_ns.set_dims(batch_dims = dims_sub, param_dims = dim_coeffs)
 coeffs_t_object = UnknownParameter(coeffs_t_ns, name = 'coeffs_t',
-                                   init_tensor = torch.tensor([0.01, 1]))
+                                   init_tensor = torch.tensor([0.1, 1]))
 
 # coeffs meteo-drift
 coeffs_m_ns = NodeStructure(UnknownParameter)
@@ -339,6 +339,8 @@ input_data = {'time': time.unsqueeze(0).unsqueeze(2).unsqueeze(3).repeat([10,1,2
               'approx_phi' : data[:,:,:,1:2],
               'approx_beta' : data[:,:,:,2:3]}
 data_cp = CalipyTensor(data, dims = dim_config + dim_time + dim_face + dim_3d)
+output_data_io = CalipyIO(data_cp)
+input_data_io = CalipyIO(input_data)
 
 # Visualize
 import torchviz
@@ -361,21 +363,58 @@ example_diffs = example_output - data_cp
 
 # i) Set up optimization
 
-adam = pyro.optim.NAdam({"lr": 0.003})
-elbo = pyro.infer.Trace_ELBO()
 n_steps = 300
-n_steps_report = 5
-
-optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps,
-              'n_steps_report' : n_steps_report}
 
 
 # ii) Train the model
 
-# input_data = {'faces' : face, 'beta' : beta_true}
-# data_cp = CalipyTensor(data, dims = dim_config + dim_time + dim_face + dim_3d)
-optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+# Fetch optional arguments
+adam = pyro.optim.NAdam({"lr": 0.003})
+loss = pyro.infer.Trace_ELBO()
+n_steps_report = 10
 
+# Set optimizer and initialize training
+svi = pyro.infer.SVI(demo_probmodel.model, demo_probmodel.guide, adam, loss)
+
+epochs = []
+loss_sequence = []
+param_sequence_d = []
+param_sequence_phi = []
+param_sequence_beta = []
+noisy_obs_sequence = []
+d_resid_images = []
+phi_resid_images = []
+beta_resid_images = []
+# noisy_obs_sequence_many = []
+
+n_simu = 1
+# Handle direct data input case
+for step in range(n_steps):
+    loss = svi.step(input_vars=input_data_io, observations=output_data_io)
+    param_d_val = pyro.get_param_store()['Node_5__param_d'].clone().detach()
+    param_phi_val = pyro.get_param_store()['Node_6__param_phi'].clone().detach()
+    param_beta_val = pyro.get_param_store()['Node_7__param_beta'].clone().detach()
+    
+    sim_vals = demo_probmodel.model(input_data_io).value.tensor.clone().detach()
+    # sim_vals_many = [demo_probmodel.model(input_data_io).value.tensor.clone().detach()[0,0] for k in range(n_simu)]
+    
+    if step % n_steps_report == 0:
+        print(f'epoch: {step} ; loss : {loss}')
+    
+    
+    epochs.append(step)
+    loss_sequence.append(loss)
+    param_sequence_d.append(param_d_val.numpy())
+    param_sequence_phi.append(param_phi_val.numpy())
+    param_sequence_beta.append(param_beta_val.numpy())
+    noisy_obs_sequence.append(sim_vals)
+    
+    resid = sim_vals - data_cp
+    d_resid_images.append(resid[:,:,0,0].tensor.squeeze())
+    phi_resid_images.append(resid[:,:,0,1].tensor.squeeze())
+    beta_resid_images.append(resid[:,:,0,2].tensor.squeeze())
+    # noisy_obs_sequence_many.append(torch.stack(sim_vals_many).numpy())
+    
 
 
 """
@@ -383,12 +422,12 @@ optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opt
 """
 
 
-# i)  Plot loss
+# # i)  Plot loss
 
-plt.figure(1, dpi = 300)
-plt.plot(optim_results)
-plt.title('ELBO loss')
-plt.xlabel('epoch')
+# plt.figure(1, dpi = 300)
+# plt.plot(optim_results)
+# plt.title('ELBO loss')
+# plt.xlabel('epoch')
 
 # ii) Print  parameters
 
@@ -512,3 +551,350 @@ axes[2].set_title('Residuals for estimation of beta')
 
 plt.tight_layout()
 plt.show()
+
+
+
+
+train_data = []
+for k in range(n_steps):
+    train_data.append([epochs[k], 
+                       param_sequence_d[k]- d_true[:,0].numpy(),
+                       param_sequence_phi[k]- phi_true[:,0].numpy(),
+                       param_sequence_beta[k]- beta_true[:,0].numpy(),
+                       loss_sequence[k],
+                       noisy_obs_sequence[k].flatten()])
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+
+
+def make_training_video_no_colorbar(
+    train_data,
+    d_images, phi_images, beta_images,   # each: list of length n_steps, shape (Nconfig, Ntime)
+    n_steps,
+    # X-axis and Y-lims for line plots
+    epoch_xlim=(0, None),
+    elbo_ylim=(None, None),
+    # We won't autoscale these line subplots for d, phi, beta
+    resid_d_ylim=(None, None),
+    resid_phi_ylim=(None, None),
+    resid_beta_ylim=(None, None),
+    # If you want to fix color ranges for images (but no colorbar):
+    d_clim=(-0.1, 0.1),
+    phi_clim=(-0.1, 0.1),
+    beta_clim=(-0.1, 0.1),
+    # Fixed bin edges for each histogram
+    d_bin_edges=None,
+    phi_bin_edges=None,
+    beta_bin_edges=None,
+    output_path="training_sim_grid.gif",
+    fps=3,
+    cmap='viridis'
+):
+    """
+    3×4 grid with arrangement:
+      [0,0] => ELBO (single line)      [0,1] => d param residual (10 lines)   [0,2] => d image    [0,3] => d histogram
+      [1,0] => empty                   [1,1] => phi param residual (10 lines) [1,2] => phi image  [1,3] => phi histogram
+      [2,0] => empty                   [2,1] => beta param residual (10 lines)[2,2] => beta image [2,3] => beta histogram
+
+    - No colorbar
+    - Each param residual subplot has multiple lines (one for each channel).
+    - The images have axis ticks disabled.
+    - The histograms update each frame (they use data from .ravel() of the images, or from separate arrays).
+    - train_data[frame] = [epoch_k, d_k, phi_k, beta_k, elbo_k, ...]
+      where d_k, phi_k, beta_k are shape (10,) if you have 10 channels.
+
+    Modify as needed if you want fewer/more channels.
+    """
+
+    fig, axes = plt.subplots(3, 4, figsize=(12, 7), sharex=False, sharey=False)
+
+    # Layout
+    ax_elbo       = axes[0,0]
+    ax_resid_d    = axes[0,1]
+    ax_img_d      = axes[0,2]
+    ax_hist_d     = axes[0,3]
+
+    ax_empty1     = axes[1,0]
+    ax_resid_phi  = axes[1,1]
+    ax_img_phi    = axes[1,2]
+    ax_hist_phi   = axes[1,3]
+
+    ax_empty2     = axes[2,0]
+    ax_resid_beta = axes[2,1]
+    ax_img_beta   = axes[2,2]
+    ax_hist_beta  = axes[2,3]
+
+    # Hide empty subplots
+    ax_empty1.set_visible(False)
+    ax_empty2.set_visible(False)
+
+    fig.suptitle("3×4 Training Animation", fontsize=14)
+
+    # Titles
+    ax_elbo.set_title("ELBO")
+    ax_resid_d.set_title("Param d residual (10 lines)")
+    ax_resid_phi.set_title("Param φ residual (10 lines)")
+    ax_resid_beta.set_title("Param β residual (10 lines)")
+
+    ax_img_d.set_title("d residual image")
+    ax_img_phi.set_title("φ residual image")
+    ax_img_beta.set_title("β residual image")
+
+    ax_hist_d.set_title("Hist d")
+    ax_hist_phi.set_title("Hist φ")
+    ax_hist_beta.set_title("Hist β")
+    ax_hist_d.set_ylim(0,50)
+    ax_hist_phi.set_ylim(0, 50)
+    ax_hist_beta.set_ylim(0, 50)
+
+    # X-axes for line plots
+    ax_elbo.set_xlabel("Epoch")
+    ax_resid_d.set_xlabel("Epoch")
+    ax_resid_phi.set_xlabel("Epoch")
+    ax_resid_beta.set_xlabel("Epoch")
+
+    # Fix the epoch range if user didn't specify
+    if epoch_xlim[1] is None:
+        epoch_xlim = (epoch_xlim[0], n_steps)
+    ax_elbo.set_xlim(*epoch_xlim)
+    ax_resid_d.set_xlim(*epoch_xlim)
+    ax_resid_phi.set_xlim(*epoch_xlim)
+    ax_resid_beta.set_xlim(*epoch_xlim)
+
+    # Fix y-lims if specified
+    if elbo_ylim != (None, None):
+        ax_elbo.set_ylim(*elbo_ylim)
+    if resid_d_ylim != (None, None):
+        ax_resid_d.set_ylim(*resid_d_ylim)
+    if resid_phi_ylim != (None, None):
+        ax_resid_phi.set_ylim(*resid_phi_ylim)
+    if resid_beta_ylim != (None, None):
+        ax_resid_beta.set_ylim(*resid_beta_ylim)
+
+    # Prepare images (no colorbar)
+    im_d = ax_img_d.imshow(np.zeros_like(d_images[0]), cmap=cmap, aspect='auto',
+                           vmin=d_clim[0], vmax=d_clim[1])
+    im_phi = ax_img_phi.imshow(np.zeros_like(phi_images[0]), cmap=cmap, aspect='auto',
+                               vmin=phi_clim[0], vmax=phi_clim[1])
+    im_beta = ax_img_beta.imshow(np.zeros_like(beta_images[0]), cmap=cmap, aspect='auto',
+                                 vmin=beta_clim[0], vmax=beta_clim[1])
+
+    # Turn off axis ticks for image subplots
+    ax_img_d.axis('off')
+    ax_img_phi.axis('off')
+    ax_img_beta.axis('off')
+
+    # Hist bin edges
+    if d_bin_edges is None:
+        d_bin_edges = np.linspace(0, 1, 21)
+    if phi_bin_edges is None:
+        phi_bin_edges = np.linspace(0, 1, 21)
+    if beta_bin_edges is None:
+        beta_bin_edges = np.linspace(0, 1, 21)
+
+    # Initialize empty hist
+    _, _, patches_d    = ax_hist_d.hist([], bins=d_bin_edges, alpha=0.6, color="blue")
+    _, _, patches_phi  = ax_hist_phi.hist([], bins=phi_bin_edges, alpha=0.6, color="blue")
+    _, _, patches_beta = ax_hist_beta.hist([], bins=beta_bin_edges, alpha=0.6, color="blue")
+
+    # Prepare ELBO single line
+    line_elbo, = ax_elbo.plot([], [], 'b-', lw=2)
+    epoch_vals = []
+    elbo_vals  = []
+
+    # Now we have multiple channels for d, phi, beta. Suppose each is shape (10,).
+    # We'll create 10 lines for each param.
+    num_channels = n_config  # adapt as needed
+
+    # d-lines
+    line_d = []
+    d_vals = [[] for _ in range(num_channels)]  # d_vals[i] = the time series for channel i
+    for i in range(num_channels):
+        linei, = ax_resid_d.plot([], [], lw=1.5, label=f"d[{i}]")
+        line_d.append(linei)
+
+    # phi-lines
+    line_phi = []
+    phi_vals = [[] for _ in range(num_channels)]
+    for i in range(num_channels):
+        linei, = ax_resid_phi.plot([], [], lw=1.5, label=f"phi[{i}]")
+        line_phi.append(linei)
+
+    # beta-lines
+    line_beta = []
+    beta_vals = [[] for _ in range(num_channels)]
+    for i in range(num_channels):
+        linei, = ax_resid_beta.plot([], [], lw=1.5, label=f"beta[{i}]")
+        line_beta.append(linei)
+
+    def init():
+        line_elbo.set_data([], [])
+
+        # Clear the param lines
+        for i in range(num_channels):
+            line_d[i].set_data([], [])
+            line_phi[i].set_data([], [])
+            line_beta[i].set_data([], [])
+
+        # Clear images
+        im_d.set_data(np.zeros_like(d_images[0]))
+        im_phi.set_data(np.zeros_like(phi_images[0]))
+        im_beta.set_data(np.zeros_like(beta_images[0]))
+
+        # Clear hist
+        for p in patches_d:   p.set_height(0)
+        for p in patches_phi: p.set_height(0)
+        for p in patches_beta:p.set_height(0)
+
+        return (
+            line_elbo,
+            *line_d, *line_phi, *line_beta,
+            im_d, im_phi, im_beta,
+            *patches_d, *patches_phi, *patches_beta
+        )
+
+    def update(frame):
+        row = train_data[frame]
+        # row = [epoch_k, d_k, phi_k, beta_k, elbo_k, ...]
+        # each d_k, phi_k, beta_k is shape (10,)
+        epoch_k   = row[0]
+        d_k       = row[1]
+        phi_k     = row[2]
+        beta_k    = row[3]
+        elbo_k    = row[4]
+
+        # single line for elbo
+        epoch_vals.append(epoch_k)
+        elbo_vals.append(elbo_k)
+        line_elbo.set_data(epoch_vals, elbo_vals)
+
+        # multiple lines for d
+        for i in range(num_channels):
+            d_vals[i].append(d_k[i])  # each channel
+            line_d[i].set_data(epoch_vals, d_vals[i])
+
+        # multiple lines for phi
+        for i in range(num_channels):
+            phi_vals[i].append(phi_k[i])
+            line_phi[i].set_data(epoch_vals, phi_vals[i])
+
+        # multiple lines for beta
+        for i in range(num_channels):
+            beta_vals[i].append(beta_k[i])
+            line_beta[i].set_data(epoch_vals, beta_vals[i])
+
+        # Update images
+        im_d.set_data(d_images[frame])
+        im_phi.set_data(phi_images[frame])
+        im_beta.set_data(beta_images[frame])
+
+        # Hist update
+        # If you have separate arrays, plug them in. Here we just use the images' data:
+        d_resid_array   = d_images[frame].ravel()
+        phi_resid_array = phi_images[frame].ravel()
+        beta_resid_array= beta_images[frame].ravel()
+
+        d_counts, _    = np.histogram(d_resid_array, bins=d_bin_edges)
+        phi_counts, _  = np.histogram(phi_resid_array, bins=phi_bin_edges)
+        beta_counts, _ = np.histogram(beta_resid_array, bins=beta_bin_edges)
+
+        for c, p in zip(d_counts, patches_d):
+            p.set_height(c)
+        for c, p in zip(phi_counts, patches_phi):
+            p.set_height(c)
+        for c, p in zip(beta_counts, patches_beta):
+            p.set_height(c)
+
+        return (
+            line_elbo,
+            *line_d, *line_phi, *line_beta,
+            im_d, im_phi, im_beta,
+            *patches_d, *patches_phi, *patches_beta
+        )
+
+    anim = FuncAnimation(
+        fig, update,
+        frames=n_steps,
+        init_func=init,
+        blit=False,
+        interval=200,
+        repeat=False
+    )
+
+    plt.tight_layout()
+    anim.save(output_path, writer="pillow", fps=fps, dpi=150)
+    print(f"Animation saved to {output_path}")
+
+
+make_training_video_no_colorbar(
+    train_data=train_data,
+    d_images=d_resid_images, phi_images=phi_resid_images, beta_images=beta_resid_images,
+    n_steps=n_steps,
+    epoch_xlim=(0, n_steps),   # x-axis for line plots
+    elbo_ylim=(-1e5, 1e6),
+    resid_d_ylim=(-0.01,0.01),
+    resid_phi_ylim=(-0.2,0.2),
+    resid_beta_ylim=(-0.01,0.01),
+    d_clim=(-0.01,0.01),
+    phi_clim=(-0.1,0.1),
+    beta_clim=(-0.01,0.01),
+    d_bin_edges=np.linspace(-0.01,0.01,21),
+    phi_bin_edges=np.linspace(-0.05,0.05,21),
+    beta_bin_edges=np.linspace(-0.01,0.01,21),
+    output_path="training_sim_grid.gif",
+    fps=10
+)
+
+    
+
+
+
+# # -----------------------------------------------------------------
+# # Example usage
+# if __name__ == "__main__":
+#     n_steps = 8
+#     train_data = []
+#     d_images   = []
+#     phi_images = []
+#     beta_images= []
+
+#     for k in range(n_steps):
+#         epoch_k = k
+#         d_k     = 0.01*np.random.randn()
+#         phi_k   = 0.02*np.random.randn()
+#         beta_k  = 0.03*np.random.randn()
+#         elbo_k  = 1000/(k+1)+50*np.random.randn()
+
+#         # store in train_data
+#         train_data.append([epoch_k, d_k, phi_k, beta_k, elbo_k])
+
+#         # images
+#         d_img   = np.random.rand(10, 8)*0.2 + 0.1
+#         phi_img = np.random.rand(10, 8)*0.3 + 0.2
+#         beta_img= np.random.rand(10, 8)*0.1 - 0.05
+
+#         d_images.append(d_img)
+#         phi_images.append(phi_img)
+#         beta_images.append(beta_img)
+
+#     make_training_video_no_colorbar(
+#         train_data=train_data,
+#         d_images=d_images, phi_images=phi_images, beta_images=beta_images,
+#         n_steps=n_steps,
+#         epoch_xlim=(0, n_steps),   # x-axis for line plots
+#         elbo_ylim=(0, 1200),
+#         resid_d_ylim=(-0.1,0.1),
+#         resid_phi_ylim=(-0.2,0.2),
+#         resid_beta_ylim=(-0.3,0.3),
+#         d_clim=(0.0,0.3),
+#         phi_clim=(0.2,0.5),
+#         beta_clim=(-0.05,0.05),
+#         d_bin_edges=np.linspace(0,0.3,21),
+#         phi_bin_edges=np.linspace(0.2,0.5,21),
+#         beta_bin_edges=np.linspace(-0.05,0.05,21),
+#         output_path="training_sim_grid.gif",
+#         fps=2
+#     )
