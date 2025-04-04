@@ -84,7 +84,7 @@ function. All of these subobjects form a probabilistic model that can be sampled
 and conditioned on measured data. For more information, see the separate
 documentation entries the CalipyProbModel class, for the subobjects, or the tutorial.</p>
 <p>The script is meant solely for educational and illustrative purposes. Written by
-Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <p class="rubric">Classes</p>
 <table class="longtable docutils align-default">
 <colgroup>
@@ -96,10 +96,10 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <td><p>The CalipyNode class provides a comprehensive representation of the data  flow and the dependencies between the nodes.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyProbModel</span></code>([type, name, info])</p></td>
-<td><p></p></td>
+<td><p>CalipyProbModel is an abstract base class that integrates the model, guide, and training components  for probabilistic models within the Calipy framework.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeStructure</span></code>(*args, **kwargs)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeStructure</span></code>([node_cls])</p></td>
+<td><p>NodeStructure class is basis for defining batch_shapes, event_shapes, and plate configurations for a CalipyNode object.</p></td>
 </tr>
 </tbody>
 </table>

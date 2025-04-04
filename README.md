@@ -124,40 +124,130 @@ pip install -r requirements.txt
 Below is a toy snippet demonstrating how you might declare a simple **bias-plus-noise model**:
 
 ```python
+
+"""
+    1. Imports and definitions
+"""
+
+# i) Imports
+# base packages
 import torch
 import pyro
-import pyro.distributions as dist
-from calipy.core import CalipyObservation, CalipyProbModel
-from calipy.effects import NoiseAddition, UnknownParameter
+import matplotlib.pyplot as plt
 
-# Suppose we want to model y = mu - theta + noise
+# calipy
+from calipy.core.base import NodeStructure, CalipyProbModel
+from calipy.core.effects import UnknownParameter, NoiseAddition
+from calipy.core.utils import dim_assignment
+from calipy.core.tensor import CalipyTensor
 
-# 1) Create nodes
-theta_node = UnknownParameter(...)   # unknown bias
-noise_node = NoiseAddition(...)      # Gaussian noise?
 
-# 2) Wrap into a ProbModel
-class SimpleBiasProbModel(CalipyProbModel):
-    def model(self, input_vars=None, observations=None):
-        theta = theta_node.forward()
-        # define forward
-        output = noise_node.forward((mu - theta, sigma),
-                                    observations=observations)
+# ii) Definitions
+
+n_meas = 20
+
+
+"""
+    2. Simulate some data
+"""
+
+# i) Set up sample distributions
+mu_true = torch.tensor(0.0)
+sigma_true = torch.tensor(0.1)
+
+
+# ii) Sample from distributions
+data_distribution = pyro.distributions.Normal(mu_true, sigma_true)
+data = data_distribution.sample([n_meas])
+
+
+"""
+    3. Load and customize effects
+"""
+
+# i) Set up dimensions
+batch_dims = dim_assignment(['bd_1'], dim_sizes = [n_meas])
+event_dims = dim_assignment(['ed_1'], dim_sizes = [])
+param_dims = dim_assignment(['pd_1'], dim_sizes = [])
+
+# ii) Set up dimensions for mean parameter mu
+# mu setup
+mu_ns = NodeStructure(UnknownParameter)
+mu_ns.set_dims(batch_dims = batch_dims, param_dims = param_dims,)
+mu_object = UnknownParameter(mu_ns, name = 'mu')
+
+# iii) Set up the dimensions for noise addition
+noise_ns = NodeStructure(NoiseAddition)
+noise_ns.set_dims(batch_dims = batch_dims, event_dims = event_dims)
+noise_object = NoiseAddition(noise_ns, name = 'noise')
+        
+
+"""
+    4. Build the probmodel
+"""
+
+# i) Define the probmodel class 
+class DemoProbModel(CalipyProbModel):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # integrate nodes
+        self.mu_object = mu_object
+        self.noise_object = noise_object 
+        
+    # Define model by forward passing
+    def model(self, input_vars = None, observations = None):
+        mu = self.mu_object.forward()       
+        inputs = {'mean':mu, 'standard_deviation': sigma_true} 
+        output = self.noise_object.forward(input_vars = inputs,
+                                           observations = observations)
         return output
-
-    def guide(self, input_vars=None, observations=None):
-        # optional, if you have latent variables
+    
+    # Define guide (trivial since no posteriors)
+    def guide(self, input_vars = None, observations = None):
         pass
+    
+demo_probmodel = DemoProbModel()
+    
 
-# 3) Acquire or simulate data -> wrap in CalipyObservation
-my_data = torch.randn(10)
+"""
+    5. Perform inference
+"""
 
-# 4) Run inference
-prob_model = SimpleBiasProbModel()
-prob_model.train(my_data)
+# i) Set up optimization
+adam = pyro.optim.NAdam({"lr": 0.01})
+elbo = pyro.infer.Trace_ELBO()
+n_steps = 1000
+
+optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
+
+# ii) Train the model
+input_data = None
+data_cp = CalipyTensor(data, dims = batch_dims + event_dims)
+optim_results = demo_probmodel.train(input_data, data_cp, optim_opts = optim_opts)
+
+
+"""
+    6. Analyse results and illustrate
+"""
+
+# i)  Plot loss
+
+plt.figure(1, dpi = 300)
+plt.plot(optim_results)
+plt.title('ELBO loss')
+plt.xlabel('epoch')
+
+# ii) Print  parameters
+for param, value in pyro.get_param_store().items():
+    print(param, '\n', value)
+    
+print('True values of mu = ', mu_true)
+print('Results of taking empirical means for mu_1 = ', torch.mean(data))
+
+
 ```
 
-This snippet shows how you might define a node-based approach to an unknown parameter \(\theta\) and noise, letting Pyro handle the inference behind the scenes.
+This snippet shows how you might define a node-based approach to an unknown parameter \(\mu\) and noise, letting CaliPy handle the inference behind the scenes.
 
 ---
 
@@ -175,6 +265,7 @@ This snippet shows how you might define a node-based approach to an unknown para
    - Model collimation or trunnion axis misalignments, even under strongly nonlinear geometry or face configurations.  
    - Simple to incorporate discrete “face” variables, e.g. Face I/Face II, in a single forward pass.
 
+These three example were presented at JISDM 2025 in Karlsruhe; documented code can be found in the [examples folder](https://github.com/atlasoptimization/calipy/tree/master/calipy/examples/engineering_geodesy) 
 ---
 
 ## References

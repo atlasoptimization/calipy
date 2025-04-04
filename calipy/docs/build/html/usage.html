@@ -73,7 +73,7 @@ flow and the dependencies between the nodes.</p>
 <h2>Effect classes<a class="headerlink" href="#effect-classes" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="calipy.core.effects.CalipyEffect">
-<em class="property">class </em><code class="sig-prename descclassname">calipy.core.effects.</code><code class="sig-name descname">CalipyEffect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.CalipyEffect" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">calipy.core.effects.</code><code class="sig-name descname">CalipyEffect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">info</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.CalipyEffect" title="Permalink to this definition">¶</a></dt>
 <dd><p>The CalipyEffect class provides a comprehensive representation of a specific 
 effect. It is named, explained, and referenced in the effect description. The
 effect is incorporated as a differentiable function based on torch. This function
@@ -106,24 +106,43 @@ structure (shapes, plate_stacks, plates, aux_data) completely.</p>
 <span class="c1">#</span>
 <span class="c1"># i) Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
 <span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">NoiseAddition</span>
-<span class="n">node_structure</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="o">.</span><span class="n">example_node_structure</span>
-<span class="n">noisy_meas_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
-<span class="c1">#</span>
-<span class="c1"># ii) Sample noise</span>
-<span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
-<span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
-<span class="n">noisy_meas</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
-<span class="c1">#</span>
-<span class="c1"># iii) Investigate object</span>
-<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">dtype_chain</span>
-<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">id</span>
-<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">noise_dist</span>
-<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">node_structure</span><span class="o">.</span><span class="n">description</span>
-<span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">plate_stack</span>
-<span class="n">render_1</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">render</span><span class="p">((</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+
+<span class="c1"># ii) Invoke and investigate class</span>
+<span class="n">help</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">NoiseAddition</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="o">.</span><span class="n">input_vars_schema</span><span class="p">)</span>
+
+<span class="c1"># iii) Instantiate object</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+<span class="n">noise_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+
+<span class="c1"># iv) Create arguments</span>
+<span class="n">noise_dims</span> <span class="o">=</span> <span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;batch_dims&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;event_dims&#39;</span><span class="p">]</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">noise_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="n">noise_dims</span><span class="p">,</span> <span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">noise_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="n">noise_dims</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+<span class="n">noise_input_vars</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="o">.</span><span class="n">create_input_vars</span><span class="p">(</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mu</span><span class="p">,</span> <span class="n">standard_deviation</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
+
+<span class="c1"># v) Pass forward</span>
+<span class="n">noisy_output</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="n">noise_input_vars</span><span class="p">,</span> 
+                                    <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                                    <span class="n">subsample_index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">noisy_output</span>
+<span class="n">noisy_output</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">help</span><span class="p">(</span><span class="n">noisy_output</span><span class="p">)</span>
+
+<span class="c1"># vi) Investigate object further</span>
+<span class="n">noise_object</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">noise_object</span><span class="o">.</span><span class="n">id</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
 <span class="n">render_1</span>
-<span class="n">render_2</span> <span class="o">=</span> <span class="n">noisy_meas_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">((</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">))</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
 <span class="n">render_2</span>
 </pre></div>
 </div>
