@@ -1,8 +1,8 @@
 # The Prosperity Public License Development Draft
 
-Contributor: $name
+Contributor: Dr. Jemil Avers Butt
 
-Source Code: $address
+Source Code: [https://github.com/atlasoptimization/calipy](https://github.com/atlasoptimization/calipy)
 
 ## Purpose
 

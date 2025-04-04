@@ -126,13 +126,6 @@ Below is a toy snippet demonstrating how you might declare a simple **bias-plus-
 ### Quickstart Example with Calipy
 
 ```python
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr  4 21:20:20 2025
-
-@author: jemil
-"""
 import pyro
 import matplotlib.pyplot as plt
 
