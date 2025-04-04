@@ -126,7 +126,14 @@ Below is a toy snippet demonstrating how you might declare a simple **bias-plus-
 ### Quickstart Example with Calipy
 
 ```python
-import torch, pyro
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Apr  4 21:20:20 2025
+
+@author: jemil
+"""
+import pyro
 import matplotlib.pyplot as plt
 
 from calipy.core.base import NodeStructure, CalipyProbModel
@@ -140,24 +147,29 @@ mu_true, sigma_true = 0.0, 0.1
 data = pyro.distributions.Normal(mu_true, sigma_true).sample([n_meas])
 
 # Define dimensions
-dims = dim_assignment(['batch'], [n_meas])
+batch_dims = dim_assignment(['batch'], [n_meas])
+single_dims = dim_assignment(['single'], [])
 
 # Set up model nodes
-mu_node = UnknownParameter(NodeStructure(UnknownParameter, batch_dims=dims), name='mu')
-noise_node = NoiseAddition(NodeStructure(NoiseAddition, batch_dims=dims), name='noise')
+mu_ns = NodeStructure(UnknownParameter)
+mu_ns.set_dims(batch_dims=batch_dims, param_dims = single_dims)
+mu_node = UnknownParameter(mu_ns, name='mu')
+noise_ns = NodeStructure(NoiseAddition)
+noise_ns.set_dims(batch_dims=batch_dims, event_dims = single_dims)
+noise_node = NoiseAddition(noise_ns, name='noise')
 
 # Define probabilistic model
 class DemoProbModel(CalipyProbModel):
-    def model(self, observations=None):
+    def model(self, input_vars = None, observations=None):
         mu = mu_node.forward()
         return noise_node.forward({'mean': mu, 'standard_deviation': sigma_true}, observations)
 
-    def guide(self, observations=None):
+    def guide(self, input_vars = None, observations=None):
         pass
 
 # Train model
 demo_probmodel = DemoProbModel()
-data_cp = CalipyTensor(data, dims=dims)
+data_cp = CalipyTensor(data, dims=batch_dims)
 optim_results = demo_probmodel.train(None, data_cp, optim_opts={
     'optimizer': pyro.optim.NAdam({"lr": 0.01}),
     'loss': pyro.infer.Trace_ELBO(),
@@ -177,6 +189,8 @@ This snippet shows how you might define a node-based approach to an unknown para
 
 ## Use Cases
 
+The following three example were presented at JISDM 2025 in Karlsruhe; documented code can be found in the [examples folder](https://github.com/atlasoptimization/calipy/tree/master/calipy/examples/engineering_geodesy) 
+
 1. **Tape Bias Estimation**  
    - Classic scenario: measure a known rod length with a tape that has an unknown offset \(\theta\).  
    - Equivalent to linear maximum-likelihood in simplest form, but easily extended in CaliPy for more complex error structures or prior knowledge.
@@ -189,7 +203,6 @@ This snippet shows how you might define a node-based approach to an unknown para
    - Model collimation or trunnion axis misalignments, even under strongly nonlinear geometry or face configurations.  
    - Simple to incorporate discrete “face” variables, e.g. Face I/Face II, in a single forward pass.
 
-These three example were presented at JISDM 2025 in Karlsruhe; documented code can be found in the [examples folder](https://github.com/atlasoptimization/calipy/tree/master/calipy/examples/engineering_geodesy) 
 ---
 
 ## References

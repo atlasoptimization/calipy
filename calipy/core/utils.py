@@ -16,8 +16,8 @@ import torch
 import pyro
 import fnmatch
 import contextlib
-import networkx as nx
-import matplotlib.pyplot as plt
+# import networkx as nx
+# import matplotlib.pyplot as plt
 import copy
 import re
 from functorch.dim import dims

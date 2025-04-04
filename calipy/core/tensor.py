@@ -31,7 +31,6 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 import torch
-import numpy
 import math
 import pandas as pd
 import warnings
