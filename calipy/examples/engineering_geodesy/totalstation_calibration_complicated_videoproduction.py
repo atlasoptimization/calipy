@@ -363,7 +363,7 @@ example_diffs = example_output - data_cp
 
 # i) Set up optimization
 
-n_steps = 300
+n_steps = 350
 
 
 # ii) Train the model
@@ -845,7 +845,7 @@ make_training_video_no_colorbar(
     phi_bin_edges=np.linspace(-0.05,0.05,21),
     beta_bin_edges=np.linspace(-0.01,0.01,21),
     output_path="training_sim_grid.gif",
-    fps=10
+    fps=15
 )
 
     
