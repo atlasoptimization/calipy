@@ -25,6 +25,8 @@ author = 'Dr. Jemil Avers Butt, Atlas optimization GmbH / ETH Zurich'
 release = '0.5'
 
 
+
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -46,11 +48,23 @@ mermaid_output_format = "raw"          # keep it interactive
 mermaid_version        = "10.8.0"      # any version available on unpkg
 mermaid_init_js        = "mermaid.initialize({startOnLoad:true});"
 
-
 # Parse *.rst with the ReST parser and *.md with MyST
 source_suffix = {
     '.rst': 'restructuredtext',
     '.md' : 'myst',      
+}
+
+# -- Enable rendering math with mathjax--------------------------------
+myst_enable_extensions = [
+    "dollarmath",     # enables $...$ and $$...$$ LaTeX support
+    "amsmath",        # enables .. math:: blocks (optional)
+]
+
+mathjax3_config = {
+    "tex": {
+        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+        "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
+    }
 }
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -68,10 +82,12 @@ exclude_patterns = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = 'bizstyle'
+
+#html_theme = 'bizstyle'
+html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['custom.css']

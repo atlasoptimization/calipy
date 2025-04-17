@@ -14,6 +14,7 @@ when some functions / classes not clickable: include their name in "usage", then
 pip install -U "jinja2>=2.11"
 pip install -U "sphinx>=5.0"
 pip install --upgrade sphinxcontrib-mermaid
+pip install sphinx_rtd_theme
 
 for markdown files to be parsed also, install and enable myst-parser
 pip install "myst-parser<3"

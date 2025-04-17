@@ -819,8 +819,8 @@ class CalipyIO:
           - A single item => store under a default key '__single__'
     :type data: None, or dict, or CalipyDict, or DataTuple, or single object.
     
-    :return: An instance of CalipyDict
-    :rtype: CalipyDict
+    :return: An instance of CalipyIO
+    :rtype: CalipyIO
 
     Example usage:
 

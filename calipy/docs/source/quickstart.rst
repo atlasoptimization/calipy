@@ -22,7 +22,7 @@ A tiny probabilistic model
 .. literalinclude:: ../../examples/calipy_demo_0.py
    :language: python
    :caption: *bias_plus_noise.py* – minimal runnable demo
-   :emphasize-lines: 33, 36, 38-45, 50
+#   :emphasize-lines: 33, 36, 38-45, 50
 
 Expected output
 ---------------

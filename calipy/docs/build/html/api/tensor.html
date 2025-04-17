@@ -1,56 +1,147 @@
 
 
-<!doctype html>
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>calipy.core.tensor (API) &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=92fd9be5" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
 
-    <title>calipy.core.tensor (API) &#8212; calipy 0.5 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
-    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
-    
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
-    <script src="../_static/bizstyle.js"></script>
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="calipy.core.data (API)" href="data.html" />
-    <link rel="prev" title="calipy.core.effects (API)" href="effects.html" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <!--[if lt IE 9]>
-    <script src="_static/css3-mediaqueries.js"></script>
-    <![endif]-->
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="data.html" title="calipy.core.data (API)"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="effects.html" title="calipy.core.effects (API)"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">calipy.core.tensor  (API)</a></li> 
-      </ul>
-    </div>  
+    <link rel="prev" title="calipy.core.utils" href="generated/calipy.core.utils.html" /> 
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">CaliPy API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">calipy.core  (overview)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.core.tensor  (API)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex"><code class="docutils literal notranslate"><span class="pre">CalipyIndex</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.bound_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.bound_dims</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.expand_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.expand_to_dims()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.generate_index_name_dict"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.generate_index_name_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_empty"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_empty</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_null</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_reducible"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_reducible()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.null"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.null()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.reduce_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.reduce_to_dims()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_indextensor_to_tuple"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_indextensor_to_tuple()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_slice_to_indextensor"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_slice_to_indextensor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_tuple_to_indextensor"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_tuple_to_indextensor()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor"><code class="docutils literal notranslate"><span class="pre">CalipyTensor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.T"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.T</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.expand_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.expand_to_dims()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.flatten"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.flatten()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.get_element"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.get_element()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.is_null</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.reorder"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.reorder()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.IOIndexer"><code class="docutils literal notranslate"><span class="pre">IOIndexer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.IOIndexer.create_global_index"><code class="docutils literal notranslate"><span class="pre">IOIndexer.create_global_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.IOIndexer.create_local_index"><code class="docutils literal notranslate"><span class="pre">IOIndexer.create_local_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.IOIndexer.simple_subsample"><code class="docutils literal notranslate"><span class="pre">IOIndexer.simple_subsample()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer"><code class="docutils literal notranslate"><span class="pre">TensorIndexer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.block_subsample"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.block_subsample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_block_subsample_indices"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_block_subsample_indices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_global_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_global_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_local_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_local_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_simple_subsample_indices"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_simple_subsample_indices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.expand_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.expand_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.reorder"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.reorder()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.simple_subsample"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.simple_subsample()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.broadcast_dims"><code class="docutils literal notranslate"><span class="pre">broadcast_dims()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.build_dim_supersequence"><code class="docutils literal notranslate"><span class="pre">build_dim_supersequence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.core.tensor.preprocess_args"><code class="docutils literal notranslate"><span class="pre">preprocess_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.core.data  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.core.effects  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dist.html">calipy.core.dist.distributions  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="funs.html">calipy.core.funs  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="primitives.html">calipy.core.primitives  (API)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/bias_estimation.html">Bias Estimation (Mean Estimation)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">CaliPy API Reference</a></li>
+      <li class="breadcrumb-item active">calipy.core.tensor  (API)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/tensor.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="module-calipy.core.tensor">
-<span id="calipy-core-tensor-api"></span><span id="api-tensor"></span><h1>calipy.core.tensor  (API)<a class="headerlink" href="#module-calipy.core.tensor" title="Permalink to this heading">¶</a></h1>
+<span id="calipy-core-tensor-api"></span><span id="api-tensor"></span><h1>calipy.core.tensor  (API)<a class="headerlink" href="#module-calipy.core.tensor" title="Permalink to this heading"></a></h1>
 <p>This module provides basic dimension aware tensor functionality needed for 
 subsampling, indexing, attaching dimensions to tensors and other quality of
 life features that allow tensors to keep and communicate extra structure.</p>
@@ -77,7 +168,7 @@ that need to implement subsampling (like sampling or calling parameters.)</p>
 Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyIndex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_tensor_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyIndex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_tensor_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class acting as a collection of infos on a specific index tensor collecting
 basic index_tensor, index_tensor_tuple, and index_tensor_named. This class
@@ -89,13 +180,13 @@ represents a specific index tensor.</p>
 </ul>
 <dl class="py property">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.bound_dims">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bound_dims</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.bound_dims" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bound_dims</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.bound_dims" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the dims of ssi bound to the current actual sizes</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.expand_to_dims">
-<span class="sig-name descname"><span class="pre">expand_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.expand_to_dims" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">expand_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.expand_to_dims" title="Permalink to this definition"></a></dt>
 <dd><p>Expand the current index to include additional dimensions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -112,7 +203,7 @@ represents a specific index tensor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.generate_index_name_dict">
-<span class="sig-name descname"><span class="pre">generate_index_name_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.generate_index_name_dict" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generate_index_name_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.generate_index_name_dict" title="Permalink to this definition"></a></dt>
 <dd><p>Generate a dictionary that maps indices to unique names.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -126,7 +217,7 @@ represents a specific index tensor.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.is_empty">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_empty</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_empty" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_empty</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_empty" title="Permalink to this definition"></a></dt>
 <dd><p>Indicates if no indexing is actually performed because e.g. indexed
 quantity is a scalar and does not have dims. is_empty is passed to the 
 CalipyTensor __getitem__ method to check if the full tensor is to be 
@@ -135,14 +226,14 @@ returned.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.is_null">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_null" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_null" title="Permalink to this definition"></a></dt>
 <dd><p>Indicates if the Index is null and will not perform any subsampling
 just returning the orginal tensor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.is_reducible">
-<span class="sig-name descname"><span class="pre">is_reducible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_keep</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_reducible" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">is_reducible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_keep</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.is_reducible" title="Permalink to this definition"></a></dt>
 <dd><p>Determine if the index is reducible to the specified dimensions without loss.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -156,13 +247,13 @@ just returning the orginal tensor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.null">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">null</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.null" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">null</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.null" title="Permalink to this definition"></a></dt>
 <dd><p>Construct a null index object.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndex.reduce_to_dims">
-<span class="sig-name descname"><span class="pre">reduce_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_keep</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.reduce_to_dims" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reduce_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_keep</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndex.reduce_to_dims" title="Permalink to this definition"></a></dt>
 <dd><p>Reduce the current index to cover some subset of dimensions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -178,7 +269,7 @@ just returning the orginal tensor</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndexer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class of an Indexer that implements methods for assigning dimensions
 to specific slices of e.g. tensors or distributions. The methods and attributes
@@ -188,7 +279,7 @@ batching, name generation etc are conretized. See those classes for examples
 and specific implementation details.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndexer.convert_indextensor_to_tuple">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_indextensor_to_tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indextensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_indextensor_to_tuple" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_indextensor_to_tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indextensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_indextensor_to_tuple" title="Permalink to this definition"></a></dt>
 <dd><p>Converts an indextensor to an indextuple so that their actions for indexing
 are equivalent in the sense that indexed tensor has entries from tensor indexed
 by indextensor values: tensor[indextuple]  = tensor[indextensor.unbind(-1)].</p>
@@ -205,7 +296,7 @@ in tensor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndexer.convert_slice_to_indextensor">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_slice_to_indextensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexslice_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_slice_to_indextensor" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_slice_to_indextensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexslice_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_slice_to_indextensor" title="Permalink to this definition"></a></dt>
 <dd><p>Converts an indexslice_list to an indextensor so that their actions for indexing
 are equivalent in the sense that sliced tensor has entries from tensor indexed
 by indextensor values: tensor[indexslice_list]  = tensor[indextensor.unbind(-1)].</p>
@@ -222,7 +313,7 @@ in tensor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyIndexer.convert_tuple_to_indextensor">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_tuple_to_indextensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indextuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_tuple_to_indextensor" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convert_tuple_to_indextensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indextuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyIndexer.convert_tuple_to_indextensor" title="Permalink to this definition"></a></dt>
 <dd><p>Converts an indexstuple to an indextensor so that their actions for indexing
 are equivalent in the sense that indexed tensor has entries from tensor indexed
 by indextensor values: tensor[indextuple]  = tensor[indextensor.unbind(-1)].</p>
@@ -241,7 +332,7 @@ in tensor</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tensor_noname'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">CalipyTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tensor_noname'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class that wraps torch.Tensor objects and augments them with indexing operations
 and dimension upkeep functionality, while referring most torch functions to
@@ -262,7 +353,7 @@ tensor with new dims.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>tensor</strong> (<em>torch.Tensor</em>) – The tensor which should be embedded into CalipyTensor</p></li>
-<li><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple containing the dimensions of the tensor or None</p></li>
+<li><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple containing the dimensions of the tensor or None</p></li>
 <li><p><strong>name</strong> (<em>string</em>) – A name for the CalipyTensor, useful for keeping track of derived CalipyTensor’s.
 Default is None.</p></li>
 </ul>
@@ -272,7 +363,7 @@ Default is None.</p></li>
 upkeep, indexing, and function call referral.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -459,25 +550,25 @@ upkeep, indexing, and function call referral.</p>
 </div>
 <dl class="py property">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.T">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">T</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.T" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">T</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.T" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.expand_to_dims">
-<span class="sig-name descname"><span class="pre">expand_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.expand_to_dims" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">expand_to_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.expand_to_dims" title="Permalink to this definition"></a></dt>
 <dd><p>Expands the current CalipyTensor to another CalipyTensor with dims
 specified in argument dims. Returns a CalipyTensor with dims dims that
 consists of copies of self where expansion is necessary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple instance that contains the dims of the current
+<dd class="field-odd"><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple instance that contains the dims of the current
 CalipyTensor and prescribes the dims of the expanded CalipyTensor</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An instance of CalipyTensor expanded to match dims.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -498,7 +589,7 @@ CalipyTensor and prescribes the dims of the expanded CalipyTensor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.flatten">
-<span class="sig-name descname"><span class="pre">flatten</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_flatten</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_flat_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'flat_dim'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.flatten" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">flatten</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_to_flatten</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_flat_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'flat_dim'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.flatten" title="Permalink to this definition"></a></dt>
 <dd><p>Flattens the current CalipyTensor to another CalipyTensor by collapsing
 the dims dims_to_flatten towards a new dim with name name_dim_flat.
 Procedure consists of reordering followed by reshaping and repackaging
@@ -506,7 +597,7 @@ into a new CalipyTensor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dims_to_flatten</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple instance that contains some dims of 
+<li><p><strong>dims_to_flatten</strong> (<em>DimTuple</em>) – A DimTuple instance that contains some dims of 
 the current CalipyTensor that are to be flattened.</p></li>
 <li><p><strong>name_flat_dim</strong> – A string providing the name of the flattened dim 
 that will replace the collapsed dims.</p></li>
@@ -516,7 +607,7 @@ that will replace the collapsed dims.</p></li>
 <dd class="field-even"><p>An instance of CalipyTensor reordered to match dims.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -540,13 +631,13 @@ that will replace the collapsed dims.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.get_element">
-<span class="sig-name descname"><span class="pre">get_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.get_element" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.get_element" title="Permalink to this definition"></a></dt>
 <dd><p>Access the tensor at positions indices in dims dims of self and return it.
 Returns a CalipyTensor with the same dims as self.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple instance that represents the dims in which indexing
+<li><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple instance that represents the dims in which indexing
 should be performed</p></li>
 <li><p><strong>indices</strong> (<em>list</em><em> of </em><em>int</em>) – A list containing integers providing where to access 
 the corresponding dimensions. match between dims and indices is done
@@ -585,26 +676,26 @@ via ordering</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.is_null">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.is_null" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.is_null" title="Permalink to this definition"></a></dt>
 <dd><p>Indicates if the Index is null and will not perform any subsampling
 just returning the orginal tensor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.CalipyTensor.reorder">
-<span class="sig-name descname"><span class="pre">reorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.reorder" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.CalipyTensor.reorder" title="Permalink to this definition"></a></dt>
 <dd><p>Reorders the current CalipyTensor to another CalipyTensor with dims
 ordered as specified in argument dims.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple instance that contains the dims of the current
+<dd class="field-odd"><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple instance that contains the dims of the current
 CalipyTensor and prescribes the dims of the reordered CalipyTensor</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An instance of CalipyTensor reordered to match dims.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -627,8 +718,8 @@ CalipyTensor and prescribes the dims of the reordered CalipyTensor</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="calipy.core.tensor.IOIndexer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">IOIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_io</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyIndexer" title="calipy.core.tensor.CalipyIndexer"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">IOIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_io</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#calipy.core.tensor.CalipyIndexer" title="calipy.core.tensor.CalipyIndexer"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a></p>
 <p>Class to handle indexing operations for CalipyIO objects, including creating
 local and global indices, managing subsampling, and generating named dictionaries
 for indexing purposes. Takes as input a CalipyIO object and a DimTuple object
@@ -638,8 +729,8 @@ Indexing is performed over the calipy_list elements.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>calipy_io</strong> (<a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a>) – The CalipyIO object for which the indexer is to be constructed</p></li>
-<li><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple containing the dimensions of the tensor</p></li>
+<li><p><strong>calipy_io</strong> (<a class="reference internal" href="data.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a>) – The CalipyIO object for which the indexer is to be constructed</p></li>
+<li><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple containing the dimensions of the tensor</p></li>
 <li><p><strong>name</strong> (<em>string</em>) – A name for the indexer, useful for keeping track of subservient indexers.
 Default is None.</p></li>
 </ul>
@@ -649,7 +740,7 @@ Default is None.</p></li>
 input tensor including subbatching, naming, index tensors.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.TensorIndexer" title="calipy.core.tensor.TensorIndexer">TensorIndexer</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.TensorIndexer" title="calipy.core.tensor.TensorIndexer">TensorIndexer</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -660,7 +751,7 @@ input tensor including subbatching, naming, index tensors.</p>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.IOIndexer.create_global_index">
-<span class="sig-name descname"><span class="pre">create_global_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsample_indextensor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.create_global_index" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_global_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsample_indextensor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.create_global_index" title="Permalink to this definition"></a></dt>
 <dd><p>Create a global CalipyIndex object enumerating all possible indices for all the dims. The
 indices global_index_tensor are chosen such that they can be used to access the data
 in data_source with name data_source_name via self.tensor  = data_source[global_index_tensor_tuple]</p>
@@ -682,7 +773,7 @@ sampled from.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.IOIndexer.create_local_index">
-<span class="sig-name descname"><span class="pre">create_local_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.create_local_index" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_local_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.create_local_index" title="Permalink to this definition"></a></dt>
 <dd><p>Create a local index tensor enumerating all indices for the list calipy_list
 inside of the CalipyIO object.</p>
 <dl class="field-list simple">
@@ -695,7 +786,7 @@ representing all list indices.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.IOIndexer.simple_subsample">
-<span class="sig-name descname"><span class="pre">simple_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.simple_subsample" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">simple_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.IOIndexer.simple_subsample" title="Permalink to this definition"></a></dt>
 <dd><p>Generate indices for subbatching across a single batch dimension and 
 extract the subbatches.</p>
 <dl class="field-list simple">
@@ -716,8 +807,8 @@ subbatching happens.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">TensorIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyIndexer" title="calipy.core.tensor.CalipyIndexer"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">TensorIndexer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#calipy.core.tensor.CalipyIndexer" title="calipy.core.tensor.CalipyIndexer"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a></p>
 <p>Class to handle indexing operations for observations, including creating local
 and global indices, managing subsampling, and generating named dictionaries
 for indexing purposes. Takes as input a tensor and a DimTuple object and creates
@@ -727,7 +818,7 @@ order the tensor and similar other support functionality.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>tensor</strong> (<em>torch.Tensor</em>) – The tensor for which the indexer is to be constructed</p></li>
-<li><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple containing the dimensions of the tensor</p></li>
+<li><p><strong>dims</strong> (<em>DimTuple</em>) – A DimTuple containing the dimensions of the tensor</p></li>
 <li><p><strong>name</strong> (<em>string</em>) – A name for the indexer, useful for keeping track of subservient indexers.
 Default is None.</p></li>
 </ul>
@@ -737,7 +828,7 @@ Default is None.</p></li>
 input tensor including subbatching, naming, index tensors.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.TensorIndexer" title="calipy.core.tensor.TensorIndexer">TensorIndexer</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#calipy.core.tensor.TensorIndexer" title="calipy.core.tensor.TensorIndexer">TensorIndexer</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -928,7 +1019,7 @@ input tensor including subbatching, naming, index tensors.</p>
 </div>
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.block_subsample">
-<span class="sig-name descname"><span class="pre">block_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.block_subsample" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">block_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.block_subsample" title="Permalink to this definition"></a></dt>
 <dd><p>Generate indices for block subbatching across multiple batch dimensions
 and extract the subbatches.</p>
 <dl class="field-list simple">
@@ -946,7 +1037,7 @@ and extract the subbatches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.create_block_subsample_indices">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_block_subsample_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_block_subsample_indices" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_block_subsample_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor_shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_sizes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_block_subsample_indices" title="Permalink to this definition"></a></dt>
 <dd><p>Create a CalipyIndex that indexes only the specified batch_dims.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -964,7 +1055,7 @@ and extract the subbatches.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.create_global_index">
-<span class="sig-name descname"><span class="pre">create_global_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsample_indextensor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_global_index" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_global_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subsample_indextensor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_global_index" title="Permalink to this definition"></a></dt>
 <dd><p>Create a global CalipyIndex object enumerating all possible indices for all the dims. The
 indices global_index_tensor are chosen such that they can be used to access the data
 in data_source with name data_source_name via self.tensor  = data_source[global_index_tensor_tuple]</p>
@@ -986,7 +1077,7 @@ sampled from.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.create_local_index">
-<span class="sig-name descname"><span class="pre">create_local_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_local_index" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create_local_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_local_index" title="Permalink to this definition"></a></dt>
 <dd><p>Create a local index tensor enumerating all possible indices for all the dims.
 The indices local_index_tensor are chosen such that they can be used for 
 indexing the tensor via value = tensor[i,j,k] = tensor[local_index_tensor[i,j,k,:]],
@@ -1003,7 +1094,7 @@ local_index.tuple: index_tensor split into tuple for straightforward indexing</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.create_simple_subsample_indices">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_simple_subsample_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_dim_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_simple_subsample_indices" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_simple_subsample_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_dim_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.create_simple_subsample_indices" title="Permalink to this definition"></a></dt>
 <dd><p>Create a CalipyIndex that indexes only the specified singular batch_dim.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1022,7 +1113,7 @@ subbatching happens.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.expand_index">
-<span class="sig-name descname"><span class="pre">expand_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_reduced</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.expand_index" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">expand_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index_reduced</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.expand_index" title="Permalink to this definition"></a></dt>
 <dd><p>Expand the CalipyIndex index_reduced to align with the dimensions self.dims
 of the current tensor self.tensor.</p>
 <dl class="field-list simple">
@@ -1038,7 +1129,7 @@ dims of the current tensor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.reorder">
-<span class="sig-name descname"><span class="pre">reorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order_dimtuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.reorder" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">reorder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order_dimtuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.reorder" title="Permalink to this definition"></a></dt>
 <dd><p>Generate out of self.tensor a new tensor that is reordered to align with
 the order given in the order_dimtuple DimTuple object.</p>
 <dl class="field-list simple">
@@ -1054,7 +1145,7 @@ permutation and index binding of the produced tensor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="calipy.core.tensor.TensorIndexer.simple_subsample">
-<span class="sig-name descname"><span class="pre">simple_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.simple_subsample" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">simple_subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.TensorIndexer.simple_subsample" title="Permalink to this definition"></a></dt>
 <dd><p>Generate indices for subbatching across a single batch dimension and 
 extract the subbatches.</p>
 <dl class="field-list simple">
@@ -1075,7 +1166,7 @@ subbatching happens.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="calipy.core.tensor.broadcast_dims">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">broadcast_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.broadcast_dims" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">broadcast_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims_2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.broadcast_dims" title="Permalink to this definition"></a></dt>
 <dd><p>Check if DimTuples <code class="docutils literal notranslate"><span class="pre">dims_1</span></code> and <code class="docutils literal notranslate"><span class="pre">dims_2</span></code> can be broadcasted together and,
 if so, produces a new DimTuple that employs PyTorch’s broadcasting logic on
 extended dims. Unlike a simple right-to-left alignment, this version explicitly
@@ -1100,15 +1191,15 @@ dimension names from the supersequence.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dims_1</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a><em> or </em><em>None</em>) – The first DimTuple to broadcast, or None/empty to indicate no dims.</p></li>
-<li><p><strong>dims_2</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a><em> or </em><em>None</em>) – The second DimTuple to broadcast, or None/empty to indicate no dims.</p></li>
+<li><p><strong>dims_1</strong> (<em>DimTuple</em><em> or </em><em>None</em>) – The first DimTuple to broadcast, or None/empty to indicate no dims.</p></li>
+<li><p><strong>dims_2</strong> (<em>DimTuple</em><em> or </em><em>None</em>) – The second DimTuple to broadcast, or None/empty to indicate no dims.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A DimTuple reflecting the broadcasted shape if compatible, otherwise None.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple">DimTuple</a> or None</p>
+<dd class="field-odd"><p>DimTuple or None</p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -1128,7 +1219,7 @@ dimension names from the supersequence.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="calipy.core.tensor.build_dim_supersequence">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">build_dim_supersequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.build_dim_supersequence" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">build_dim_supersequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.build_dim_supersequence" title="Permalink to this definition"></a></dt>
 <dd><p>Builds a minimal supersequence of dimension names that contains seq1 and seq2
 as subsequences in the same relative order. Names that appear in both sequences
 are placed (and unified) only once, if they appear in a non-contradictory order.</p>
@@ -1179,7 +1270,7 @@ in order, unifying repeated names.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="calipy.core.tensor.preprocess_args">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">preprocess_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.preprocess_args" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">calipy.core.tensor.</span></span><span class="sig-name descname"><span class="pre">preprocess_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.tensor.preprocess_args" title="Permalink to this definition"></a></dt>
 <dd><p>Recursively preprocesses and unwraps input arguments and keyword arguments
 by replacing any nested CalipyTensor objects with their underlying torch.Tensor 
 instances. Supports arbitrary nesting including dictionaries, lists, tuples, and sets.</p>
@@ -1232,120 +1323,34 @@ with all CalipyTensor instances replaced by torch.Tensor objects.</p>
 </section>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="../index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">calipy.core.tensor  (API)</a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex"><code class="docutils literal notranslate"><span class="pre">CalipyIndex</span></code></a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.bound_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.bound_dims</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.expand_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.expand_to_dims()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.generate_index_name_dict"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.generate_index_name_dict()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_empty"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_empty</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_null</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.is_reducible"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.is_reducible()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.null"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.null()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndex.reduce_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyIndex.reduce_to_dims()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer</span></code></a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_indextensor_to_tuple"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_indextensor_to_tuple()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_slice_to_indextensor"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_slice_to_indextensor()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyIndexer.convert_tuple_to_indextensor"><code class="docutils literal notranslate"><span class="pre">CalipyIndexer.convert_tuple_to_indextensor()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor"><code class="docutils literal notranslate"><span class="pre">CalipyTensor</span></code></a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.T"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.T</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.expand_to_dims"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.expand_to_dims()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.flatten"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.flatten()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.get_element"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.get_element()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.is_null</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.CalipyTensor.reorder"><code class="docutils literal notranslate"><span class="pre">CalipyTensor.reorder()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#calipy.core.tensor.IOIndexer"><code class="docutils literal notranslate"><span class="pre">IOIndexer</span></code></a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.IOIndexer.create_global_index"><code class="docutils literal notranslate"><span class="pre">IOIndexer.create_global_index()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.IOIndexer.create_local_index"><code class="docutils literal notranslate"><span class="pre">IOIndexer.create_local_index()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.IOIndexer.simple_subsample"><code class="docutils literal notranslate"><span class="pre">IOIndexer.simple_subsample()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer"><code class="docutils literal notranslate"><span class="pre">TensorIndexer</span></code></a><ul>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.block_subsample"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.block_subsample()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_block_subsample_indices"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_block_subsample_indices()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_global_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_global_index()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_local_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_local_index()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.create_simple_subsample_indices"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.create_simple_subsample_indices()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.expand_index"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.expand_index()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.reorder"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.reorder()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.TensorIndexer.simple_subsample"><code class="docutils literal notranslate"><span class="pre">TensorIndexer.simple_subsample()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#calipy.core.tensor.broadcast_dims"><code class="docutils literal notranslate"><span class="pre">broadcast_dims()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.build_dim_supersequence"><code class="docutils literal notranslate"><span class="pre">build_dim_supersequence()</span></code></a></li>
-<li><a class="reference internal" href="#calipy.core.tensor.preprocess_args"><code class="docutils literal notranslate"><span class="pre">preprocess_args()</span></code></a></li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="generated/calipy.core.utils.html" class="btn btn-neutral float-left" title="calipy.core.utils" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data.html" class="btn btn-neutral float-right" title="calipy.core.data (API)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Dr. Jemil Avers Butt.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="effects.html"
-                          title="previous chapter">calipy.core.effects  (API)</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="data.html"
-                          title="next chapter">calipy.core.data  (API)</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/api/tensor.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="data.html" title="calipy.core.data (API)"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="effects.html" title="calipy.core.effects (API)"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">calipy.core.tensor  (API)</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-    &#169; Copyright 2024, Dr. Jemil Avers Butt.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

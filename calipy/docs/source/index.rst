@@ -41,17 +41,10 @@ API Reference
 -------------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: API Reference
 
-   api/base
-   api/effects
-   api/utils
-   api/tensor
-   api/data
-   api/dist
-   api/funs
-   api/primitives
+   api/index
 
 Examples
 --------
@@ -61,8 +54,7 @@ Examples
    :caption: Examples
 
    examples/bias_estimation
-   examples/two_peg_test
-   examples/axis_errors
+
 
 
 Indices and Tables
