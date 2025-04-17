@@ -1,0 +1,160 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.utils &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.utils</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-calipy.core.utils">
+<span id="calipy-core-utils"></span><h1>calipy.core.utils<a class="headerlink" href="#module-calipy.core.utils" title="Permalink to this heading">¶</a></h1>
+<p>This module provides support functionality related to logging, data organization,
+preprocessing and other functions not directly related to calipy core domains.</p>
+<dl class="simple">
+<dt>The classes are</dt><dd><dl class="simple">
+<dt>CalipyRegistry: Dictionary type class that is used for tracking identity</dt><dd><p>and uniqueness of objects created during a run and outputs warnings.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.check_schema" title="calipy.core.utils.check_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_schema</span></code></a>(calipy_dict_obj[, ...])</p></td>
+<td><p>Example schema validation function:</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">context_plate_stack</span></code>(plate_stack)</p></td>
+<td><p>Context manager to handle multiple nested pyro.plate contexts.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.dim_assignment" title="calipy.core.utils.dim_assignment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dim_assignment</span></code></a>(dim_names[, dim_sizes, ...])</p></td>
+<td><p>dim_assignment dynamically assigns dimension objects to names and returns them as a DimTuple.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.ensure_tuple" title="calipy.core.utils.ensure_tuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensure_tuple</span></code></a>(item)</p></td>
+<td><p>Ensures the input is a tuple.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.format_mro" title="calipy.core.utils.format_mro"><code class="xref py py-obj docutils literal notranslate"><span class="pre">format_mro</span></code></a>(cls)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.generate_trivial_dims" title="calipy.core.utils.generate_trivial_dims"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_trivial_dims</span></code></a>(ndim)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.get_params" title="calipy.core.utils.get_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_params</span></code></a>(name)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.multi_unsqueeze" title="calipy.core.utils.multi_unsqueeze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">multi_unsqueeze</span></code></a>(input_tensor, dims)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">restricted_exec</span></code>(exec_string, allowed_locals)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.robust_meshgrid" title="calipy.core.utils.robust_meshgrid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">robust_meshgrid</span></code></a>(tensors[, indexing])</p></td>
+<td><p>Ensures that meshgrid also works for empty inputs [] of sizes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">safe_eval</span></code>(expr[, allowed_globals, ...])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.CalipyDim" title="calipy.core.utils.CalipyDim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyDim</span></code></a>(name[, size, description])</p></td>
+<td><p>CalipyDim class contains information useful to manage dimensions and is the prime ingredient to DimTuple class which implements arithmentics on  dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DimTuple</span></code></a>(input_tuple)</p></td>
+<td><p>DimTuple is a custom subclass of Python's <cite>tuple</cite> designed to manage and manipulate tuples of  dimension objects, such as those from CalipyDim.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">InputSchema</span></code>(required_keys[, optional_keys, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.utils.TorchdimTuple" title="calipy.core.utils.TorchdimTuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchdimTuple</span></code></a>(input_tuple[, superior_dims])</p></td>
+<td><p>TorchdimTuple is a subclass of the Tuple class that allows esy handling of tuples build from functorchdim.dim.Dim objects.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/calipy.core.utils.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.utils</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>

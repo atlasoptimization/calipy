@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Apr  4 21:20:20 2025
 
-@author: jemil
 """
-import torch, pyro
+This is a minimal demo of calipy functionality. An unknown parameter mu is 
+observed noisily and has to be estimated from these observations. 
+
+The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
+"""
+
+# Imports and definitions
+import pyro
 import matplotlib.pyplot as plt
 
 from calipy.core.base import NodeStructure, CalipyProbModel
@@ -42,11 +47,7 @@ class DemoProbModel(CalipyProbModel):
 # Train model
 demo_probmodel = DemoProbModel()
 data_cp = CalipyTensor(data, dims=batch_dims)
-optim_results = demo_probmodel.train(None, data_cp, optim_opts={
-    'optimizer': pyro.optim.NAdam({"lr": 0.01}),
-    'loss': pyro.infer.Trace_ELBO(),
-    'n_steps': 1000
-})
+optim_results = demo_probmodel.train(None, data_cp, optim_opts = {})
 
 # Plot results
 plt.plot(optim_results)

@@ -43,13 +43,14 @@ from calipy.core.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment
 
 
 class CalipyIndex:
-    """ 
+    """
     Class acting as a collection of infos on a specific index tensor collecting
     basic index_tensor, index_tensor_tuple, and index_tensor_named. This class
     represents a specific index tensor.
-        index_tensor.tensor is the original index tensor
-        index_tensor.tuple can be used for indexing via data[tuple]
-        index_tensor.named can be used for dimension specific operations
+
+    - `index_tensor.tensor` is the original index tensor
+    - `index_tensor.tuple` can be used for indexing via `data[tuple]`
+    - `index_tensor.named` can be used for dimension-specific operations
     """
     def __init__(self, index_tensor, index_tensor_dims = None, name = None):
         

@@ -161,13 +161,10 @@ class DemoProbModel(CalipyProbModel):
         pass
 
 # Train model
+# Train model
 demo_probmodel = DemoProbModel()
 data_cp = CalipyTensor(data, dims=batch_dims)
-optim_results = demo_probmodel.train(None, data_cp, optim_opts={
-    'optimizer': pyro.optim.NAdam({"lr": 0.01}),
-    'loss': pyro.infer.Trace_ELBO(),
-    'n_steps': 1000
-})
+optim_results = demo_probmodel.train(None, data_cp, optim_opts = {})
 
 # Plot results
 plt.plot(optim_results)

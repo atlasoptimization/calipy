@@ -1,48 +1,74 @@
-.. hh2e_optimizer documentation master file, created by
-   sphinx-quickstart on Tue Nov  8 15:05:45 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. _calipy_home:
 
-Welcome to calipy's documentation!
-==========================================
+Welcome to Calipy's Documentation
+=================================
 
-**calipy** is a Python library for representing, modifying, analyzing, 
-and training deep probabilistic instrument models for engineering geodesy.
-It employs open pytorch and pyro for probabilistic modelling and an extendable library
-of composable probabilistic effects that can be chained to represent geodetic instruments. 
-Its API allows flexible interaction between analyst and computational backbone.
-
-Check out the :doc:`usage` section for further information, including how to
-:ref:`install <label_installation>` the project.
+.. include:: ../../../README.md
+   :parser: myst
+   :start-line: 1
 
 .. note::
 
    This project is under active development. All elements are subject to change.
 
+Navigation
+==========
 
-Contents
---------
+Getting Started
+---------------
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
 
-   usage
-   api
+   installation
+   quickstart
+   concepts
 
-.. autosummary::
-   :toctree: _autosummary
-   :template: custom-module-template.rst
-   :recursive:
-
+User Guide
+----------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Usage
+
+   usage/models
+   usage/effects
+   usage/data
+   usage/inference
+
+API Reference
+-------------
+
+.. toctree::
+   :maxdepth: 1
+   :caption: API Reference
+
+   api/base
+   api/effects
+   api/utils
+   api/tensor
+   api/data
+   api/dist
+   api/funs
+   api/primitives
+
+Examples
+--------
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   examples/bias_estimation
+   examples/two_peg_test
+   examples/axis_errors
 
 
-
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

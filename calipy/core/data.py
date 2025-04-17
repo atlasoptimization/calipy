@@ -425,15 +425,18 @@ class CalipyDict(dict):
     represent measurement identifiers ('mean', 'var', etc.); values are e.g. 
     CalipyTensors with potentially differing shapes across CalipyDict instances.
     
-    :param data: The data being used to construct the CalipyDict. Data used for
-        dictionary initialization can be:
-          - None => empty dict
-          - A dict {str -> item} => multi-item
-          - A CalipyDict => Leave unchanged
-          - A DataTuple => convert to dict
-          - A single item => store under a default key '__single__'
-    :type data: None, or dict, or CalipyDict, or DataTuple, or single object.
-    
+
+    :param data: The data used to construct the CalipyDict.
+        Valid input types include:
+
+        - `None`: Initializes an empty dict.
+        - `dict[str, item]`: Multi-item dictionary.
+        - `CalipyDict`: Returns unchanged.
+        - `DataTuple`: Converted to dict.
+        - Single object: Stored under a default key `'__single__'`.
+
+    :type data: None, dict, CalipyDict, DataTuple, or any single object.
+
     :return: An instance of CalipyDict
     :rtype: CalipyDict
 
@@ -686,8 +689,9 @@ class CalipyList(list):
     to wrapping once. Ingredient to CalipyIO.
     
     
-    :param data: The data being used to construct the CalipyList. Data used for
-        dictionary initialization can be:
+    :param data: The data being used to construct the CalipyList. 
+        Valid input types include:
+
           - A single item => CalipyList containing single item
           - A list => CalipyList containg list of objects
     :type data: Any
@@ -805,8 +809,9 @@ class CalipyIO:
         - If calipy_io contains in its list a single dict and in that dict a single
             key, value pair, then calipy_io.value returns that value.
     
-    :param data: The data being used to construct the CalipyDict. Data used for
-        dictionary initialization can be:
+    :param data: The data being used to construct the CalipyDict. 
+        Valid input types include:
+
           - None => empty dict
           - A dict {str -> item} => multi-item
           - A CalipyDict => Leave unchanged
@@ -1250,7 +1255,9 @@ class CalipyDataset(Dataset):
     datasets with additional, calipy-ready functionality.    
     
     :param input_data: The input_data of the dataset reflecting the inputs to 
-        the model that evoke the corresponding outputs. Can be:
+        the model that evoke the corresponding outputs. 
+        Valid input types include:
+            
           - None => No input data (no input)
           - CalipyTensor => Single tensor (single input)
           - CalipyDict => Dictionary containing CalipyTensors (multiple inputs)
@@ -1259,7 +1266,9 @@ class CalipyDataset(Dataset):
     :type input_data: NoneType, CalipyTensor, CalipyDict, CalipyIO
     
     :param output_data: The output_data of the dataset reflecting the outputs of 
-        the model evoked by the corresponding inputs. Can be:
+        the model evoked by the corresponding inputs.
+        Valid input types include:
+            
           - None => No output data (no output)
           - CalipyTensor => Single tensor (single output)
           - CalipyDict => Dictionary containing CalipyTensors (multiple outputs)
@@ -1274,8 +1283,8 @@ class CalipyDataset(Dataset):
         passing them to DataLoader objects.
     :rtype: CalipyDataset
     
-    The following scenarios need to be evaluated are covered by the dataset 
-    construction procedure:
+    The following scenarios need to be covered by the construction procedure:
+        
         i) (Input, Ouptut) =  (None, CalipyTensor)
         ii) (Input, Ouptut) =  (Calipytensor, CalipyTensor)
         iii) (Input, Ouptut) =  (None, dict(CalipyTensor))
@@ -1475,9 +1484,9 @@ def io_collate(batch, reduce = False):
     list elements into a longer list aroung which a new new CalipyIO object is built.
     This new CalipyIO object contains a list of dicts.
     If reduce = True, list elements are aimed to be stacked themselves (e.g. tensors
-                                                                        along their first dimensions) to create a single dict containing stacked elements.
-    Used primarily as collate function for the DataLoader
-    to perform automatized subsampling.
+    along their first dimensions) to create a single dict containing stacked elements.
+    Used primarily as collate function for the DataLoader to perform automatized subsampling.
+    
     :param batch: A list of CalipyDiIO containing info on input_vars, observations, and
         corresponding index that was used to produce them via dataset.__getitem__[idx]
     :type batch: list of CalipyIO

@@ -129,45 +129,39 @@ import contextlib
 
 def sample(name, dist, dist_dims, observations=None, subsample_index=None, vectorizable=True):
     """
-    Flexible sampling function handling multiple plates and four cases based on obs and subsample_indices.
+    Flexible sampling function handling multiple plates and four cases based on `obs` and `subsample_index`.
 
-    :param node_structure: Instance of NodeStructure that determines the internal
-        structure (shapes, plate_stacks, plates, aux_data) completely.
-    :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
-    
-    Example usage: Run line by line to investigate Class
-        
+    :param name: Base name for the sample site.
+    :type name: str
+
+    :param dist: The distribution to sample from.
+    :type dist: pyro.distributions.Distribution
+
+    :param dist_dims: The dimensions of the sample from the distribution; need to contain batch_dims as subset.
+    :type dist_dims: list of CalipyDim objects
+
+    :param vectorizable: If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.
+    :type vectorizable: bool, optional
+
+    :param obs: Observations wrapped in CalipyIO. If provided, sampling is conditioned on these observations.
+    :type obs: CalipyIO or None, optional
+
+    :param subsample_index: Subsample indices for each plate dimension. If provided, sampling is performed over these indices.
+    :type subsample_index: list of torch.Tensor or None, optional
+
+    :return: A CalipyTensor sample being tracked by gradient tape.
+    :rtype: CalipyTensor
+
+    Example usage:
+
     .. code-block:: python
-    
+
         # Investigate 2D noise ------------------------------------------------
         #
         # i) Imports and definitions
-        
-        
-    Parameters:
-    -----------
-    name : str
-        Base name for the sample site.
-    dist : pyro.distributions.Distribution
-        The distribution to sample from.
-    dist_dims : list of CalipyDim objects
-        The dimensions of the sample from the distribution; need to contain batch_dims as subset.
-    batch_dims : list of CalipyDim objects
-        The dimensions that act as batch dimensions and over which independence is assumed.
-    vectorizable : bool, optional
-        If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.
-    obs : CalipyObservation or None, optional
-        Observations wrapped in CalipyObservation. If provided, sampling is conditioned on these observations.
-    subsample_index : list of torch.Tensor or None, optional
-        Subsample indices for each plate dimension. If provided, sampling is performed over these indices.
-
-    Returns:
-    --------
-    CalipyTensor
-        The sampled data, preserving batch and event dimensions.
+        ...
     """
+
     
     # Basic preprocess and rename
     input_vars_io, observations_io, subsample_index_io = preprocess_args(None,

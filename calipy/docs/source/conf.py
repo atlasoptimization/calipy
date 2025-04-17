@@ -22,7 +22,7 @@ copyright = '2024, Dr. Jemil Avers Butt'
 author = 'Dr. Jemil Avers Butt, Atlas optimization GmbH / ETH Zurich'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.5'
 
 
 # -- General configuration ---------------------------------------------------
@@ -35,7 +35,24 @@ extensions = [
    'sphinx.ext.doctest',
    'sphinx.ext.autodoc',
    'sphinx.ext.autosummary',
+   'myst_parser',
+   'sphinxcontrib.mermaid', 
 ]
+
+# -- mermaid --------------------------------------------------------------
+extensions.append("sphinxcontrib.mermaid")
+
+mermaid_output_format = "raw"          # keep it interactive
+mermaid_version        = "10.8.0"      # any version available on unpkg
+mermaid_init_js        = "mermaid.initialize({startOnLoad:true});"
+
+
+# Parse *.rst with the ReST parser and *.md with MyST
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md' : 'myst',      
+}
+
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
 # Add any paths that contain templates here, relative to this directory.

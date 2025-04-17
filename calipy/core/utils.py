@@ -185,6 +185,7 @@ def check_schema(calipy_dict_obj, required_keys=None, optional_keys=None):
     Example schema validation function:
       - required_keys: list of keys that must exist
       - optional_keys: list of recognized but optional keys
+      
     Raises ValueError if some required keys are missing.
     """
     required_keys = required_keys or []

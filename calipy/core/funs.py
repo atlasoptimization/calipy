@@ -22,7 +22,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 
 import torch
-
+import textwrap
 from calipy.core.tensor import preprocess_args, CalipyTensor
 
 # Define calipy wrappers for torch functions
@@ -36,18 +36,23 @@ from calipy.core.tensor import preprocess_args, CalipyTensor
 # Alternative idea here: Build function calipy_op(func, *args, **kwargs) 
 # then inspect and functools wraps
 def calipy_sum(calipy_tensor, dim = None, keepdim = False, dtype = None):
-    """ Wrapper function for torch.sum applying a dimension-aware sum to CalipyTensor
-    objects. Input args are as for torch.sum but accept dim = dims for dims either
-    a DimTuple of a CalipyDim.
-    
+    """
+    Wrapper function for torch.sum applying a dimension-aware sum to CalipyTensor
+    objects. Input args are as for torch.sum but accept dim = dims for dims that are
+    either a DimTuple or a CalipyDim.
+
     Notes:
     - This function acts on CalipyTensor objects
-    - This function acts on dim args of class CalipyDim and DimTuple.
-    - The behavior is equivalent to torch.sum on the CalipyTensor.tensor level
-        but augments the result with dimensions.
+    - This function acts on dim args of class CalipyDim and DimTuple
+    - The behavior is equivalent to torch.sum on the CalipyTensor.tensor level,
+      but augments the result with dimensions.
 
     Original torch.sum docstring:
-    """
+
+    .. code-block:: none
+
+    {}
+    """.format(textwrap.indent(torch.sum.__doc__, "    "))
     
     # Compile and unwrap arguments
     args = (calipy_tensor,)
@@ -63,11 +68,12 @@ def calipy_sum(calipy_tensor, dim = None, keepdim = False, dtype = None):
     result = torch.sum(*args, **kwargs)
     return result
     
-calipy_sum.__doc__ += "\n" + torch.sum.__doc__
+# calipy_sum.__doc__ += "\n" + torch.sum.__doc__
 
 
 def calipy_cat(calipy_tensors, dim = 0):
-    """ Wrapper function for torch.cat applying a dimension-aware sum to CalipyTensor
+    """ 
+    Wrapper function for torch.cat applying a dimension-aware sum to CalipyTensor
     objects. Input args are as for torch.cat but accept dim = dims for dims either
     a DimTuple or an integer.
     
@@ -75,7 +81,7 @@ def calipy_cat(calipy_tensors, dim = 0):
     - This function acts on CalipyTensor objects
     - This function acts on dim args of class DimTuple and int.
     - The behavior is equivalent to torch.cat on the CalipyTensor.tensor level
-        but augments the result with dimensions.
+      but augments the result with dimensions.
         
     Example usage:
 
@@ -103,8 +109,13 @@ def calipy_cat(calipy_tensors, dim = 0):
         assert(( tensor_cat_1.tensor - tensor_cat_1_alt.tensor == 0).all())
         assert(( tensor_cat_2.tensor - tensor_cat_2_alt.tensor == 0).all())
 
+
     Original torch.cat docstring:
-    """
+
+    .. code-block:: none
+
+    {}
+    """.format(textwrap.indent(torch.cat.__doc__, "    "))
     
     # Compile and unwrap arguments
     args = calipy_tensors
@@ -124,7 +135,7 @@ def calipy_cat(calipy_tensors, dim = 0):
     
     return result_cp
     
-calipy_cat.__doc__ += "\n" + torch.cat.__doc__
+# calipy_cat.__doc__ += "\n" + torch.cat.__doc__
 
 
 

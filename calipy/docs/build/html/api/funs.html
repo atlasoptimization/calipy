@@ -1,0 +1,158 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.funs (API) &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="calipy.core.primitives (API)" href="primitives.html" />
+    <link rel="prev" title="calipy.core.dist.distributions (API)" href="dist.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="primitives.html" title="calipy.core.primitives (API)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="dist.html" title="calipy.core.dist.distributions (API)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.funs  (API)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-calipy.core.funs">
+<span id="calipy-core-funs-api"></span><span id="api-funs"></span><h1>calipy.core.funs  (API)<a class="headerlink" href="#module-calipy.core.funs" title="Permalink to this heading">¶</a></h1>
+<p>This module provides basic functionality to produce and adapt functions that
+interact well with calipy’s CalipyTensor and CalipyDistribution classes and
+maintain dimension-awareness.</p>
+<dl>
+<dt>The classes and functions are</dt><dd><dl class="simple">
+<dt>calipy_sum: a dimension-aware sum, that acts directly on CalipyTensors and</dt><dd><p>keeps track of dimensions, produces a CalipyTensor.</p>
+</dd>
+</dl>
+<p>sample:</p>
+</dd>
+</dl>
+<p>The param function is the basic function called to declare unknown parameters;
+it is often found as an ingredient when defining effects.</p>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.funs.calipy_cat">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.funs.calipy_cat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.funs.calipy_sum">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.funs.calipy_sum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">calipy.core.funs  (API)</a><ul>
+<li><a class="reference internal" href="#calipy.core.funs.calipy_cat"><code class="docutils literal notranslate"><span class="pre">calipy_cat()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.funs.calipy_sum"><code class="docutils literal notranslate"><span class="pre">calipy_sum()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="dist.html"
+                          title="previous chapter">calipy.core.dist.distributions  (API)</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="primitives.html"
+                          title="next chapter">calipy.core.primitives  (API)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/funs.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="primitives.html" title="calipy.core.primitives (API)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="dist.html" title="calipy.core.dist.distributions (API)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.funs  (API)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>

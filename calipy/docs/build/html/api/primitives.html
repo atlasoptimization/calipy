@@ -1,0 +1,274 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.primitives (API) &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="calipy.core.funs (API)" href="funs.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="funs.html" title="calipy.core.funs (API)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.primitives  (API)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="calipy-core-primitives-api">
+<span id="api-primitives"></span><h1>calipy.core.primitives  (API)<a class="headerlink" href="#calipy-core-primitives-api" title="Permalink to this heading">¶</a></h1>
+<span class="target" id="module-calipy.core.primitives"></span><p>This module provides primitives needed for performing basic probabilistic actions
+like declaring parameters and smapling distributions</p>
+<dl>
+<dt>The classes and functions are</dt><dd><dl class="simple">
+<dt>param: Declares a tensor as a parameter subject to optimization with SVI.</dt><dd><p>Produces a CalipyTensor with dims and subsampling capability</p>
+</dd>
+</dl>
+<p>sample:</p>
+</dd>
+</dl>
+<p>The param function is the basic function called to declare unknown parameters;
+it is often found as an ingredient when defining effects.</p>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.primitives.param">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.primitives.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Real()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.primitives.param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper function for pyro.param producing a CalipyTensor valued parameter.
+The tensor is inialized once, then placed in the param store and can be used
+like a regular CalipyTensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>string</em>) – Unique name of the parameter</p></li>
+<li><p><strong>init_tensor</strong> (<em>torch.tensor</em>) – The initial value of the parameter tensor, adjusted later
+on by optimization</p></li>
+<li><p><strong>dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A tuple of dimensions indicating the dims of the CalipyTensor
+created by param()</p></li>
+<li><p><strong>constraint</strong> (<em>pyro.distributions.constraints.Constraint</em>) – Pyro constraint that constrains the parameter of a distribution
+to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li>
+<li><p><strong>subsample_index</strong> (<a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyIndex" title="calipy.core.tensor.CalipyIndex"><em>CalipyIndex</em></a>) – The subsampling index indicating how subsampling
+of the parameter is to be performed</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A CalipyTensor parameter being tracked by gradient tape and marked for 
+optimization. Starts as init_tensor, has dims and constraints as specified
+and is automatically subsampled by subsampling_index.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+</dd>
+</dl>
+<p>Example usage: Run line by line to investigate Class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create parameter ---------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">param</span>
+
+<span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bd_1_A&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">event_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ed_1_A&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">param_dims</span> <span class="o">=</span> <span class="n">batch_dims</span> <span class="o">+</span> <span class="n">event_dims</span>
+<span class="n">init_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">param_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">param_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+<span class="n">parameter</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="s1">&#39;generic_param&#39;</span><span class="p">,</span> <span class="n">init_tensor</span><span class="p">,</span> <span class="n">param_dims</span><span class="p">)</span>
+
+<span class="c1"># Create constrained, subsampled parameter ---------------------------</span>
+<span class="c1">#</span>
+<span class="n">param_constraint</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span>
+<span class="n">subsample_indices</span> <span class="o">=</span> <span class="n">TensorIndexer</span><span class="o">.</span><span class="n">create_simple_subsample_indices</span><span class="p">(</span><span class="n">batch_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                        <span class="n">batch_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">ssi</span> <span class="o">=</span> <span class="n">subsample_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">ssi_expanded</span> <span class="o">=</span> <span class="n">ssi</span><span class="o">.</span><span class="n">expand_to_dims</span><span class="p">(</span><span class="n">param_dims</span><span class="p">,</span> <span class="n">param_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+<span class="n">parameter_subsampled</span> <span class="o">=</span> <span class="n">param</span><span class="p">(</span><span class="s1">&#39;param_subsampled&#39;</span><span class="p">,</span> <span class="n">init_tensor</span><span class="p">,</span> <span class="n">param_dims</span><span class="p">,</span>
+                             <span class="n">constraint</span> <span class="o">=</span> <span class="n">param_constraint</span><span class="p">,</span> <span class="n">subsample_index</span> <span class="o">=</span> <span class="n">ssi_expanded</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">parameter_subsampled</span><span class="p">)</span>
+<span class="k">assert</span><span class="p">((</span><span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">tensor</span> <span class="o">-</span> <span class="n">parameter</span><span class="o">.</span><span class="n">tensor</span><span class="p">[</span><span class="n">ssi_expanded</span><span class="o">.</span><span class="n">tuple</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
+
+
+<span class="c1"># Investigate parameter ----------------------------------------------</span>
+<span class="c1">#</span>
+
+<span class="c1"># Parameters are CalipyTensors with names, dims, and populated indexers</span>
+<span class="n">parameter</span><span class="o">.</span><span class="n">name</span>
+<span class="n">parameter</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">parameter</span><span class="o">.</span><span class="n">indexer</span>
+<span class="n">parameter</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">parameter</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">tensor</span>
+
+<span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">name</span>
+<span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">indexer</span>
+<span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">parameter_subsampled</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">tensor</span>
+
+<span class="c1"># The underlying tensors are also saved in pyro&#39;s param store</span>
+<span class="n">pyro_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()[</span><span class="s1">&#39;generic_param&#39;</span><span class="p">]</span>
+<span class="k">assert</span> <span class="p">(</span><span class="n">pyro_param</span> <span class="o">-</span> <span class="n">parameter</span><span class="o">.</span><span class="n">tensor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>pyro.param doc:</p>
+<p>Saves the variable as a parameter in the param store.
+To interact with the param store or write to disk,
+see <a class="reference external" href="parameters.html">Parameters</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – name of parameter</p></li>
+<li><p><strong>init_tensor</strong> (<em>torch.Tensor</em><em> or </em><em>callable</em>) – initial tensor or lazy callable that returns a tensor.
+For large tensors, it may be cheaper to write e.g.
+<code class="docutils literal notranslate"><span class="pre">lambda:</span> <span class="pre">torch.randn(100000)</span></code>, which will only be evaluated on the
+initial statement.</p></li>
+<li><p><strong>constraint</strong> (<em>torch.distributions.constraints.Constraint</em>) – torch constraint, defaults to <code class="docutils literal notranslate"><span class="pre">constraints.real</span></code>.</p></li>
+<li><p><strong>event_dim</strong> (<em>int</em>) – (optional) number of rightmost dimensions unrelated
+to batching. Dimension to the left of this will be considered batch
+dimensions; if the param statement is inside a subsampled plate, then
+corresponding batch dimensions of the parameter will be correspondingly
+subsampled. If unspecified, all dimensions will be considered event
+dims and no subsampling will be performed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A constrained parameter. The underlying unconstrained parameter
+is accessible via <code class="docutils literal notranslate"><span class="pre">pyro.param(...).unconstrained()</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">.unconstrained</span></code> is a weakref attribute.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.primitives.sample">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.primitives.</span></span><span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorizable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.primitives.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flexible sampling function handling multiple plates and four cases based on <cite>obs</cite> and <cite>subsample_index</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Base name for the sample site.</p></li>
+<li><p><strong>dist</strong> (<em>pyro.distributions.Distribution</em>) – The distribution to sample from.</p></li>
+<li><p><strong>dist_dims</strong> (<em>list</em><em> of </em><em>CalipyDim objects</em>) – The dimensions of the sample from the distribution; need to contain batch_dims as subset.</p></li>
+<li><p><strong>vectorizable</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.</p></li>
+<li><p><strong>obs</strong> (<a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Observations wrapped in CalipyIO. If provided, sampling is conditioned on these observations.</p></li>
+<li><p><strong>subsample_index</strong> (<em>list</em><em> of </em><em>torch.Tensor</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Subsample indices for each plate dimension. If provided, sampling is performed over these indices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A CalipyTensor sample being tracked by gradient tape.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+</dd>
+</dl>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Investigate 2D noise ------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">calipy.core.primitives  (API)</a><ul>
+<li><a class="reference internal" href="#calipy.core.primitives.param"><code class="docutils literal notranslate"><span class="pre">param()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.primitives.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="funs.html"
+                          title="previous chapter">calipy.core.funs  (API)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/primitives.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="funs.html" title="calipy.core.funs (API)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.primitives  (API)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>

@@ -2,24 +2,23 @@
 
 <!doctype html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to calipy’s documentation! &#8212; calipy 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Welcome to Calipy’s Documentation &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css?v=c92c1228" />
     
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="_static/bizstyle.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Usage" href="usage.html" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="next" title="Installing CaliPy" href="installation.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <!--[if lt IE 9]>
     <script src="_static/css3-mediaqueries.js"></script>
     <![endif]-->
@@ -34,10 +33,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="usage.html" title="Usage"
+          <a href="installation.html" title="Installing CaliPy"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">calipy 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Welcome to calipy’s documentation!</a></li> 
+        <li class="nav-item nav-item-0"><a href="#">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to Calipy’s Documentation</a></li> 
       </ul>
     </div>  
 
@@ -46,58 +45,311 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="welcome-to-calipy-s-documentation">
-<h1>Welcome to calipy’s documentation!<a class="headerlink" href="#welcome-to-calipy-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p><strong>calipy</strong> is a Python library for representing, modifying, analyzing,
-and training deep probabilistic instrument models for engineering geodesy.
-It employs open pytorch and pyro for probabilistic modelling and an extendable library
-of composable probabilistic effects that can be chained to represent geodetic instruments.
-Its API allows flexible interaction between analyst and computational backbone.</p>
-<p>Check out the <a class="reference internal" href="usage.html"><span class="doc">Usage</span></a> section for further information, including how to
-<a class="reference internal" href="usage.html#label-installation"><span class="std std-ref">install</span></a> the project.</p>
+  <section id="welcome-to-calipy-s-documentation">
+<span id="calipy-home"></span><h1>Welcome to Calipy’s Documentation<a class="headerlink" href="#welcome-to-calipy-s-documentation" title="Permalink to this heading">¶</a></h1>
+<blockquote>
+<div><p><strong>Pre-Alpha</strong>: In active development — not yet production-ready</p>
+</div></blockquote>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#introduction"><span class="xref myst">Introduction</span></a></p></li>
+<li><p><a class="reference internal" href="#key-features"><span class="xref myst">Key Features</span></a></p></li>
+<li><p><a class="reference internal" href="#architecture-overview"><span class="xref myst">Architecture Overview</span></a></p></li>
+<li><p><a class="reference internal" href="#bayesian-vs-classical-ls-estimation"><span class="xref myst">Bayesian vs. Classical (LS) Estimation</span></a></p></li>
+<li><p><a class="reference internal" href="installation.html"><span class="doc std std-doc">Installation</span></a></p></li>
+<li><p><a class="reference internal" href="#quick-example"><span class="xref myst">Quick Example</span></a></p></li>
+<li><p><a class="reference internal" href="#use-cases"><span class="xref myst">Use Cases</span></a></p></li>
+<li><p><a class="reference internal" href="#references"><span class="xref myst">References</span></a></p></li>
+<li><p><a class="reference internal" href="#license"><span class="xref myst">License</span></a></p></li>
+<li><p><a class="reference internal" href="#contributing"><span class="xref myst">Contributing</span></a></p></li>
+</ul>
+<hr class="docutils" />
+</section>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h2>
+<p>CaliPy (Calibration Library for Python) is designed to <strong>simplify and standardize</strong> how we <strong>build and solve probabilistic instrument models</strong> in geodesy (and related fields). While many real-world analyses rely on classical <strong>least squares</strong> (LS) estimation or maximum-likelihood solutions, these approaches can fail for:</p>
+<ul class="simple">
+<li><p>Nonlinear systems</p></li>
+<li><p>Non-Gaussian noise</p></li>
+<li><p>Latent or unobserved variables</p></li>
+<li><p>Large-scale or sub-batched data</p></li>
+</ul>
+<p>CaliPy addresses these limitations by:</p>
+<ul class="simple">
+<li><p><strong>Leveraging</strong> <a class="reference external" href="https://pyro.ai/">Pyro</a> for flexible <strong>Bayesian inference</strong> (e.g., Stochastic Variational Inference <a class="reference internal" href="#references"><span class="xref myst">(Blei et al., 2017)</span></a>).</p></li>
+<li><p><strong>Allowing chainable “stochastic effects”</strong> to reflect real-world complexities in measurement instruments.</p></li>
+<li><p><strong>Encouraging</strong> a “declare-then-solve” approach: once the user sets up a model, CaliPy automatically handles inference—whether you want a posterior distribution or a maximum-likelihood point estimate.</p></li>
+</ul>
+<p>Originally developed for <strong>geodetic measurement instruments</strong>, CaliPy can also apply to other domains requiring advanced calibration or hierarchical Bayesian workflows under a friendly, composable interface.</p>
+<hr class="docutils" />
+</section>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Chainable Instrument Models</strong>
+Construct models from small, <strong>pre-built node classes</strong> (like <code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code>, <code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code>) that capture aspects such as bias, drift, or axis misalignments in measurement instruments.</p></li>
+<li><p><strong>Seamless Integration with PyTorch &amp; Pyro</strong>
+CaliPy builds on <a class="reference external" href="https://pytorch.org/">PyTorch</a> <a class="reference internal" href="#references"><span class="xref myst">(Paszke et al., 2019)</span></a> for automatic differentiation and <a class="reference external" href="https://pyro.ai/">Pyro</a> <a class="reference internal" href="#references"><span class="xref myst">(Bingham et al., 2018)</span></a> for advanced Bayesian inference algorithms.</p></li>
+<li><p><strong>Bayesian or Classical</strong></p>
+<ul class="simple">
+<li><p>For linear Gaussian models, <strong>maximum-likelihood</strong> solutions coincide with least squares (LS).</p></li>
+<li><p>For more general models, <strong>Stochastic Variational Inference</strong> or other Pyro-based inference can handle non-Gaussian, nonlinear, or latent-variable scenarios automatically.</p></li>
+</ul>
+</li>
+<li><p><strong>Dimension-Aware Data Structures</strong>
+CaliPy offers dimension-handling (inspired by <code class="docutils literal notranslate"><span class="pre">functorch.torchdims</span></code>), letting you specify shapes, subbatching strategies, and independence assumptions with minimal overhead.</p></li>
+<li><p><strong>Rapid Prototyping &amp; Extendability</strong></p>
+<ul class="simple">
+<li><p>The library’s architecture is modular; you can add new “effects” for specialized phenomena (e.g., scanning-laser sensor errors, environment-driven drifts).</p></li>
+<li><p>A “declare-then-solve” approach means minimal user code from model definition to inference result.</p></li>
+</ul>
+</li>
+</ol>
+<hr class="docutils" />
+</section>
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Node Classes</strong>
+Each effect (e.g., <code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code>, <code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code>) inherits from a base node class, providing a <code class="docutils literal notranslate"><span class="pre">forward()</span></code> method for random draws or deterministic transformations.</p></li>
+<li><p><strong>Indexing &amp; Subbatching</strong></p>
+<ul class="simple">
+<li><p><strong>CalipyIndexer</strong>: centralizes creation of local/global index tensors, block indices for subbatching, and index naming.</p></li>
+<li><p><strong>CalipyObservation</strong>: aggregates data plus metadata about batch/event dims, bridging user data with inference routines.</p></li>
+</ul>
+</li>
+<li><p><strong>CalipyProbModel</strong></p>
+<ul class="simple">
+<li><p>Users typically write a <code class="docutils literal notranslate"><span class="pre">model()</span></code> (and optionally a <code class="docutils literal notranslate"><span class="pre">guide()</span></code>) capturing the generative structure of their problem.</p></li>
+<li><p>This class compiles your code with Pyro’s back-end to perform SVI or other inference algorithms seamlessly.</p></li>
+</ul>
+</li>
+</ol>
+<hr class="docutils" />
+</section>
+<section id="bayesian-vs-classical-ls-estimation">
+<h2>Bayesian vs. Classical (LS) Estimation<a class="headerlink" href="#bayesian-vs-classical-ls-estimation" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Classical Approach</strong></p>
+<ul class="simple">
+<li><p><strong>Least Squares (LS)</strong> solves a maximum-likelihood problem in Gaussian, linear scenarios by minimizing
+[
+\sum \bigl(\text{predictions} - \text{observations}\bigr)^2.
+]</p></li>
+<li><p>It has closed-form solutions for linear, Gaussian assumptions <a class="reference internal" href="#references"><span class="xref myst">(Ghilani and Wolf, 2006)</span></a>.</p></li>
+</ul>
+</li>
+<li><p><strong>Bayesian Extension</strong></p>
+<ul class="simple">
+<li><p>Instead of a single estimate (\hat{\theta}), we specify a full model:
+[
+p(\theta, \mathrm{data}) = p(\mathrm{data}\mid\theta),p(\theta).
+]
+Then infer the posterior
+[
+p(\theta\mid \mathrm{data}) = \frac{p(\mathrm{data}\mid\theta),p(\theta)}{p(\mathrm{data})}.
+]</p></li>
+<li><p><strong>Stochastic Variational Inference (SVI)</strong> approximates the posterior with an ELBO objective, bridging complex or large-scale problems.</p></li>
+<li><p>This approach gracefully handles <strong>non-Gaussian noise</strong>, <strong>nonlinear</strong> relationships, or <strong>latent variables</strong>—cases where LS is no longer straightforward.</p></li>
+</ul>
+</li>
+<li><p><strong>Connection</strong></p>
+<ul class="simple">
+<li><p>In purely Gaussian, linear scenarios with non-informative priors, Bayesian approaches reduce to classical LS solutions.</p></li>
+<li><p>For more complex or large-scale problems, the same code in CaliPy can use SVI or MCMC to produce approximate posteriors or ML solutions.</p></li>
+</ul>
+</li>
+</ol>
+<hr class="docutils" />
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading">¶</a></h2>
+<p><strong>Project Status</strong>: Pre-alpha</p>
+<p>Once published on PyPI, CaliPy can be installed via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install calipy
+</pre></div>
+</div>
+<p>Until then, clone this repository and install dependencies manually:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/atlasoptimization/calipy.git
+<span class="nb">cd</span> calipy
+pip install -r requirements.txt
+</pre></div>
+</div>
+<hr class="docutils" />
+</section>
+<section id="quick-example">
+<h2>Quick Example<a class="headerlink" href="#quick-example" title="Permalink to this heading">¶</a></h2>
+<p>Below is a toy snippet demonstrating how you might declare a simple <strong>bias-plus-noise model</strong>:</p>
+<section id="quickstart-example-with-calipy">
+<h3>Quickstart Example with Calipy<a class="headerlink" href="#quickstart-example-with-calipy" title="Permalink to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+
+<span class="c1"># Simulate data</span>
+<span class="n">n_meas</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">n_meas</span><span class="p">])</span>
+
+<span class="c1"># Define dimensions</span>
+<span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;batch&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">n_meas</span><span class="p">])</span>
+<span class="n">single_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;single&#39;</span><span class="p">],</span> <span class="p">[])</span>
+
+<span class="c1"># Set up model nodes</span>
+<span class="n">mu_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">mu_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">single_dims</span><span class="p">)</span>
+<span class="n">mu_node</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">mu_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">,</span> <span class="n">event_dims</span> <span class="o">=</span> <span class="n">single_dims</span><span class="p">)</span>
+<span class="n">noise_node</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+
+<span class="c1"># Define probabilistic model</span>
+<span class="k">class</span> <span class="nc">DemoProbModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">mu_node</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">noise_node</span><span class="o">.</span><span class="n">forward</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span> <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span> <span class="n">sigma_true</span><span class="p">},</span> <span class="n">observations</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Train model</span>
+<span class="c1"># Train model</span>
+<span class="n">demo_probmodel</span> <span class="o">=</span> <span class="n">DemoProbModel</span><span class="p">()</span>
+<span class="n">data_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">)</span>
+<span class="n">optim_results</span> <span class="o">=</span> <span class="n">demo_probmodel</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_cp</span><span class="p">,</span> <span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{})</span>
+
+<span class="c1"># Plot results</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">optim_results</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Epoch&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;ELBO loss&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Training Progress&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</pre></div>
+</div>
+<p>This snippet shows how you might define a node-based approach to an unknown parameter (\mu) and noise, letting CaliPy handle the inference behind the scenes.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this heading">¶</a></h2>
+<p>The following three example were presented at JISDM 2025 in Karlsruhe; documented code can be found in the <a class="reference external" href="https://github.com/atlasoptimization/calipy/tree/master/calipy/examples/engineering_geodesy">examples folder</a></p>
+<ol class="arabic simple">
+<li><p><strong>Tape Bias Estimation</strong></p>
+<ul class="simple">
+<li><p>Classic scenario: measure a known rod length with a tape that has an unknown offset (\theta).</p></li>
+<li><p>Equivalent to linear maximum-likelihood in simplest form, but easily extended in CaliPy for more complex error structures or prior knowledge.</p></li>
+</ul>
+</li>
+<li><p><strong>Two-Peg Test (Level Collimation)</strong></p>
+<ul class="simple">
+<li><p>Solve for the collimation angle (\alpha) in a leveling instrument.</p></li>
+<li><p>Chain multiple observations across distinct geometric setups. For more complicated geometry or weighting, SVI seamlessly generalizes the solution.</p></li>
+</ul>
+</li>
+<li><p><strong>Axis Errors in Total Stations</strong></p>
+<ul class="simple">
+<li><p>Model collimation or trunnion axis misalignments, even under strongly nonlinear geometry or face configurations.</p></li>
+<li><p>Simple to incorporate discrete “face” variables, e.g. Face I/Face II, in a single forward pass.</p></li>
+</ul>
+</li>
+</ol>
+<hr class="docutils" />
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Probabilistic Programming</strong></p>
+<ul>
+<li><p>Bingham, E., et al. (2018). <em>Pyro: Deep Universal Probabilistic Programming</em>. arXiv e-prints, 1810.09538.</p></li>
+<li><p>Blei, D. M., Kucukelbir, A., &amp; McAuliffe, J. D. (2017). <em>Variational Inference: A Review for Statisticians</em>. JASA, 112(518), 859–877.</p></li>
+<li><p>Gelman, A., et al. (2020). <em>Bayesian Workflow</em>. arXiv:2011.01808.</p></li>
+<li><p>Paszke, A., et al. (2019). <em>PyTorch: an imperative style, high-performance deep learning library</em>. NeurIPS.</p></li>
+</ul>
+</li>
+<li><p><strong>Calibration, Geodesy &amp; LS</strong></p>
+<ul>
+<li><p>Ghilani, C. D., &amp; Wolf, P. R. (2006). <em>Adjustment Computations - Spatial Data Analysis</em>. Wiley.</p></li>
+<li><p>Uren, J. &amp; Price, W. F. (2006). <em>Surveying for Engineers</em>. Palgrave Macmillan.</p></li>
+<li><p>Phillips, S. D. et al. (2001). <em>A Careful Consideration of the Calibration Concept</em>. J. Res. NIST.</p></li>
+<li><p>Deumlich, F. (1980). <em>Instrumentenkunde der Vermessungstechnik</em>. VEB Verlag fuer Bauwesen.</p></li>
+<li><p>Hastie, T., Tibshirani, R., &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>. Springer.</p></li>
+<li><p>Boyd, S. &amp; Vandenberghe, L. (2004). <em>Convex Optimization</em>. Cambridge University Press.</p></li>
+</ul>
+</li>
+</ul>
+<hr class="docutils" />
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
+<p>CaliPy is released under a <strong>Prosperity Public License</strong> for non-commercial use. For commercial usage, a separate license is available. See <a href="#id1"><span class="problematic" id="id2">LICENSE</span></a> for details.</p>
+<hr class="docutils" />
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading">¶</a></h2>
+<p>The project is currently <strong>Pre-Alpha</strong>, so expect changes. We welcome bug reports, new effect classes, and general improvements. To contribute:</p>
+<ol class="arabic simple">
+<li><p><strong>Fork</strong> the <a class="reference external" href="https://github.com/atlasoptimization/calipy">GitHub repo</a>.</p></li>
+<li><p>Make your changes or propose new classes/effects.</p></li>
+<li><p><strong>Open a pull request</strong> to discuss your contribution.</p></li>
+</ol>
+<p>Thank you for your interest in CaliPy! We hope it accelerates your research or engineering in advanced instrument calibration and beyond.</p>
+</section>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This project is under active development. All elements are subject to change.</p>
 </div>
-<div class="section" id="contents">
-<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="navigation">
+<h1>Navigation<a class="headerlink" href="#navigation" title="Permalink to this heading">¶</a></h1>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#basic-classes">Basic classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#effect-classes">Effect classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#utility-functions">Utility functions</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="generated/core.base.html">core.base</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/core.effects.html">core.effects</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/core.utils.html">core.utils</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts &amp; Architecture</a></li>
 </ul>
 </div>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-</tbody>
-</table>
+</section>
+<section id="user-guide">
+<h2>User Guide<a class="headerlink" href="#user-guide" title="Permalink to this heading">¶</a></h2>
 <div class="toctree-wrapper compound">
 </div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/effects.html">calipy.core.effects  (API)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/tensor.html">calipy.core.tensor  (API)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/data.html">calipy.core.data  (API)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/dist.html">calipy.core.dist.distributions  (API)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/funs.html">calipy.core.funs  (API)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/primitives.html">calipy.core.primitives  (API)</a></li>
+</ul>
 </div>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and Tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading">¶</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -106,20 +358,42 @@ Its API allows flexible interaction between analyst and computational backbone.<
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Welcome to calipy’s documentation!</a><ul>
-<li><a class="reference internal" href="#contents">Contents</a><ul>
+  <div>
+    <h3><a href="#">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Welcome to Calipy’s Documentation</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#key-features">Key Features</a></li>
+<li><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
+<li><a class="reference internal" href="#bayesian-vs-classical-ls-estimation">Bayesian vs. Classical (LS) Estimation</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#quick-example">Quick Example</a><ul>
+<li><a class="reference internal" href="#quickstart-example-with-calipy">Quickstart Example with Calipy</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#use-cases">Use Cases</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#navigation">Navigation</a><ul>
+<li><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li><a class="reference internal" href="#user-guide">User Guide</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and Tables</a></li>
 </ul>
 
-  <h4>Next topic</h4>
-  <p class="topless"><a href="usage.html"
-                        title="next chapter">Usage</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="installation.html"
+                          title="next chapter">Installing <strong>CaliPy</strong></a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -131,12 +405,12 @@ Its API allows flexible interaction between analyst and computational backbone.<
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -151,15 +425,15 @@ Its API allows flexible interaction between analyst and computational backbone.<
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="usage.html" title="Usage"
+          <a href="installation.html" title="Installing CaliPy"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">calipy 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Welcome to calipy’s documentation!</a></li> 
+        <li class="nav-item nav-item-0"><a href="#">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Welcome to Calipy’s Documentation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2024, Dr. Jemil Avers Butt.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

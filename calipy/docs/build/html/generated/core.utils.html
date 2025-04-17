@@ -2,24 +2,22 @@
 
 <!doctype html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>core.utils &#8212; calipy 0.1 documentation</title>
-    <link rel="stylesheet" href="../_static/bizstyle.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>core.utils &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
     
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/bizstyle.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="core.effects" href="core.effects.html" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <!--[if lt IE 9]>
     <script src="_static/css3-mediaqueries.js"></script>
     <![endif]-->
@@ -33,11 +31,7 @@
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="core.effects.html" title="core.effects"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.1 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../api.html" accesskey="U">API</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">core.utils</a></li> 
       </ul>
     </div>  
@@ -47,8 +41,8 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-core.utils">
-<span id="core-utils"></span><h1>core.utils<a class="headerlink" href="#module-core.utils" title="Permalink to this headline">¶</a></h1>
+  <section id="module-core.utils">
+<span id="core-utils"></span><h1>core.utils<a class="headerlink" href="#module-core.utils" title="Permalink to this heading">¶</a></h1>
 <p>This module provides support functionality related to logging, data organization,
 preprocessing and other functions not directly related to calipy core domains.</p>
 <dl class="simple">
@@ -61,19 +55,15 @@ preprocessing and other functions not directly related to calipy core domains.</
 <p>The script is meant solely for educational and illustrative purposes. Written by
 Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <p class="rubric">Functions</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_schema</span></code>(calipy_dict_obj[, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_schema</span></code>(calipy_dict_obj[, ...])</p></td>
 <td><p>Example schema validation function:</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">context_plate_stack</span></code>(plate_stack)</p></td>
 <td><p>Context manager to handle multiple nested pyro.plate contexts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dim_assignment</span></code>(dim_names[, dim_sizes, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dim_assignment</span></code>(dim_names[, dim_sizes, ...])</p></td>
 <td><p>dim_assignment dynamically assigns dimension objects to names and returns them as a DimTuple.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ensure_tuple</span></code>(item)</p></td>
@@ -97,25 +87,21 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">robust_meshgrid</span></code>(tensors[, indexing])</p></td>
 <td><p>Ensures that meshgrid also works for empty inputs [] of sizes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">safe_eval</span></code>(expr[, allowed_globals, …])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">safe_eval</span></code>(expr[, allowed_globals, ...])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Classes</p>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyDim</span></code>(name[, size, description])</p></td>
 <td><p>CalipyDim class contains information useful to manage dimensions and is the prime ingredient to DimTuple class which implements arithmentics on  dimensions.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">DimTuple</span></code>(input_tuple)</p></td>
-<td><p>DimTuple is a custom subclass of Python’s <cite>tuple</cite> designed to manage and manipulate tuples of  dimension objects, such as those from CalipyDim.</p></td>
+<td><p>DimTuple is a custom subclass of Python's <cite>tuple</cite> designed to manage and manipulate tuples of  dimension objects, such as those from CalipyDim.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">InputSchema</span></code>(required_keys, optional_keys, …)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">InputSchema</span></code>(required_keys[, optional_keys, ...])</p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchdimTuple</span></code>(input_tuple[, superior_dims])</p></td>
@@ -123,7 +109,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 </tr>
 </tbody>
 </table>
-</div>
+</section>
 
 
             <div class="clearer"></div>
@@ -132,9 +118,6 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="core.effects.html"
-                        title="previous chapter">core.effects</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -146,12 +129,12 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -165,17 +148,13 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
         <li class="right" >
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="core.effects.html" title="core.effects"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.1 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../api.html" >API</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">core.utils</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2024, Dr. Jemil Avers Butt.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

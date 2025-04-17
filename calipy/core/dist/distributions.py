@@ -36,7 +36,7 @@ class CalipyDistribution(CalipyNode):
     distribution class and associates a NodeStructure (or any additional 
     dimension-aware info). CalipyDistributions are Subclasses of CalipyNode and
     therefore come together with a method forward(input_vars, observations, 
-    subsample_index, **kwargs) method. The forward() method of distributions can
+    subsample_index, \*\*kwargs) method. The forward() method of distributions can
     be seen as a way of passing parameters and sampling; the format of inputs 
     and observations is documented within the methods create_input_vars or 
     create_observations that help turn data into the DataTuples needed as input

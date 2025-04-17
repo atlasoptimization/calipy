@@ -1,0 +1,614 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.effects (API) &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="calipy.core.tensor (API)" href="tensor.html" />
+    <link rel="prev" title="Core Concepts &amp; Architecture" href="../concepts.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tensor.html" title="calipy.core.tensor (API)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../concepts.html" title="Core Concepts &amp; Architecture"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.effects  (API)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-calipy.core.effects">
+<span id="calipy-core-effects-api"></span><span id="api-effects"></span><h1>calipy.core.effects  (API)<a class="headerlink" href="#module-calipy.core.effects" title="Permalink to this heading">¶</a></h1>
+<p>This module provides the CalipyEffect base class that is used for specifying
+random and deterministic phenomena affecting measurements and provides a list
+of basic effects as well as the functionality needed to integrate them into
+the CalipyProbModel class for simulation and inference.</p>
+<dl class="simple">
+<dt>The classes are</dt><dd><dl class="simple">
+<dt>CalipyEffect: Base class from which all concrete effects inherit. Blueprint</dt><dd><p>for effects that involve known parameters, unknown parameters, and random
+variables. Provides effect in form of differentiable forward map.</p>
+</dd>
+<dt>CalipyQuantity: Base class from which all concrete quantities inherit. Blueprint</dt><dd><p>for quantities, i.e. known parameters, unknown parameters, and random
+variables that are the building blocks for CalipyEffect objects.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.CalipyEffect">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">CalipyEffect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.CalipyEffect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyNode</span></code></a></p>
+<p>The CalipyEffect class provides a comprehensive representation of a specific 
+effect. It is named, explained, and referenced in the effect description. The
+effect is incorporated as a differentiable function based on torch. This function
+can depend on known parameters, unknown parameters, and random variables. Known 
+parameters have to be provided during invocation of the effect. During training,
+unknown parameters and the posterior density of the random variables is inferred.
+This requires providing a unique name, a prior distribution, and a variational
+distribution for the random variables.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.CalipyEffect.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CalipyEffect'</span></em><a class="headerlink" href="#calipy.core.effects.CalipyEffect.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.CalipyQuantity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">CalipyQuantity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.CalipyQuantity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyNode</span></code></a></p>
+<p>The CalipyQuantity class provides a comprehensive representation of a specific 
+quantity used in the construction of a CalipyEffect object. This could be a
+known parameter, an unknown parameter, or a random variable. This quantity
+is named, explained, and referenced in the quantity description. Quantities
+are incorporated into the differentiable function that define the CalipyEffect
+forward pass. Each quantity is subservient to an effect and gets a unique id
+that reflects this, quantities are local and cannot be shared between effects.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.CalipyQuantity.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CalipyQuantity'</span></em><a class="headerlink" href="#calipy.core.effects.CalipyQuantity.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.KnownParam">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">KnownParam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.KnownParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.effects.CalipyQuantity" title="calipy.core.effects.CalipyQuantity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyQuantity</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.KnownParam.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KnownParam'</span></em><a class="headerlink" href="#calipy.core.effects.KnownParam.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">NoiseAddition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_structure</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.NoiseAddition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.effects.CalipyEffect" title="calipy.core.effects.CalipyEffect"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyEffect</span></code></a></p>
+<p>NoiseAddition is a subclass of CalipyEffect that produces an object whose
+forward() method emulates uncorrelated noise being added to an input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node_structure</strong> (<a class="reference internal" href="../usage.html#calipy.core.base.NodeStructure" title="calipy.core.base.NodeStructure"><em>NodeStructure</em></a>) – Instance of NodeStructure that determines the internal
+structure (shapes, plate_stacks, plates, aux_data) completely.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instance of the NoiseAddition class built on the basis of node_structure</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.effects.NoiseAddition" title="calipy.core.effects.NoiseAddition">NoiseAddition</a> (subclass of CalipyEffect subclass of <a class="reference internal" href="../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode">CalipyNode</a>)</p>
+</dd>
+</dl>
+<p>Example usage: Run line by line to investigate Class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Investigate 2D noise ------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">NoiseAddition</span>
+
+<span class="c1"># ii) Invoke and investigate class</span>
+<span class="n">help</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">NoiseAddition</span><span class="o">.</span><span class="n">mro</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="o">.</span><span class="n">input_vars_schema</span><span class="p">)</span>
+
+<span class="c1"># iii) Instantiate object</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+<span class="n">noise_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+
+<span class="c1"># iv) Create arguments</span>
+<span class="n">noise_dims</span> <span class="o">=</span> <span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;batch_dims&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">noise_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;event_dims&#39;</span><span class="p">]</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">noise_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="n">noise_dims</span><span class="p">,</span> <span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">noise_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">),</span> <span class="n">noise_dims</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+<span class="n">noise_input_vars</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="o">.</span><span class="n">create_input_vars</span><span class="p">(</span><span class="n">mean</span> <span class="o">=</span> <span class="n">mu</span><span class="p">,</span> <span class="n">standard_deviation</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
+
+<span class="c1"># v) Pass forward</span>
+<span class="n">noisy_output</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="n">noise_input_vars</span><span class="p">,</span> 
+                                    <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                                    <span class="n">subsample_index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">noisy_output</span>
+<span class="n">noisy_output</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">help</span><span class="p">(</span><span class="n">noisy_output</span><span class="p">)</span>
+
+<span class="c1"># vi) Investigate object further</span>
+<span class="n">noise_object</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">noise_object</span><span class="o">.</span><span class="n">id</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
+<span class="n">render_1</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">noise_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">(</span><span class="n">noise_input_vars</span><span class="p">)</span>
+<span class="n">render_2</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.batch_dims">
+<span class="sig-name descname"><span class="pre">batch_dims</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DimTuple((Dim</span> <span class="pre">batch_dim,))</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.batch_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.batch_dims_description">
+<span class="sig-name descname"><span class="pre">batch_dims_description</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">noise</span> <span class="pre">is</span> <span class="pre">independent'</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.batch_dims_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.create_input_vars">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_input_vars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor"><span class="pre">calipy.core.tensor.CalipyTensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_deviation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor"><span class="pre">calipy.core.tensor.CalipyTensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">NoneType</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.NoiseAddition.create_input_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for input_vars_schema.</p>
+<p>Parameters:
+mean (&lt;class ‘calipy.core.tensor.CalipyTensor’&gt;): Required
+standard_deviation (&lt;class ‘calipy.core.tensor.CalipyTensor’&gt;): Required
+validate_args (typing.Union[bool, NoneType]): Optional</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.create_observations">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_observations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor"><span class="pre">calipy.core.tensor.CalipyTensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.NoiseAddition.create_observations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for observation_schema.</p>
+<p>Parameters:
+sample (&lt;class ‘calipy.core.tensor.CalipyTensor’&gt;): Required</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.default_nodestructure">
+<span class="sig-name descname"><span class="pre">default_nodestructure</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">NodeStructure</span> <span class="pre">instance</span> <span class="pre">for</span> <span class="pre">node</span> <span class="pre">class</span> <span class="pre">NoiseAddition</span> <span class="pre">with</span> <span class="pre">dims:</span>&#160;&#160; <span class="pre">name:</span> <span class="pre">batch_dims,</span> <span class="pre">obj</span> <span class="pre">:</span> <span class="pre">DimTuple((Dim</span> <span class="pre">batch_dim,)),</span> <span class="pre">sizes</span> <span class="pre">:</span> <span class="pre">[10]</span>&#160;&#160;   <span class="pre">description</span> <span class="pre">:</span> <span class="pre">The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">noise</span> <span class="pre">is</span> <span class="pre">independent</span>&#160; <span class="pre">name:</span> <span class="pre">event_dims,</span> <span class="pre">obj</span> <span class="pre">:</span> <span class="pre">DimTuple((Dim</span> <span class="pre">event_dim,)),</span> <span class="pre">sizes</span> <span class="pre">:</span> <span class="pre">[2]</span>&#160;&#160;   <span class="pre">description</span> <span class="pre">:</span> <span class="pre">The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">noise</span> <span class="pre">is</span> <span class="pre">copied</span> <span class="pre">and</span> <span class="pre">repeated</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.default_nodestructure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.event_dims">
+<span class="sig-name descname"><span class="pre">event_dims</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DimTuple((Dim</span> <span class="pre">event_dim,))</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.event_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.event_dims_description">
+<span class="sig-name descname"><span class="pre">event_dims_description</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">noise</span> <span class="pre">is</span> <span class="pre">copied</span> <span class="pre">and</span> <span class="pre">repeated'</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.event_dims_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_vars</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.NoiseAddition.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create noisy samples using input_vars = (mean, standard_deviation) with
+shapes as indicated in the node_structures’ ‘batch_dims’ and ‘event_dims’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vars</strong> (<em>input</em>) – CalipyDict with keys [‘mean’, ‘standard_deviation’]
+containing CalipyTensor objects defining the underlying mean onto
+which noise with distribution N(0, standard_deviation) is added.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>param observations: CalipyDict containing a single CalipyTensor</dt><dd><p>object that is considered to be observed and used for inference.</p>
+</dd>
+</dl>
+<p>type observations: CalipyDict
+param subsample_index:
+type subsample_index:
+:return: CalipyTensor representing simulation of a noisy measurement of</p>
+<blockquote>
+<div><p>the mean.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.input_vars_schema">
+<span class="sig-name descname"><span class="pre">input_vars_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">InputSchema:</span>&#160;&#160; <span class="pre">Required</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">mean</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">standard_deviation</span>&#160;&#160; <span class="pre">Optional</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">validate_args</span>&#160;&#160; <span class="pre">Defaults:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">validate_args:</span> <span class="pre">None</span>&#160;&#160; <span class="pre">Key</span> <span class="pre">Types:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">mean:</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.core.tensor.CalipyTensor'&gt;</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">standard_deviation:</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.core.tensor.CalipyTensor'&gt;</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">validate_args:</span> <span class="pre">typing.Union[bool,</span> <span class="pre">NoneType]</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.input_vars_schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'NoiseAddition'</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.NoiseAddition.observation_schema">
+<span class="sig-name descname"><span class="pre">observation_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">InputSchema:</span>&#160;&#160; <span class="pre">Required</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">sample</span>&#160;&#160; <span class="pre">Optional</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Defaults:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Key</span> <span class="pre">Types:</span>&#160;&#160;&#160;&#160; <span class="pre">-</span> <span class="pre">sample:</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.core.tensor.CalipyTensor'&gt;</span></em><a class="headerlink" href="#calipy.core.effects.NoiseAddition.observation_schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">UnknownParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_structure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Real()</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.UnknownParameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.effects.CalipyQuantity" title="calipy.core.effects.CalipyQuantity"><code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyQuantity</span></code></a></p>
+<p>UnknownParameter is a subclass of CalipyQuantity that produces an object whose
+forward() method produces a parameter that is subject to inference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node_structure</strong> (<a class="reference internal" href="../usage.html#calipy.core.base.NodeStructure" title="calipy.core.base.NodeStructure"><em>NodeStructure</em></a>) – Instance of NodeStructure that determines the internal
+structure (shapes, plate_stacks, plates, aux_data) completely.</p></li>
+<li><p><strong>constraint</strong> (<em>pyro.distributions.constraints.Constraint</em>) – Pyro constraint that constrains the parameter of a distribution
+to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instance of the UnknownParameter class built on the basis of node_structure</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.effects.UnknownParameter" title="calipy.core.effects.UnknownParameter">UnknownParameter</a> (subclass of CalipyQuantity subclass of <a class="reference internal" href="../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode">CalipyNode</a>)</p>
+</dd>
+</dl>
+<p>Example usage: Run line by line to investigate Class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Investigate 2D bias tensor -------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
+<span class="n">node_structure</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">bias_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
+<span class="c1">#</span>
+<span class="c1"># ii) Produce bias value</span>
+<span class="n">bias</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+<span class="c1">#</span>
+<span class="c1"># iii) Investigate object</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">id</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">node_structure</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">node_structure</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">render_1</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">()</span>
+<span class="n">render_2</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.batch_dims">
+<span class="sig-name descname"><span class="pre">batch_dims</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DimTuple((Dim</span> <span class="pre">batch_dim,))</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.batch_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.batch_dims_description">
+<span class="sig-name descname"><span class="pre">batch_dims_description</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">parameter</span> <span class="pre">is</span> <span class="pre">copied</span> <span class="pre">and</span> <span class="pre">repeated'</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.batch_dims_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.create_input_vars">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_input_vars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.UnknownParameter.create_input_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for input_vars_schema.</p>
+<p>Parameters:</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.create_observations">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_observations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.UnknownParameter.create_observations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for observation_schema.</p>
+<p>Parameters:</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.default_nodestructure">
+<span class="sig-name descname"><span class="pre">default_nodestructure</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">NodeStructure</span> <span class="pre">instance</span> <span class="pre">for</span> <span class="pre">node</span> <span class="pre">class</span> <span class="pre">UnknownParameter</span> <span class="pre">with</span> <span class="pre">dims:</span>&#160;&#160; <span class="pre">name:</span> <span class="pre">batch_dims,</span> <span class="pre">obj</span> <span class="pre">:</span> <span class="pre">DimTuple((Dim</span> <span class="pre">batch_dim,)),</span> <span class="pre">sizes</span> <span class="pre">:</span> <span class="pre">[10]</span>&#160;&#160;   <span class="pre">description</span> <span class="pre">:</span> <span class="pre">The</span> <span class="pre">dims</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">parameter</span> <span class="pre">is</span> <span class="pre">copied</span> <span class="pre">and</span> <span class="pre">repeated</span>&#160; <span class="pre">name:</span> <span class="pre">param_dims,</span> <span class="pre">obj</span> <span class="pre">:</span> <span class="pre">DimTuple((Dim</span> <span class="pre">param_dim,)),</span> <span class="pre">sizes</span> <span class="pre">:</span> <span class="pre">[2]</span>&#160;&#160;   <span class="pre">description</span> <span class="pre">:</span> <span class="pre">The</span> <span class="pre">dims</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameter,</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">it</span> <span class="pre">can</span> <span class="pre">vary</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.default_nodestructure" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.UnknownParameter.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a parameter of dimension param_dims.shape that is copied n times
+where n = batch_dims.size to yield an extendet tensor with the shape 
+[batch_dims.sizes, param_dims.sizes]. It can be passed to subsequent 
+effects and will be tracked to adjust it when training the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vars</strong> (<em>input</em>) – (Calipy)Dict with inputs, always None for UnknownParameter</p>
+</dd>
+</dl>
+<p>param observations: (Calipy)Dict with observations, always None for UnknownParameter
+type observations: dict
+param subsample_index:
+type subsample_index:
+:return: CalipyTensor containing parameter tensor and dimension info.
+:rtype: CalipyTensor</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.input_vars_schema">
+<span class="sig-name descname"><span class="pre">input_vars_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">InputSchema:</span>&#160;&#160; <span class="pre">Required</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Optional</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Defaults:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Key</span> <span class="pre">Types:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.input_vars_schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UnknownParameter'</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.observation_schema">
+<span class="sig-name descname"><span class="pre">observation_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">InputSchema:</span>&#160;&#160; <span class="pre">Required</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Optional</span> <span class="pre">Keys:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Defaults:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span>&#160;&#160; <span class="pre">Key</span> <span class="pre">Types:</span>&#160;&#160;&#160;&#160; <span class="pre">None</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.observation_schema" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.param_dims">
+<span class="sig-name descname"><span class="pre">param_dims</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">DimTuple((Dim</span> <span class="pre">param_dim,))</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.param_dims" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownParameter.param_dims_description">
+<span class="sig-name descname"><span class="pre">param_dims_description</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'The</span> <span class="pre">dims</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">parameter,</span> <span class="pre">in</span> <span class="pre">which</span> <span class="pre">it</span> <span class="pre">can</span> <span class="pre">vary'</span></em><a class="headerlink" href="#calipy.core.effects.UnknownParameter.param_dims_description" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownVariance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.effects.</span></span><span class="sig-name descname"><span class="pre">UnknownVariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_structure</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.effects.UnknownVariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../usage.html#calipy.core.effects.UnknownParameter" title="calipy.core.effects.UnknownParameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">UnknownParameter</span></code></a></p>
+<p>UnknownVariance is a subclass of UnknownParameter that includes a positivity constraint. UnknownParameter is a subclass of CalipyQuantity that produces an object whose
+forward() method produces a parameter that is subject to inference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node_structure</strong> (<a class="reference internal" href="../usage.html#calipy.core.base.NodeStructure" title="calipy.core.base.NodeStructure"><em>NodeStructure</em></a>) – Instance of NodeStructure that determines the internal
+structure (shapes, plate_stacks, plates, aux_data) completely.</p></li>
+<li><p><strong>constraint</strong> (<em>pyro.distributions.constraints.Constraint</em>) – Pyro constraint that constrains the parameter of a distribution
+to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instance of the UnknownParameter class built on the basis of node_structure</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.effects.UnknownParameter" title="calipy.core.effects.UnknownParameter">UnknownParameter</a> (subclass of CalipyQuantity subclass of <a class="reference internal" href="../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode">CalipyNode</a>)</p>
+</dd>
+</dl>
+<p>Example usage: Run line by line to investigate Class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Investigate 2D bias tensor -------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
+<span class="n">node_structure</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">bias_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
+<span class="c1">#</span>
+<span class="c1"># ii) Produce bias value</span>
+<span class="n">bias</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+<span class="c1">#</span>
+<span class="c1"># iii) Investigate object</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">id</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">node_structure</span>
+<span class="n">bias_object</span><span class="o">.</span><span class="n">node_structure</span><span class="o">.</span><span class="n">dims</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">render_1</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">bias_object</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">()</span>
+<span class="n">render_2</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownVariance.create_input_vars">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_input_vars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.UnknownVariance.create_input_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for input_vars_schema.</p>
+<p>Parameters:</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownVariance.create_observations">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_observations</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.effects.UnknownVariance.create_observations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a DataTuple for observation_schema.</p>
+<p>Parameters:</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>DataTuple: The constructed DataTuple instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownVariance.docstring">
+<span class="sig-name descname"><span class="pre">docstring</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UnknownVariance</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">subclass</span> <span class="pre">of</span> <span class="pre">UnknownParameter</span> <span class="pre">that</span> <span class="pre">includes</span> <span class="pre">a</span> <span class="pre">positivity</span> <span class="pre">constraint.'</span></em><a class="headerlink" href="#calipy.core.effects.UnknownVariance.docstring" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.core.effects.UnknownVariance.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'UnknownVariance'</span></em><a class="headerlink" href="#calipy.core.effects.UnknownVariance.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">calipy.core.effects  (API)</a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.CalipyEffect"><code class="docutils literal notranslate"><span class="pre">CalipyEffect</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.CalipyEffect.name"><code class="docutils literal notranslate"><span class="pre">CalipyEffect.name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.effects.CalipyQuantity"><code class="docutils literal notranslate"><span class="pre">CalipyQuantity</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.CalipyQuantity.name"><code class="docutils literal notranslate"><span class="pre">CalipyQuantity.name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.effects.KnownParam"><code class="docutils literal notranslate"><span class="pre">KnownParam</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.KnownParam.name"><code class="docutils literal notranslate"><span class="pre">KnownParam.name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition"><code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.batch_dims"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.batch_dims</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.batch_dims_description"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.batch_dims_description</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.create_input_vars"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.create_input_vars()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.create_observations"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.create_observations()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.default_nodestructure"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.default_nodestructure</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.event_dims"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.event_dims</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.event_dims_description"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.event_dims_description</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.forward"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.forward()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.input_vars_schema"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.input_vars_schema</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.name"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.name</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.NoiseAddition.observation_schema"><code class="docutils literal notranslate"><span class="pre">NoiseAddition.observation_schema</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter"><code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.batch_dims"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.batch_dims</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.batch_dims_description"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.batch_dims_description</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.create_input_vars"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.create_input_vars()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.create_observations"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.create_observations()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.default_nodestructure"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.default_nodestructure</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.forward"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.forward()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.input_vars_schema"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.input_vars_schema</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.name"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.name</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.observation_schema"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.observation_schema</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.param_dims"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.param_dims</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownParameter.param_dims_description"><code class="docutils literal notranslate"><span class="pre">UnknownParameter.param_dims_description</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownVariance"><code class="docutils literal notranslate"><span class="pre">UnknownVariance</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownVariance.create_input_vars"><code class="docutils literal notranslate"><span class="pre">UnknownVariance.create_input_vars()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownVariance.create_observations"><code class="docutils literal notranslate"><span class="pre">UnknownVariance.create_observations()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownVariance.docstring"><code class="docutils literal notranslate"><span class="pre">UnknownVariance.docstring</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.effects.UnknownVariance.name"><code class="docutils literal notranslate"><span class="pre">UnknownVariance.name</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../concepts.html"
+                          title="previous chapter">Core Concepts &amp; Architecture</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="tensor.html"
+                          title="next chapter">calipy.core.tensor  (API)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/effects.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tensor.html" title="calipy.core.tensor (API)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../concepts.html" title="Core Concepts &amp; Architecture"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.effects  (API)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>

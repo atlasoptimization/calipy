@@ -1,0 +1,140 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.base &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.base</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-calipy.core.base">
+<span id="calipy-core-base"></span><h1>calipy.core.base<a class="headerlink" href="#module-calipy.core.base" title="Permalink to this heading">¶</a></h1>
+<p>This module provides the CalipyProbModel base class that is useful for representing,
+modifying, analyzing, and optimizing instrument models based on observed data.
+Furthermore, this module defines the CalipyDAG, CalipyNode, and CalipyEdge base
+classes that enable construction of the durected acyclic graph used for model 
+and guide representation.</p>
+<dl>
+<dt>The classes are</dt><dd><p>CalipyProbModel: Short for Calipy Probabilistic Model. Base class providing
+functionality for integrating instruments, effects, and data into one 
+CalipyProbModel object. Allows simulation, inference, and illustration of 
+deep instrument models.</p>
+<p>CalipyDAG: Class representing the directed acyclic graph underlying the model
+or the guide. Contains nodes and edges together with methods of manipulating
+them and converting them to executable and inferrable models and guides.</p>
+<p>CalipyNode: Class representing the nodes in the DAG. This is the base class
+for data, instruments, effects, and quantities. Contains as attributes its 
+input/output signature and a simulate method. Further methods are related 
+automatically inferring ancestor and descendent nodes as well as incoming and
+outgoing edges.</p>
+<p>CalipyEdge: Class representing the edges in the DAG. This class contains as
+attributes source and target nodes and a dictionary edge_dict that summarizes
+the data flow along the edges.</p>
+</dd>
+</dl>
+<p>The CalipyProbModel class provides a comprehensive representation of the interactions
+between instruments and data. It contains several subobjects representing the
+physical instrument, random and systematic effects originating from instrument
+or environment, unknown parameters and variables, constraints, and the objective
+function. All of these subobjects form a probabilistic model that can be sampled
+and conditioned on measured data. For more information, see the separate
+documentation entries the CalipyProbModel class, for the subobjects, or the tutorial.</p>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.base.CalipyNode" title="calipy.core.base.CalipyNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyNode</span></code></a>([node_type, node_name, info_dict])</p></td>
+<td><p>The CalipyNode class provides a comprehensive representation of the data  flow and the dependencies between the nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../../usage.html#calipy.core.base.CalipyProbModel" title="calipy.core.base.CalipyProbModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyProbModel</span></code></a>([type, name, info])</p></td>
+<td><p>CalipyProbModel is an abstract base class that integrates the model, guide, and training components  for probabilistic models within the Calipy framework.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../../usage.html#calipy.core.base.NodeStructure" title="calipy.core.base.NodeStructure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeStructure</span></code></a>([node_cls])</p></td>
+<td><p>NodeStructure class is basis for defining batch_shapes, event_shapes, and plate configurations for a CalipyNode object.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/calipy.core.base.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.base</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>

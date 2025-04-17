@@ -1,9 +1,38 @@
 cd into folder, then execute
 
-cd Desktop/Programming/Python/Atlas_Optimization/Powerplant_optimization/hh2e_compilation/docs
+cd Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy/calipy/docs
 make html
 
 documentation is under
-cd Desktop/Programming/Python/Atlas_Optimization/Powerplant_optimization/hh2e_compilation/docs/build/html/index.html
+cd Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy/calipy/docs/build/html/index.html
 
 when some functions / classes not clickable: include their name in "usage", then in command line: make clean, make html
+
+
+
+# For first run:
+pip install -U "jinja2>=2.11"
+pip install -U "sphinx>=5.0"
+pip install --upgrade sphinxcontrib-mermaid
+
+for markdown files to be parsed also, install and enable myst-parser
+pip install "myst-parser<3"
+
+In docs/source/conf.py add the following:
+"
+extensions = [
+   'sphinx.ext.duration',
+   'sphinx.ext.doctest',
+   'sphinx.ext.autodoc',
+   'sphinx.ext.autosummary',
+   'myst_parser',
+   'sphinxcontrib.mermaid', 
+]
+
+# Parse *.rst with the ReST parser and *.md with MyST
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md' : 'myst',        # <- DO NOT write "myst_parser" here
+}
+"
+

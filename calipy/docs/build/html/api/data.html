@@ -1,0 +1,1174 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>calipy.core.data (API) &#8212; calipy 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/bizstyle.css?v=c92c1228" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="calipy.core.dist.distributions (API)" href="dist.html" />
+    <link rel="prev" title="calipy.core.tensor (API)" href="tensor.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="dist.html" title="calipy.core.dist.distributions (API)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tensor.html" title="calipy.core.tensor (API)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.data  (API)</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-calipy.core.data">
+<span id="calipy-core-data-api"></span><span id="api-data"></span><h1>calipy.core.data  (API)<a class="headerlink" href="#module-calipy.core.data" title="Permalink to this heading">¶</a></h1>
+<p>This module provides basic functionality to represent and access data in a way
+that interacts well with calipy’s basic classes and methods.</p>
+<dl>
+<dt>The classes and functions are</dt><dd><dl class="simple">
+<dt>DataTuple: A class for holding tuples of various objects with explicit names.</dt><dd><p>is the basic object to be used for input variables, observations etc. as
+it makes explicit the meaning of the tensors passed or produced.</p>
+</dd>
+</dl>
+<p>sample:</p>
+</dd>
+</dl>
+<p>The DataTuple class is often used to manage and package data, including for the
+various forward() methods when activating CalipyNodes.</p>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">CalipyDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">homogeneous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></p>
+<p>CalipyDataset is a class mimicking the functionality of the Dataset class in
+torch.utils.data but providing some streamlined prebuilt functions needed
+in the context of calipy. This includes support for subsampling based on 
+CalipyDict objects. Is meant to be subclassed for augmenting user specified
+datasets with additional, calipy-ready functionality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_data</strong> (<em>NoneType</em><em>, </em><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor"><em>CalipyTensor</em></a><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a>) – <p>The input_data of the dataset reflecting the inputs to 
+the model that evoke the corresponding outputs. 
+Valid input types include:</p>
+<blockquote>
+<div><ul>
+<li><p>None =&gt; No input data (no input)</p></li>
+<li><p>CalipyTensor =&gt; Single tensor (single input)</p></li>
+<li><p>CalipyDict =&gt; Dictionary containing CalipyTensors (multiple inputs)</p></li>
+<li><dl class="simple">
+<dt>CalipyIO =&gt; List containing CalipyDict containing CalipyTensors </dt><dd><p>(multiple inputs, possibly of inhomogeneous shape and type)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>output_data</strong> (<em>NoneType</em><em>, </em><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor"><em>CalipyTensor</em></a><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a>) – <p>The output_data of the dataset reflecting the outputs of 
+the model evoked by the corresponding inputs.
+Valid input types include:</p>
+<blockquote>
+<div><ul>
+<li><p>None =&gt; No output data (no output)</p></li>
+<li><p>CalipyTensor =&gt; Single tensor (single output)</p></li>
+<li><p>CalipyDict =&gt; Dictionary containing CalipyTensors (multiple outputs)</p></li>
+<li><dl class="simple">
+<dt>CalipyIO =&gt; List containing CalipyDict containing CalipyTensors </dt><dd><p>(multiple inputs, possibly of inhomogeneous shape and type)</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>batch_dims</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple object defining the batch dimensions among 
+which flattening and subsampling is performed.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of CalipyDataset, suitable for accessing datasets and
+passing them to DataLoader objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDataset" title="calipy.core.data.CalipyDataset">CalipyDataset</a></p>
+</dd>
+</dl>
+<p>The following scenarios need to be covered by the construction procedure:</p>
+<blockquote>
+<div><ol class="lowerroman simple">
+<li><p>(Input, Ouptut) =  (None, CalipyTensor)</p></li>
+<li><p>(Input, Ouptut) =  (Calipytensor, CalipyTensor)</p></li>
+<li><p>(Input, Ouptut) =  (None, dict(CalipyTensor))</p></li>
+<li><p>(Input, Output) = (dict(CalipyTensor), dict(CalipyTensor))</p></li>
+<li><p>(Input, Ouptut) =  (None, list(dict(CalipyTensor)))</p></li>
+<li><p>(Input, Output) = (list(dict(CalipyTensor)), list(dict(CalipyTensor)))</p></li>
+<li><p>(Input, Output) = (None, list_mixed)</p></li>
+<li><p>(Input, Output) = (list_mixed, list_mixed)</p></li>
+</ol>
+</div></blockquote>
+<p>where list_mixed means a list of dicts with entries to keys sometimes being
+None or of nonmatching shapes.</p>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>        
+<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span>  <span class="n">CalipyDataset</span><span class="p">,</span> <span class="n">io_collate</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="c1"># Definitions        </span>
+<span class="n">n_meas</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">n_event</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">n_subbatch</span> <span class="o">=</span> <span class="mi">7</span>
+
+
+<span class="c1"># ii) Create data for dataset</span>
+
+<span class="c1"># Set up sample distributions</span>
+<span class="n">mu_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">sigma_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+<span class="c1"># Sample from distributions &amp; wrap result</span>
+<span class="n">data_distribution</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data_distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">n_meas</span><span class="p">,</span> <span class="n">n_event</span><span class="p">])</span>
+<span class="n">data_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;bd_data&#39;</span><span class="p">,</span> <span class="s1">&#39;ed_data&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n_meas</span><span class="p">,</span> <span class="n">n_event</span><span class="p">])</span>
+<span class="n">data_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">data_dims</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+
+<span class="c1"># dataset_inputs</span>
+<span class="n">data_none</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">data_ct</span> <span class="o">=</span> <span class="n">data_cp</span>
+<span class="n">data_cd</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">data_cp</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span> <span class="p">:</span> <span class="n">data_cp</span><span class="p">}</span>
+<span class="n">data_io</span> <span class="o">=</span> <span class="p">[</span><span class="n">data_cd</span><span class="p">,</span> <span class="n">data_cd</span><span class="p">]</span>
+<span class="n">data_io_mixed</span> <span class="o">=</span> <span class="p">[</span><span class="n">data_cd</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span> <span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span> <span class="p">:</span> <span class="n">data_cp</span><span class="p">}</span> <span class="p">,</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="n">data_cp</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">},</span> <span class="n">data_cd</span><span class="p">]</span>
+
+
+<span class="c1"># iii) Build datasets</span>
+
+<span class="c1"># Build datasets and check</span>
+<span class="n">dataset_none_none</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">)</span>
+<span class="n">dataset_none_ct</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">)</span>
+<span class="n">dataset_none_cd</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">)</span>
+<span class="n">dataset_none_io</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">)</span>
+<span class="n">dataset_none_iomixed</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_none</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">)</span>
+
+<span class="n">dataset_ct_ct</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">)</span>
+<span class="n">dataset_ct_cd</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">)</span>
+<span class="n">dataset_ct_io</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">)</span>
+<span class="n">dataset_ct_iomixed</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">)</span>
+
+<span class="n">dataset_cd_ct</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">)</span>
+<span class="n">dataset_cd_cd</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">)</span>
+<span class="n">dataset_cd_io</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">)</span>
+<span class="n">dataset_cd_iomixed</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">)</span>
+
+<span class="n">dataset_io_ct</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">)</span>
+<span class="n">dataset_io_cd</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">)</span>
+<span class="n">dataset_io_io</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">)</span>
+<span class="n">dataset_io_iomixed</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">)</span>
+
+<span class="n">dataset_iomixed_ct</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_ct</span><span class="p">)</span>
+<span class="n">dataset_iomixed_cd</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_cd</span><span class="p">)</span>
+<span class="n">dataset_iomixed_io</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io</span><span class="p">)</span>
+<span class="n">dataset_iomixed_iomixed</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">,</span> <span class="n">output_data</span> <span class="o">=</span> <span class="n">data_io_mixed</span><span class="p">)</span>
+
+
+<span class="c1"># iv) Build dataloader and subsample</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">CalipyDataset</span><span class="p">(</span><span class="n">input_data</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">data_cd</span><span class="p">],</span>
+                        <span class="n">output_data</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_ct</span><span class="p">,</span> <span class="n">data_cd</span><span class="p">]</span> <span class="p">)</span>
+<span class="n">dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">collate_fn</span><span class="o">=</span><span class="n">io_collate</span><span class="p">)</span>
+
+<span class="c1"># Iterate through the DataLoader</span>
+<span class="k">for</span> <span class="n">batch_input</span><span class="p">,</span> <span class="n">batch_output</span><span class="p">,</span> <span class="n">batch_index</span> <span class="ow">in</span> <span class="n">dataloader</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">batch_input</span><span class="p">,</span> <span class="n">batch_output</span><span class="p">,</span> <span class="n">batch_index</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDataset.infer_length">
+<span class="sig-name descname"><span class="pre">infer_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDataset.infer_length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">CalipyDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<p>A dictionary-like container that can store single or multiple items.
+If it contains exactly one item, calipy_dict.value can be called to retrieve
+it directly. Is meant as a convenient wrapper to DataTuple functionality 
+and is the basis  for the standard input/output/observation format CalipyIO
+handled inside of the CalipyNode objects. Is typically autowrapped around 
+dictionaries or single objects provided by the user towards e.g. the forward()
+method. Has idempotent property and leaves CalipyDict objects unchanged.</p>
+<p>CalipyDict allows heterogeneous tensor shapes for flexible datasets. Keys
+represent measurement identifiers (‘mean’, ‘var’, etc.); values are e.g. 
+CalipyTensors with potentially differing shapes across CalipyDict instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>None</em><em>, </em><em>dict</em><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><em>DataTuple</em></a><em>, or </em><em>any single object.</em>) – <p>The data used to construct the CalipyDict.
+Valid input types include:</p>
+<ul class="simple">
+<li><p><cite>None</cite>: Initializes an empty dict.</p></li>
+<li><p><cite>dict[str, item]</cite>: Multi-item dictionary.</p></li>
+<li><p><cite>CalipyDict</cite>: Returns unchanged.</p></li>
+<li><p><cite>DataTuple</cite>: Converted to dict.</p></li>
+<li><p>Single object: Stored under a default key <cite>‘__single__’</cite>.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of CalipyDict</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict">CalipyDict</a></p>
+</dd>
+</dl>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span>
+
+
+<span class="c1"># Create data for CalipyDict initialization</span>
+<span class="n">tensor_A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">tensor_B</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">,</span> <span class="s1">&#39;tensor_B&#39;</span><span class="p">]</span>
+<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">tensor_A</span><span class="p">,</span> <span class="n">tensor_B</span><span class="p">]</span>
+<span class="n">data_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+<span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">:</span> <span class="n">tensor_A</span><span class="p">,</span> <span class="s1">&#39;tensor_B&#39;</span> <span class="p">:</span> <span class="n">tensor_B</span><span class="p">}</span>
+
+<span class="c1"># Create CalipyDict objects</span>
+<span class="n">dict_from_none</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">()</span>
+<span class="n">dict_from_dict</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+<span class="n">dict_from_tuple</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">(</span><span class="n">data_tuple</span><span class="p">)</span>
+<span class="n">dict_from_calipy</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">(</span><span class="n">dict_from_dict</span><span class="p">)</span>
+<span class="n">dict_from_single</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">(</span><span class="n">tensor_A</span><span class="p">)</span>
+
+<span class="c1"># Print contents and investigate </span>
+<span class="k">for</span> <span class="n">cp_dict</span> <span class="ow">in</span> <span class="p">[</span><span class="n">dict_from_none</span><span class="p">,</span> <span class="n">dict_from_dict</span><span class="p">,</span> <span class="n">dict_from_tuple</span><span class="p">,</span> 
+                <span class="n">dict_from_calipy</span><span class="p">,</span> <span class="n">dict_from_single</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cp_dict</span><span class="p">)</span>
+
+<span class="n">dict_from_single</span><span class="o">.</span><span class="n">has_single_item</span>
+<span class="n">dict_from_single</span><span class="o">.</span><span class="n">value</span>
+<span class="n">dict_from_dict</span><span class="o">.</span><span class="n">as_datatuple</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.as_datatuple">
+<span class="sig-name descname"><span class="pre">as_datatuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.data.CalipyDict.as_datatuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert this CalipyDict into a DataTuple for dimension-aware operations
+or other advanced uses.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.has_single_item">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_single_item</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#calipy.core.data.CalipyDict.has_single_item" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if exactly one item is in this dict, else False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.is_null">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.data.CalipyDict.is_null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicate if CalipyDict only has one element and that one is trivial</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.rename_keys">
+<span class="sig-name descname"><span class="pre">rename_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rename_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDict.rename_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renames current keys to the ones given by rename_dict[key].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rename_dict</strong> (<em>dict</em>) – Dictionary s.t. for each key in rename_dict, key is in
+self.keys() with rename_dict[key] being the string that is the key
+in the newly produced CalipyDict.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>CalipyDict with the same values but with changed keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict">CalipyDict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.stack">
+<span class="sig-name descname"><span class="pre">stack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDict.stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overloads the + operator to return a new CalipyDicte when adding two 
+CalipyDict objects. Addition is defined</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a>) – The CalipyDict to add.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new CalipyDict with elements from each dict stacked.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict">CalipyDict</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both DataTuples do not have matching keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.subsample_tensors">
+<span class="sig-name descname"><span class="pre">subsample_tensors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyDict.subsample_tensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows accessing CalipyTensor elements of CalipyDict by passing a
+list of integer indices and a single dimension along which all of the
+CalipyTensors in the dict are to be sliced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indices</strong> (<em>list</em><em> of </em><em>int</em>) – List of integer indices that is used for indexing self
+in the dimension dim</p></li>
+<li><p><strong>dim</strong> (<a class="reference internal" href="../usage.html#calipy.core.utils.DimTuple" title="calipy.core.utils.DimTuple"><em>DimTuple</em></a>) – A DimTuple containing a single CalipyDim object declaring
+which dim is to be subsampled</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new CalipyDict with keys of self and corresponding values =
+value[…, indices, …] i.e. the values indexed by the indices in
+dimension dim.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict">CalipyDict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyDict.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#calipy.core.data.CalipyDict.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>If there’s exactly one item in this CalipyDict, return it.
+Otherwise, raise an error. This property allows single-output usage.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">CalipyIO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'io_noname'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyIO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A data container that can store single or multiple dict like containers.
+Is meant as a convenient wrapper for homogeneous and inhomogeneous lists of
+data where each list element is a CalipyDict. CalipyIO s the standard input
+/output/observation format handled inside of the CalipyNode objects. Is
+typically autowrapped around lists of dictionaries or single objects provided
+by the user towards e.g. the forward() method. Has idempotent property and 
+leaves CalipyIO objects unchanged; i.e. wrapping multiple times is equivalent
+to wrapping once. CalipyIO objects are also the output of iterating through
+InhomogeneousDataLoader objects; i.e. datasets and subbatched datasets are
+represented in this way.</p>
+<dl class="simple">
+<dt>Special access rules: </dt><dd><ul class="simple">
+<li><p>If calipy_io contains in its list a single dict, calipy_io.dict returns it</p></li>
+<li><dl class="simple">
+<dt>If calipy_io contains in its list a single dict, calipy_io[key] returns</dt><dd><p>the corresponding value dict[key]</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If calipy_io contains in its list a single dict and in that dict a single</dt><dd><p>key, value pair, then calipy_io.value returns that value.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>None</em><em>, or </em><em>dict</em><em>, or </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a><em>, or </em><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><em>DataTuple</em></a><em>, or </em><em>single object.</em>) – <p>The data being used to construct the CalipyDict. 
+Valid input types include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>None =&gt; empty dict</p></li>
+<li><p>A dict {str -&gt; item} =&gt; multi-item</p></li>
+<li><p>A CalipyDict =&gt; Leave unchanged</p></li>
+<li><p>A DataTuple =&gt; convert to dict</p></li>
+<li><p>A single item =&gt; store under a default key ‘__single__’</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of CalipyDict</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict">CalipyDict</a></p>
+</dd>
+</dl>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+
+
+<span class="c1"># Create data for CalipyList</span>
+<span class="n">calipy_list_empty</span> <span class="o">=</span> <span class="n">CalipyList</span><span class="p">()</span>
+<span class="n">calipy_list</span> <span class="o">=</span> <span class="n">CalipyList</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">])</span>
+<span class="n">calipy_same_list</span> <span class="o">=</span> <span class="n">CalipyList</span><span class="p">(</span><span class="n">calipy_list</span><span class="p">)</span>
+
+
+<span class="c1"># Pass data into CalipyIO and investigate</span>
+
+<span class="c1"># Legal input types are None, single object, dict, CalipyDict, DataTuple, list,</span>
+<span class="c1"># CalipyList, CalipyIO. </span>
+
+<span class="c1"># Build inputs</span>
+<span class="n">none_input</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">single_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">])</span>
+<span class="n">dict_input</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<span class="n">CalipyDict_input</span> <span class="o">=</span> <span class="n">CalipyDict</span><span class="p">(</span><span class="n">dict_input</span><span class="p">)</span>
+<span class="n">DataTuple_input</span> <span class="o">=</span> <span class="n">CalipyDict_input</span><span class="o">.</span><span class="n">as_datatuple</span><span class="p">()</span>
+<span class="n">list_input</span> <span class="o">=</span> <span class="p">[</span><span class="n">dict_input</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span> <span class="p">:</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;d&#39;</span> <span class="p">:</span> <span class="mi">4</span><span class="p">}]</span>
+<span class="n">CalipyList_input</span> <span class="o">=</span> <span class="n">CalipyList</span><span class="p">(</span><span class="n">list_input</span><span class="p">)</span>
+<span class="n">CalipyIO_input</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">dict_input</span><span class="p">)</span>
+
+<span class="c1"># Build CalipyIO&#39;s</span>
+<span class="n">none_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">none_input</span><span class="p">)</span>
+<span class="n">single_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">single_input</span><span class="p">)</span>
+<span class="n">dict_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">dict_input</span><span class="p">)</span>
+<span class="n">CalipyDict_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">CalipyDict_input</span><span class="p">)</span>
+<span class="n">DataTuple_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">DataTuple_input</span><span class="p">)</span>
+<span class="n">list_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">list_input</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;io_from_list&#39;</span><span class="p">)</span>
+<span class="n">CalipyList_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">CalipyList_input</span><span class="p">)</span>
+<span class="n">CalipyIO_io</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">(</span><span class="n">CalipyIO_input</span><span class="p">)</span>
+
+
+<span class="c1"># Check properties</span>
+<span class="n">none_io</span><span class="o">.</span><span class="n">is_null</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">is_null</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">single_io</span><span class="p">)</span>
+
+
+<span class="c1"># Functionality includes:</span>
+<span class="c1">#   1. Iteration</span>
+<span class="c1">#   2. Fetch by index</span>
+<span class="c1">#   3. Associated CalipyIndex</span>
+<span class="c1">#      -  Has global and local index</span>
+<span class="c1">#   4. Comes with collate function</span>
+
+<span class="c1"># 1. Iteration</span>
+<span class="c1"># Proceed to investigate one of the built calipy_io objects, here list_io</span>
+<span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">list_io</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">io</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="p">)</span>
+
+<span class="c1"># 2. Fetch by index</span>
+<span class="c1"># Access values (special if list and dict only have 1 element)</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">dict</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">value</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">calipy_dict</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">calipy_list</span>
+<span class="n">single_io</span><span class="o">.</span><span class="n">data_tuple</span>
+<span class="n">single_io</span><span class="p">[</span><span class="s1">&#39;__single__&#39;</span><span class="p">]</span>
+<span class="n">list_io</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+
+
+<span class="c1"># 3. a) Associated Indexer</span>
+<span class="c1"># Content of indexer</span>
+<span class="n">list_io</span><span class="o">.</span><span class="n">batch_dim_flattened</span>
+<span class="n">list_io</span><span class="o">.</span><span class="n">indexer</span>
+<span class="n">list_io</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+<span class="n">list_io_sub</span> <span class="o">=</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">data_source_name</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">index_tensor_dims</span>
+
+<span class="c1"># 3. b) Associated CalipyIndex</span>
+<span class="c1"># Content of specific IOIndexer</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span><span class="o">.</span><span class="n">tuple</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span><span class="o">.</span><span class="n">tensor</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span><span class="o">.</span><span class="n">index_name_dict</span>
+
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">tuple</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">tensor</span>
+<span class="n">list_io_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">index_name_dict</span>
+
+<span class="c1"># Iteration produces sub_io&#39;s</span>
+<span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">list_io</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+
+<span class="c1"># 3. c) Index / IO interaction</span>
+<span class="c1"># subsampling and indexing: via intes, tuples, slices, and CalipyIndex</span>
+<span class="n">sub_io_1</span> <span class="o">=</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">sub_io_2</span> <span class="o">=</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">sub_io_3</span> <span class="o">=</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="n">sub_io_1</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+<span class="n">sub_io_2</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+<span class="n">sub_io_3</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+
+<span class="n">sub_io_1</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">sub_io_2</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">sub_io_3</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+
+<span class="n">global_index_1</span> <span class="o">=</span> <span class="n">sub_io_1</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">global_index_2</span> <span class="o">=</span> <span class="n">sub_io_2</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+<span class="n">global_index_3</span> <span class="o">=</span> <span class="n">sub_io_3</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+
+<span class="k">assert</span><span class="p">(</span><span class="n">list_io</span><span class="p">[</span><span class="n">global_index_1</span><span class="p">]</span> <span class="o">==</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">list_io</span><span class="p">[</span><span class="n">global_index_2</span><span class="p">]</span> <span class="o">==</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">assert</span><span class="p">(</span><span class="n">list_io</span><span class="p">[</span><span class="n">global_index_3</span><span class="p">]</span> <span class="o">==</span> <span class="n">list_io</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="c1"># 4. Collate function</span>
+<span class="c1"># Check collation functionality for autoreducing io s</span>
+<span class="n">mean_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;bd_1&#39;</span><span class="p">,</span> <span class="s1">&#39;ed_1&#39;</span><span class="p">])</span>
+<span class="n">var_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;bd_1&#39;</span><span class="p">,</span> <span class="s1">&#39;ed_1&#39;</span><span class="p">])</span>
+
+<span class="n">mean_1</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">mean_dims</span><span class="p">)</span>
+<span class="n">mean_2</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">mean_dims</span><span class="p">)</span>
+<span class="n">var_1</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">var_dims</span><span class="p">)</span>
+<span class="n">var_2</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">var_dims</span><span class="p">)</span>
+
+<span class="n">io_obj</span> <span class="o">=</span> <span class="n">CalipyIO</span><span class="p">([</span>
+    <span class="n">CalipyDict</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mean_1</span><span class="p">,</span> <span class="s1">&#39;var&#39;</span><span class="p">:</span> <span class="n">var_1</span><span class="p">}),</span>
+    <span class="n">CalipyDict</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mean_2</span><span class="p">,</span> <span class="s1">&#39;var&#39;</span><span class="p">:</span> <span class="n">var_2</span><span class="p">})</span>
+<span class="p">])</span>
+
+<span class="n">collated_io</span> <span class="o">=</span> <span class="n">io_obj</span><span class="o">.</span><span class="n">reduce_list</span><span class="p">()</span>
+
+<span class="c1"># Rename all entries in the dicts in CalipyIO</span>
+<span class="n">rename_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span> <span class="p">:</span> <span class="s1">&#39;new_a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span> <span class="p">:</span> <span class="s1">&#39;new_b&#39;</span><span class="p">}</span>
+<span class="n">renamed_io</span> <span class="o">=</span> <span class="n">list_io</span><span class="o">.</span><span class="n">rename_keys</span><span class="p">(</span><span class="n">rename_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.as_datatuple">
+<span class="sig-name descname"><span class="pre">as_datatuple</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><span class="pre">DataTuple</span></a></span></span><a class="headerlink" href="#calipy.core.data.CalipyIO.as_datatuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert this CalipyDict into a DataTuple for dimension-aware operations
+or other advanced uses.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.dict">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#calipy.core.data.CalipyIO.dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>If there’s exactly one dict in this CalipyIO, return it.
+Otherwise, raise an error. This property allows single-output usage.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.has_single_item">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_single_item</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#calipy.core.data.CalipyIO.has_single_item" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if exactly one item is in this io, else False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.is_null">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.data.CalipyIO.is_null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicate if CalipyIO only has one element and that one is trivial</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.is_reducible">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_reducible</span></span><a class="headerlink" href="#calipy.core.data.CalipyIO.is_reducible" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.preprocess_for_node">
+<span class="sig-name descname"><span class="pre">preprocess_for_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodestructure</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyIO.preprocess_for_node" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.reduce_list">
+<span class="sig-name descname"><span class="pre">reduce_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyIO.reduce_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempts to merge all CalipyDict elements in self.calipy_list into a single
+CalipyDict by concatenating tensors along the first dimension. This method 
+succeeds only if all CalipyDict elements have exactly matching keys and 
+tensor dimensions (excluding the first dimension).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.rename_keys">
+<span class="sig-name descname"><span class="pre">rename_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rename_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyIO.rename_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renames current keys in all the dicts to the ones given by rename_dict[key].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rename_dict</strong> (<em>dict</em>) – Dictionary s.t. for each key in rename_dict, key is in
+self.calipy_list[k]keys() with rename_dict[key] being the string that
+is the key in the newly produced CalipyDict.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>CalipyIO with the same values but with changed keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO">CalipyIO</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyIO.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#calipy.core.data.CalipyIO.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>If there’s exactly one dict in this CalipyIO and one entry in it return
+the entry. Otherwise, raise an error. This property allows single-output usage.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyList">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">CalipyList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.CalipyList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+<p>A list-like container that can store single or multiple dict like containers.
+Is meant as a convenient wrapper for homogeneous and inhomogeneous lists of
+data where each list element is a CalipyDict. CalipyList is a central element
+to the standard input/output/observation format handled inside of the CalipyNode
+objects. Is typically autowrapped around lists of dictionaries or single objects
+provided by the user towards e.g. the forward() method. Has idempotent property
+and leaves CalipyList objects unchanged; i.e. wrapping multiple times is equivalent
+to wrapping once. Ingredient to CalipyIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Any</em>) – <p>The data being used to construct the CalipyList. 
+Valid input types include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A single item =&gt; CalipyList containing single item</p></li>
+<li><p>A list =&gt; CalipyList containg list of objects</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of CalipyList</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyList" title="calipy.core.data.CalipyList">CalipyList</a></p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyList.has_single_item">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_single_item</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#calipy.core.data.CalipyList.has_single_item" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if exactly one item is in this dict, else False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyList.is_null">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_null</span></span><a class="headerlink" href="#calipy.core.data.CalipyList.is_null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicate if CalipyList only has one element and that one is trivial</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="calipy.core.data.CalipyList.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></em><a class="headerlink" href="#calipy.core.data.CalipyList.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>If there’s exactly one item in this CalipyList, return it.
+Otherwise, raise an error. This property allows single-output usage.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">DataTuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Custom class for holding tuples of various objects with explicit names.
+Provides methods for easily distributing functions over the entries in the
+tuple and thereby makes modifying collections of objects easier. This is
+routinely used to perform actions on grouped observation tensors, batch_dims,
+or event_dims.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names</strong> (<em>list</em><em> of </em><em>string</em>) – A list of names serving as keys for the DataTuple.</p></li>
+<li><p><strong>values</strong> (<em>list</em><em> of </em><em>obj</em>) – A list of objects serving as values for the DataTuple.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of DataTuple containing the key, value pairs and additional
+attributes and methods.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple">DataTuple</a></p>
+</dd>
+</dl>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create DataTuple of tensors</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">,</span> <span class="s1">&#39;tensor_B&#39;</span><span class="p">]</span>
+<span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)]</span>
+<span class="n">data_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+<span class="n">data_tuple</span><span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">]</span>
+
+<span class="c1"># Apply functions</span>
+<span class="n">fun</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span><span class="mi">1</span>
+<span class="n">result_tuple_1</span> <span class="o">=</span> <span class="n">data_tuple</span><span class="o">.</span><span class="n">apply_elementwise</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result of applying function:&quot;</span><span class="p">,</span> <span class="n">result_tuple_1</span><span class="p">,</span> <span class="n">result_tuple_1</span><span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">],</span> <span class="n">result_tuple_1</span><span class="p">[</span><span class="s1">&#39;tensor_B&#39;</span><span class="p">])</span>
+<span class="n">fun_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;tensor_B&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">}</span>
+<span class="n">result_tuple_2</span> <span class="o">=</span> <span class="n">data_tuple</span><span class="o">.</span><span class="n">apply_from_dict</span><span class="p">(</span><span class="n">fun_dict</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result of applying function dictionary:&quot;</span><span class="p">,</span> <span class="n">result_tuple_2</span><span class="p">,</span> <span class="n">result_tuple_2</span><span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">],</span> <span class="n">result_tuple_2</span><span class="p">[</span><span class="s1">&#39;tensor_B&#39;</span><span class="p">])</span>
+
+
+<span class="c1"># Create DataTuple of dimensions</span>
+<span class="n">batch_dims_A</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bd_A&#39;</span><span class="p">,])</span>
+<span class="n">event_dims_A</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ed_A&#39;</span><span class="p">])</span>       
+<span class="n">batch_dims_B</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bd_B&#39;</span><span class="p">])</span>
+<span class="n">event_dims_B</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ed_B&#39;</span><span class="p">])</span>
+
+<span class="n">batch_dims_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="p">[</span><span class="n">batch_dims_A</span><span class="p">,</span> <span class="n">batch_dims_B</span><span class="p">])</span>
+<span class="n">event_dims_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="p">[</span><span class="n">event_dims_A</span><span class="p">,</span> <span class="n">event_dims_B</span><span class="p">])</span>
+
+<span class="c1"># Add them </span>
+<span class="n">added_tensor_tuple</span> <span class="o">=</span> <span class="n">data_tuple</span> <span class="o">+</span> <span class="n">data_tuple</span>
+<span class="n">full_dims_datatuple</span> <span class="o">=</span> <span class="n">batch_dims_tuple</span> <span class="o">+</span> <span class="n">event_dims_tuple</span>
+
+<span class="c1"># Construct indexer</span>
+<span class="n">data_tuple_cp</span> <span class="o">=</span> <span class="n">data_tuple</span><span class="o">.</span><span class="n">calipytensor_construct</span><span class="p">(</span><span class="n">full_dims_datatuple</span><span class="p">)</span>
+<span class="n">augmented_tensor</span> <span class="o">=</span> <span class="n">data_tuple_cp</span><span class="p">[</span><span class="s1">&#39;tensor_A&#39;</span><span class="p">]</span>
+<span class="n">augmented_tensor</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+
+<span class="c1"># Access subattributes</span>
+<span class="n">shapes_tuple</span> <span class="o">=</span> <span class="n">data_tuple</span><span class="o">.</span><span class="n">get_subattributes</span><span class="p">(</span><span class="s1">&#39;shape&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shapes of each tensor in DataTuple:&quot;</span><span class="p">,</span> <span class="n">shapes_tuple</span><span class="p">)</span>
+<span class="n">batch_dims_datatuple</span><span class="o">.</span><span class="n">get_subattributes</span><span class="p">(</span><span class="s1">&#39;sizes&#39;</span><span class="p">)</span>
+<span class="n">batch_dims_datatuple</span><span class="o">.</span><span class="n">get_subattributes</span><span class="p">(</span><span class="s1">&#39;build_torchdims&#39;</span><span class="p">)</span>
+
+<span class="c1"># Set new item</span>
+<span class="n">data_tuple</span><span class="p">[</span><span class="s1">&#39;tensor_C&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data_tuple</span><span class="p">)</span>
+
+<span class="c1"># Apply class over each element</span>
+<span class="k">class</span> <span class="nc">DifferentClass</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;DifferentClass(tensor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<span class="n">different_tuple</span> <span class="o">=</span> <span class="n">data_tuple</span><span class="o">.</span><span class="n">apply_class</span><span class="p">(</span><span class="n">DifferentClass</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Result of applying DifferentClass to DataTuple:&quot;</span><span class="p">,</span> <span class="n">different_tuple</span><span class="p">)</span>
+
+
+<span class="c1"># DataTuple and CalipyTensor interact well: In the following we showcase</span>
+<span class="c1"># that a DataTuple of CalipyTensors can be subsampled by providing a</span>
+<span class="c1"># DataTuple of CalipyIndexes or a single CalipyIndex that is automatically</span>
+<span class="n">distributed</span> <span class="n">over</span> <span class="n">the</span> <span class="n">CalipyTensors</span> <span class="k">for</span> <span class="n">indexing</span><span class="o">.</span>
+
+<span class="c1"># Set up DataTuple of CalipyTensors</span>
+<span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bd_1&#39;</span><span class="p">])</span>
+<span class="n">event_dims_A</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ed_1_A&#39;</span><span class="p">,</span> <span class="s1">&#39;ed_2_A&#39;</span><span class="p">])</span>
+<span class="n">data_dims_A</span> <span class="o">=</span> <span class="n">batch_dims</span> <span class="o">+</span> <span class="n">event_dims_A</span>
+<span class="n">event_dims_B</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ed_1_B&#39;</span><span class="p">])</span>
+<span class="n">data_dims_B</span> <span class="o">=</span> <span class="n">batch_dims</span> <span class="o">+</span> <span class="n">event_dims_B</span>
+<span class="n">data_A_torch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">data_A_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data_A_torch</span><span class="p">,</span> <span class="n">data_dims_A</span><span class="p">,</span> <span class="s1">&#39;data_A&#39;</span><span class="p">)</span>
+<span class="n">data_B_torch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,[</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+<span class="n">data_B_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data_B_torch</span><span class="p">,</span> <span class="n">data_dims_B</span><span class="p">,</span> <span class="s1">&#39;data_B&#39;</span><span class="p">)</span>
+
+<span class="n">data_AB_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">([</span><span class="s1">&#39;data_A_cp&#39;</span><span class="p">,</span> <span class="s1">&#39;data_B_cp&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">data_A_cp</span><span class="p">,</span> <span class="n">data_B_cp</span><span class="p">])</span>
+
+<span class="c1"># subsample the data individually</span>
+<span class="n">data_AB_subindices</span> <span class="o">=</span> <span class="n">TensorIndexer</span><span class="o">.</span><span class="n">create_simple_subsample_indices</span><span class="p">(</span><span class="n">batch_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_A_cp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">data_AB_subindex</span> <span class="o">=</span> <span class="n">data_AB_subindices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">data_A_subindex</span> <span class="o">=</span> <span class="n">data_AB_subindex</span><span class="o">.</span><span class="n">expand_to_dims</span><span class="p">(</span><span class="n">data_dims_A</span><span class="p">,</span> <span class="n">data_A_cp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">data_B_subindex</span> <span class="o">=</span> <span class="n">data_AB_subindex</span><span class="o">.</span><span class="n">expand_to_dims</span><span class="p">(</span><span class="n">data_dims_B</span><span class="p">,</span> <span class="n">data_B_cp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">data_AB_sub_1</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">([</span><span class="s1">&#39;data_A_cp_sub&#39;</span><span class="p">,</span> <span class="s1">&#39;data_B_cp_sub&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">data_A_cp</span><span class="p">[</span><span class="n">data_A_subindex</span><span class="p">],</span> <span class="n">data_B_cp</span><span class="p">[</span><span class="n">data_B_subindex</span><span class="p">]])</span>
+
+<span class="c1"># Use subsampling functionality for DataTuples, either by passing a DataTuple of</span>
+<span class="c1"># CalipyIndex or a single CalipyIndex that is broadcasted</span>
+<span class="n">data_AB_subindex_tuple</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">([</span><span class="s1">&#39;data_A_cp&#39;</span><span class="p">,</span> <span class="s1">&#39;data_B_cp&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">data_A_subindex</span><span class="p">,</span> <span class="n">data_B_subindex</span><span class="p">])</span>
+<span class="n">data_AB_sub_2</span> <span class="o">=</span> <span class="n">data_AB_tuple</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">data_AB_subindex_tuple</span><span class="p">)</span>
+<span class="n">data_AB_sub_3</span> <span class="o">=</span> <span class="n">data_AB_tuple</span><span class="o">.</span><span class="n">subsample</span><span class="p">(</span><span class="n">data_AB_subindex</span><span class="p">)</span>
+<span class="k">assert</span> <span class="p">((</span><span class="n">data_AB_sub_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">data_AB_sub_2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">tensor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="k">assert</span> <span class="p">((</span><span class="n">data_AB_sub_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">data_AB_sub_3</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">tensor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.apply_class">
+<span class="sig-name descname"><span class="pre">apply_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.apply_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows applying a class constructor to all elements in the DataTuple.
+For example, DifferentClass(data_tuple) will apply DifferentClass to each element in data_tuple.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>class_type</strong> – The class constructor to be applied to each element.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New DataTuple with the class constructor applied to each element.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.apply_elementwise">
+<span class="sig-name descname"><span class="pre">apply_elementwise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.apply_elementwise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a new DataTuple with keys = self._data_dict.keys() and associated
+values = function(self._data_dict.values())</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.apply_from_dict">
+<span class="sig-name descname"><span class="pre">apply_from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.apply_from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies functions from a dictionary to corresponding entries in the DataTuple.
+If a key in fun_dict matches a key in DataTuple, the function is applied.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fun_dict</strong> – Dictionary with keys corresponding to DataTuple keys and values as functions.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New DataTuple with functions applied where specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.as_dict">
+<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the underlying dictionary linking names and values</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.calipytensor_construct">
+<span class="sig-name descname"><span class="pre">calipytensor_construct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dims_datatuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.calipytensor_construct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies construction of the TensorIndexer to build for each tensor in self
+the CalipyTensor construction used for indexing. Requires all elements
+of self to be tensors and requires dims_datatuple to be a DataTuple containing
+DimTuples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – A DataTuple containing indexable tensors to be indexed</p></li>
+<li><p><strong>dims_datatuple</strong> – A DataTuple containing the DimTuples used for indexing</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Nothing returned, calipy.indexer integrated into tensors in self</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple">DataTuple</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both DataTuples do not have matching keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.get_subattributes">
+<span class="sig-name descname"><span class="pre">get_subattributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.get_subattributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows direct access to attributes or methods of elements inside the DataTuple.
+For example, calling <cite>data_tuple.get_subattributes(‘shape’)</cite> will return a DataTuple
+containing the shapes of each tensor in <cite>data_tuple</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>attr</strong> – The attribute or method name to be accessed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataTuple containing the attribute values or method results for each element.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.get_tensors">
+<span class="sig-name descname"><span class="pre">get_tensors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.get_tensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows to extract .tensor attribute out of a DataTuple that contains
+CalipyTensors leaving other objects in the tuple unperturbed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataTuple containing for each key, value pair either the tensor
+subattribute value.tensor or the original value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.items">
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.rename_keys">
+<span class="sig-name descname"><span class="pre">rename_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rename_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.rename_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renames current keys to the ones given by rename_dict[key].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rename_dict</strong> (<em>dict</em>) – Dictionary s.t. for each key in rename_dict, key is in
+self.keys() with rename_dict[key] being the string that is the key
+in the newly produced DataTuple.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataTuple the same values but with changed keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple">DataTuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.subsample">
+<span class="sig-name descname"><span class="pre">subsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datatuple_indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.subsample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subsamples a DataTuple containing CalipyTensors by applying to each of it
+the corresponding CalipyIndex object from the datatuple_indices. The arg
+datatuple_indices can also consist of just 1 entry of CalipyIndex that
+is then applied to all elements of self for subsampling. If a CalipyTensor
+in self does not feature the dim subsampled in CalipyIndex, then it is not 
+subsampled</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>datatuple_indices</strong> (<a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple"><em>DataTuple</em></a><em> or </em><a class="reference internal" href="../usage.html#calipy.core.tensor.CalipyIndex" title="calipy.core.tensor.CalipyIndex"><em>CalipyIndex</em></a>) – The DataTuple containing the CalipyIndex objects
+or a single CalipyIndex object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new DataTuple with each CalipyTensor subsampled by the indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.DataTuple" title="calipy.core.data.DataTuple">DataTuple</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If both DataTuples do not have matching keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.core.data.DataTuple.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.DataTuple.values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.data.io_collate">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">io_collate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.io_collate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Custom collate function that collates ios together by concatenating contained
+list elements into a longer list aroung which a new new CalipyIO object is built.
+This new CalipyIO object contains a list of dicts.
+If reduce = True, list elements are aimed to be stacked themselves (e.g. tensors
+along their first dimensions) to create a single dict containing stacked elements.
+Used primarily as collate function for the DataLoader to perform automatized subsampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>list</em><em> of </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a>) – A list of CalipyDiIO containing info on input_vars, observations, and
+corresponding index that was used to produce them via dataset.__getitem__[idx]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of CalipyIO, where multiple CalipyDict objects are 
+collated together either into a list of dicts or into a single calipy_io
+containing stacked CalipyTensors.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO">CalipyIO</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.core.data.preprocess_args">
+<span class="sig-prename descclassname"><span class="pre">calipy.core.data.</span></span><span class="sig-name descname"><span class="pre">preprocess_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_vars</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.data.preprocess_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function for preprocessing arguments to forward passes. Converts different
+forms of input to CalipyIO objects reflecting a standardized form of inputs
+and outputs. Typically just wraps input into CalipyIO.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_vars</strong> (<em>None</em><em>, </em><em>single object</em><em>, </em><em>Dict</em><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyDict" title="calipy.core.data.CalipyDict"><em>CalipyDict</em></a><em>, </em><em>list</em><em>, </em><a class="reference internal" href="../usage.html#calipy.core.data.CalipyList" title="calipy.core.data.CalipyList"><em>CalipyList</em></a><em>, 
+or </em><em>CalipyIO containing CalipyTensors.</em>) – Input input_vars to some .forward() method call. Specific
+contents depend on the node but typically None or a dict containing CalipyTensors
+with keys as specified in the nodes’ input_vars_schema</p></li>
+<li><p><strong>observation</strong> – Input observation to some .forward() method call. Specific
+contents depend on the node but typically a dict containing CalipyTensors
+with keys as specified in the nodes’ observation_schema</p></li>
+<li><p><strong>sbsample_index</strong> – Input subsample_index to some .forward() method call. Specific
+contents depend on the node but typically None if no subsampling happens
+or of type Dict containing CalipyIndex objects in case of subsampling. 
+The keys are as specified in the nodes’ subsampling_schema</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing instances of CalipyIO that represent input_vars,
+observations, subsample_index in a way that forward methods can handle
+them well and they are easily passable between nodes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple of <a class="reference internal" href="../usage.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO">CalipyIO</a></p>
+</dd>
+</dl>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">calipy.core.data  (API)</a><ul>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDataset"><code class="docutils literal notranslate"><span class="pre">CalipyDataset</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDataset.infer_length"><code class="docutils literal notranslate"><span class="pre">CalipyDataset.infer_length()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict"><code class="docutils literal notranslate"><span class="pre">CalipyDict</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.as_datatuple"><code class="docutils literal notranslate"><span class="pre">CalipyDict.as_datatuple()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.has_single_item"><code class="docutils literal notranslate"><span class="pre">CalipyDict.has_single_item</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyDict.is_null</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.rename_keys"><code class="docutils literal notranslate"><span class="pre">CalipyDict.rename_keys()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.stack"><code class="docutils literal notranslate"><span class="pre">CalipyDict.stack()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.subsample_tensors"><code class="docutils literal notranslate"><span class="pre">CalipyDict.subsample_tensors()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyDict.value"><code class="docutils literal notranslate"><span class="pre">CalipyDict.value</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO"><code class="docutils literal notranslate"><span class="pre">CalipyIO</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.as_datatuple"><code class="docutils literal notranslate"><span class="pre">CalipyIO.as_datatuple()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.dict"><code class="docutils literal notranslate"><span class="pre">CalipyIO.dict</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.has_single_item"><code class="docutils literal notranslate"><span class="pre">CalipyIO.has_single_item</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyIO.is_null</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.is_reducible"><code class="docutils literal notranslate"><span class="pre">CalipyIO.is_reducible</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.preprocess_for_node"><code class="docutils literal notranslate"><span class="pre">CalipyIO.preprocess_for_node()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.reduce_list"><code class="docutils literal notranslate"><span class="pre">CalipyIO.reduce_list()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.rename_keys"><code class="docutils literal notranslate"><span class="pre">CalipyIO.rename_keys()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyIO.value"><code class="docutils literal notranslate"><span class="pre">CalipyIO.value</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyList"><code class="docutils literal notranslate"><span class="pre">CalipyList</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.data.CalipyList.has_single_item"><code class="docutils literal notranslate"><span class="pre">CalipyList.has_single_item</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyList.is_null"><code class="docutils literal notranslate"><span class="pre">CalipyList.is_null</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.CalipyList.value"><code class="docutils literal notranslate"><span class="pre">CalipyList.value</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple"><code class="docutils literal notranslate"><span class="pre">DataTuple</span></code></a><ul>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.apply_class"><code class="docutils literal notranslate"><span class="pre">DataTuple.apply_class()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.apply_elementwise"><code class="docutils literal notranslate"><span class="pre">DataTuple.apply_elementwise()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.apply_from_dict"><code class="docutils literal notranslate"><span class="pre">DataTuple.apply_from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.as_dict"><code class="docutils literal notranslate"><span class="pre">DataTuple.as_dict()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.calipytensor_construct"><code class="docutils literal notranslate"><span class="pre">DataTuple.calipytensor_construct()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.get_subattributes"><code class="docutils literal notranslate"><span class="pre">DataTuple.get_subattributes()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.get_tensors"><code class="docutils literal notranslate"><span class="pre">DataTuple.get_tensors()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.items"><code class="docutils literal notranslate"><span class="pre">DataTuple.items()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.keys"><code class="docutils literal notranslate"><span class="pre">DataTuple.keys()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.rename_keys"><code class="docutils literal notranslate"><span class="pre">DataTuple.rename_keys()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.subsample"><code class="docutils literal notranslate"><span class="pre">DataTuple.subsample()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.DataTuple.values"><code class="docutils literal notranslate"><span class="pre">DataTuple.values()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calipy.core.data.io_collate"><code class="docutils literal notranslate"><span class="pre">io_collate()</span></code></a></li>
+<li><a class="reference internal" href="#calipy.core.data.preprocess_args"><code class="docutils literal notranslate"><span class="pre">preprocess_args()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="tensor.html"
+                          title="previous chapter">calipy.core.tensor  (API)</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="dist.html"
+                          title="next chapter">calipy.core.dist.distributions  (API)</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/data.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="dist.html" title="calipy.core.dist.distributions (API)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tensor.html" title="calipy.core.tensor (API)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">calipy 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">calipy.core.data  (API)</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2024, Dr. Jemil Avers Butt.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    </div>
+  </body>
+</html>
