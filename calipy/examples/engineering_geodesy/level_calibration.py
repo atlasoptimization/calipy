@@ -203,7 +203,7 @@ adam = pyro.optim.NAdam({"lr": 1})
 elbo = pyro.infer.Trace_ELBO()
 n_steps = 1000
 
-optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps}
+optim_opts = {'optimizer': adam, 'loss' : elbo, 'n_steps': n_steps, 'n_steps_report' : 100}
 
 
 # ii) Train the model

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'calipy'
-copyright = '2024, Dr. Jemil Avers Butt'
+copyright = '2024 - 20255, Dr. Jemil Avers Butt'
 author = 'Dr. Jemil Avers Butt, Atlas optimization GmbH / ETH Zurich'
 
 # The full version, including alpha/beta/rc tags
@@ -38,8 +38,10 @@ extensions = [
    'sphinx.ext.autodoc',
    'sphinx.ext.autosummary',
    'myst_parser',
+   'sphinx.ext.mathjax',    # ←  render LaTeX with MathJax
    'sphinxcontrib.mermaid', 
 ]
+pygments_style = "friendly"
 
 # -- mermaid --------------------------------------------------------------
 extensions.append("sphinxcontrib.mermaid")

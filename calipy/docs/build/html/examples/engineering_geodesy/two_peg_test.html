@@ -1,0 +1,708 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Two‑Peg Level Test — Estimating a Collimation Angle &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="../../_static/doctools.js?v=888ff710"></script>
+      <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]]}, "options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot" href="total_station_calibration.html" />
+    <link rel="prev" title="Tape-Measure Bias Estimation — Finding a Hidden Offset" href="tape_bias_estimation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="eg_examples_index.html">Engineering Geodesy</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tape_bias_estimation.html">Tape-Measure Bias Estimation — Finding a Hidden Offset</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Two‑Peg Level Test — Estimating a Collimation Angle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#background-what-is-the-twopeg-test">1  Background — What <strong>is</strong> the Two‑Peg Test?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementation-calipy-building-blocks">2  Implementation — <em>CaliPy</em> Building Blocks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dimaware-anatomy">2.1  Dim‑aware anatomy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#forward-model-in-code">2.2  Forward model in code</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#running-inference">3  Running Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results">4  Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-insights">5  Key Insights</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#next-steps">6  Next Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#full-code">7  Full code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="total_station_calibration.html">Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="eg_examples_index.html">Engineering Geodesy</a></li>
+      <li class="breadcrumb-item active">Two‑Peg Level Test — Estimating a Collimation Angle</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/engineering_geodesy/two_peg_test.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="twopeg-level-test-estimating-a-collimation-angle">
+<h1>Two‑Peg Level Test — Estimating a Collimation Angle<a class="headerlink" href="#twopeg-level-test-estimating-a-collimation-angle" title="Permalink to this heading"></a></h1>
+<blockquote>
+<div><p><em>“How do we turn a textbook levelling test into a fully‑Bayesian
+inference problem that runs in a few lines of code?”</em></p>
+</div></blockquote>
+<p>Example adopted from <em>Building and Solving Probabilistic Instrument Models with CaliPy</em>
+(Jemil Avers Butt, JISDM 2025, Karlsruhe). Available <a class="reference external" href="https://publikationen.bibliothek.kit.edu/1000179733">here</a> DOI: 10.5445/IR/1000179733</p>
+<div class="tip admonition">
+<p class="admonition-title">What you’ll learn</p>
+<ul class="simple">
+<li><p>How to encode a classical two‑peg test in <strong>CaliPy</strong></p></li>
+<li><p>How Bayesian inference (SVI) replaces hand‑derived Least Squares (LS) formulae</p></li>
+<li><p>How bayesian estimates and LS estimates coincide for simple Maximum likelihood estimation</p></li>
+</ul>
+</div>
+<hr class="docutils" />
+<section id="background-what-is-the-twopeg-test">
+<h2>1  Background — What <strong>is</strong> the Two‑Peg Test?<a class="headerlink" href="#background-what-is-the-twopeg-test" title="Permalink to this heading"></a></h2>
+<p>When you calibrate a digital or optical level you must know how far the
+instrument’s line‑of‑sight deviates from a true horizontal.  That
+mis‑alignment is called the <strong>collimation angle</strong> <span class="math notranslate nohighlight">\(\alpha\)</span> (Fig. 1).</p>
+<div align="center">
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="../../_images/levelling_sketch_1.png"><img alt="Geometry of the two-peg test with rods A and B and instrument setup" src="../../_images/levelling_sketch_1.png" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 1 —</strong> Two configurations of the two‑peg test. Figure taken from the paper by Butt(2025).</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+<div class="legend">
+<p>For the classical two-peg test, rod A is always placed 60 m away from rod B and we level the instrument twice:</p>
+<ul class="simple">
+<li><p><strong>Config 1</strong>: 30 m from each rod.</p></li>
+<li><p><strong>Config 2</strong>: directly in front of rod A and 60 m from rod B.</p></li>
+</ul>
+</div>
+<p>The classical (“deterministic”) solution uses two height readings
+<span class="math notranslate nohighlight">\(y_A^k,\;y_B^k\)</span> per configuration and some algebra to isolate
+<span class="math notranslate nohighlight">\(\tan\alpha\)</span>.  That works <em>only</em> because the geometry is simple and the
+error model is Gaussian and homoscedastic.</p>
+<p><em>CaliPy</em> lets us write a <strong>probabilistic</strong> version instead:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{aligned}
+y_A^k &amp;\sim \mathcal N \bigl(h_I^{(k)}
+              + l_A^{(k)}\tan\alpha,\; \sigma \bigr) \\
+y_B^k &amp;\sim \mathcal N \bigl(h_I^{(k)}-\Delta H
+              + l_B^{(k)}\tan\alpha,\; \sigma \bigr) ,
+\end{aligned}
+\end{split}\]</div>
+<p>where</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>symbol</p></th>
+<th class="head"><p>meaning</p></th>
+<th class="head"><p>dim</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(k\)</span></p></td>
+<td><p>configuration index</p></td>
+<td><p><span class="math notranslate nohighlight">\((n_\text{conf})\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(l_A, l_B\)</span></p></td>
+<td><p>distances instrument→rod</p></td>
+<td><p><span class="math notranslate nohighlight">\((n_\text{conf}\times 2)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(h_I^{(k)}\)</span></p></td>
+<td><p>unknown sight‑line height</p></td>
+<td><p><span class="math notranslate nohighlight">\((n_\text{conf})\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\Delta H\)</span></p></td>
+<td><p>unknown rod‑to‑rod true height difference</p></td>
+<td><p>scalar</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\alpha\)</span></p></td>
+<td><p>collimation angle (wanted)</p></td>
+<td><p>scalar</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\sigma\)</span></p></td>
+<td><p>known standard deviation</p></td>
+<td><p>scalar of measurements</p></td>
+</tr>
+</tbody>
+</table>
+<div class="note admonition">
+<p class="admonition-title">Modelling insight</p>
+<p>Treating the instrument height <span class="math notranslate nohighlight">\(h_I^{(k)}\)</span> as an <em>UnknownParameter</em> lets CaliPy
+estimate it automatically. You get the same estimator for <span class="math notranslate nohighlight">\(\alpha\)</span>
+while having to perform zero extra algebra manually.</p>
+</div>
+</div>
+</figcaption>
+</figure>
+</section>
+<hr class="docutils" />
+<section id="implementation-calipy-building-blocks">
+<h2>2  Implementation — <em>CaliPy</em> Building Blocks<a class="headerlink" href="#implementation-calipy-building-blocks" title="Permalink to this heading"></a></h2>
+<section id="dimaware-anatomy">
+<h3>2.1  Dim‑aware anatomy<a class="headerlink" href="#dimaware-anatomy" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Building block</p></th>
+<th class="head"><p>Code class</p></th>
+<th class="head"><p>Why we need it</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Parameters</strong> <span class="math notranslate nohighlight">\(\alpha,\;h_I,\;\Delta H\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code></p></td>
+<td><p>Provide init value &amp; learn later</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Noise injection</strong> for eq. \eqref{eq:model}</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code></p></td>
+<td><p>Wraps Pyro’s <code class="docutils literal notranslate"><span class="pre">Normal</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Node structure</strong> (dims, plates)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NodeStructure</span></code></p></td>
+<td><p>Tells each node where batch &amp; event axes live</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Probabilistic model</strong></p></td>
+<td><p>subclass of <code class="docutils literal notranslate"><span class="pre">CalipyProbModel</span></code></p></td>
+<td><p>Chains everything &amp; calls <code class="docutils literal notranslate"><span class="pre">forward()</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Inference engine</strong></p></td>
+<td><p>Pyro’s SVI (Trace_ELBO)</p></td>
+<td><p>Runs automatically inside <code class="docutils literal notranslate"><span class="pre">probmodel.train()</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ── Dimensions ─────────────────────────────────────────</span>
+<span class="n">n_conf</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">batch_k</span>   <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;conf&#39;</span><span class="p">],</span>  <span class="p">[</span><span class="n">n_conf</span><span class="p">])</span>   <span class="c1"># configurations k</span>
+<span class="n">batch_AB</span>  <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;AB&#39;</span><span class="p">],</span>    <span class="p">[</span><span class="mi">2</span><span class="p">])</span>        <span class="c1"># A or B per conf</span>
+<span class="n">scalar</span>    <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;_&#39;</span><span class="p">],</span>     <span class="p">[])</span>         <span class="c1"># empty (=scalar)</span>
+
+<span class="c1"># ── Unknowns ───────────────────────────────────────────</span>
+<span class="n">alpha_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">alpha_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_k</span><span class="o">+</span><span class="n">batch_AB</span><span class="p">,</span> <span class="n">param_dims</span><span class="o">=</span><span class="n">scalar</span><span class="p">)</span>
+<span class="n">alpha</span>    <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">alpha_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;alpha&#39;</span><span class="p">,</span>
+                            <span class="n">init_tensor</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1e-2</span><span class="p">))</span>
+
+<span class="n">hI_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">hI_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_AB</span><span class="p">,</span> <span class="n">param_dims</span><span class="o">=</span><span class="n">batch_k</span><span class="p">)</span>
+<span class="n">hI</span>    <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">hI_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;h_I&#39;</span><span class="p">)</span>
+
+<span class="n">dH_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">dH_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_k</span><span class="o">+</span><span class="n">batch_AB</span><span class="p">,</span> <span class="n">param_dims</span><span class="o">=</span><span class="n">scalar</span><span class="p">)</span>
+<span class="n">dH</span>    <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">dH_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;dH&#39;</span><span class="p">)</span>
+
+<span class="c1"># ── Measurement noise ─────────────────────────────────</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_k</span><span class="o">+</span><span class="n">batch_AB</span><span class="p">,</span> <span class="n">event_dims</span><span class="o">=</span><span class="n">scalar</span><span class="p">)</span>
+<span class="n">noise</span>    <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="forward-model-in-code">
+<h3>2.2  Forward model in code<a class="headerlink" href="#forward-model-in-code" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TwoPegProbModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">l_AB</span> <span class="o">=</span> <span class="n">input_vars</span><span class="o">.</span><span class="n">value</span>                 <span class="c1"># shape  (n_conf, 2)</span>
+
+        <span class="c1"># draw unknowns</span>
+        <span class="n">a</span>   <span class="o">=</span> <span class="n">alpha</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>                  <span class="c1"># shape  (n_conf,2) broadcast</span>
+        <span class="n">h_I</span> <span class="o">=</span> <span class="n">hI</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>                   <span class="c1"># shape  (n_conf,1)</span>
+        <span class="n">dH</span>  <span class="o">=</span> <span class="n">dH</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>                     <span class="c1"># scalar broadcast</span>
+
+        <span class="c1"># deterministic signal  y_true + Δ</span>
+        <span class="n">scaler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_conf</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span>
+                               <span class="n">torch</span><span class="o">.</span><span class="n">ones</span> <span class="p">([</span><span class="n">n_conf</span><span class="p">,</span><span class="mi">1</span><span class="p">])])</span>
+        <span class="n">y_true</span>   <span class="o">=</span> <span class="n">h_I</span> <span class="o">-</span> <span class="n">scaler</span> <span class="o">*</span> <span class="n">dH</span>
+        <span class="n">y_mean</span>   <span class="o">=</span> <span class="n">y_true</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">l_AB</span>
+
+        <span class="c1"># observation node</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">noise</span><span class="o">.</span><span class="n">forward</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span><span class="n">y_mean</span><span class="p">,</span> <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span><span class="n">sigma_true</span><span class="p">},</span>
+                            <span class="n">observations</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+</pre></div>
+</div>
+<p>Internally <code class="docutils literal notranslate"><span class="pre">.forward()</span></code> places every <code class="docutils literal notranslate"><span class="pre">sample()</span></code> (Pyro) site under
+vectorised <code class="docutils literal notranslate"><span class="pre">plate</span></code>s <strong>generated automatically</strong> from your
+<code class="docutils literal notranslate"><span class="pre">NodeStructure</span></code>.  No manual plates &amp; broadcasting gymnastics needed.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="running-inference">
+<h2>3  Running Inference<a class="headerlink" href="#running-inference" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">probmodel</span> <span class="o">=</span> <span class="n">TwoPegProbModel</span><span class="p">()</span>
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">l_mat</span>                              <span class="c1"># distances (torch tensor)</span>
+<span class="n">y_obs</span>      <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">batch_k</span><span class="o">+</span><span class="n">batch_AB</span><span class="p">)</span>
+
+<span class="n">elbo_curve</span> <span class="o">=</span> <span class="n">probmodel</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">y_obs</span><span class="p">,</span>
+                             <span class="n">optim_opts</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">}),</span>
+                                             <span class="n">loss</span>      <span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
+                                             <span class="n">n_steps</span>   <span class="o">=</span><span class="mi">1000</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><em>Behind the scenes</em></p>
+<ol class="arabic simple">
+<li><p><strong>SVI loop</strong> builds the computation graph once, then
+back‑propagates the ELBO gradient each iteration.</p></li>
+<li><p>Parameters <code class="docutils literal notranslate"><span class="pre">alpha</span></code>, <code class="docutils literal notranslate"><span class="pre">h_I</span></code>, <code class="docutils literal notranslate"><span class="pre">dH</span></code> live in Pyro’s <em>param store</em>.</p></li>
+<li><p>Sampling statements are conditioned on <code class="docutils literal notranslate"><span class="pre">y_obs</span></code> automatically.</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">epoch</span><span class="p">:</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">63942.6328125</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">100</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">35856.48046875</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">200</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="o">-</span><span class="mf">21.9062442779541</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">300</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="o">-</span><span class="mf">23.955263137817383</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">400</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="o">-</span><span class="mf">23.955265045166016</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">500</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">6660.3935546875</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">600</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">12589833.0</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">700</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">56793.0546875</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">800</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="mf">101.84868621826172</span>
+<span class="n">epoch</span><span class="p">:</span> <span class="mi">900</span> <span class="p">;</span> <span class="n">loss</span> <span class="p">:</span> <span class="o">-</span><span class="mf">23.81795310974121</span>
+<span class="n">Node_1__param_alpha</span> 
+ <span class="n">tensor</span><span class="p">(</span><span class="o">-</span><span class="mf">12.5654</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Node_2__param_hI</span> 
+ <span class="n">tensor</span><span class="p">([</span><span class="mf">0.9879</span><span class="p">,</span> <span class="mf">1.0109</span><span class="p">],</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Node_3__param_dh</span> 
+ <span class="n">tensor</span><span class="p">(</span><span class="mf">0.4997</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="kc">True</span> <span class="n">values</span> 
+ <span class="n">alpha</span> <span class="p">:</span> <span class="mf">0.0010000000474974513</span> 
+ <span class="n">dh</span> <span class="p">:</span> <span class="mf">0.5</span> 
+ <span class="n">hI</span> <span class="p">:</span> <span class="n">tensor</span><span class="p">([</span><span class="mf">0.9889</span><span class="p">,</span> <span class="mf">1.0120</span><span class="p">])</span>
+<span class="n">Values</span> <span class="n">estimated</span> <span class="n">by</span> <span class="n">least</span> <span class="n">squares</span> 
+ <span class="n">alpha</span> <span class="p">:</span> <span class="mf">0.0010212835622951388</span> 
+ <span class="n">dh</span> <span class="p">:</span> <span class="mf">0.49987077713012695</span> 
+ <span class="n">hI</span> <span class="p">:</span> <span class="n">tensor</span><span class="p">([[</span><span class="mf">0.9878</span><span class="p">],</span>
+        <span class="p">[</span><span class="mf">1.0108</span><span class="p">]])</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="results">
+<h2>4  Results<a class="headerlink" href="#results" title="Permalink to this heading"></a></h2>
+<p>The following graph illustrates the value of the ELBO loss. Note that the behavior is non-monotonic
+and at around epoch 500 the optimization converges to an equivalent value for alpha by adding <span class="math notranslate nohighlight">\(4 \pi\)</span>
+to the previous estimate. in the end the LS and calipy estimates coincide - apart from the irrelevant
+constant <span class="math notranslate nohighlight">\( 4 \pi\)</span> in the collimation angle.</p>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="../../_images/levelling_sketch_2.png"><img alt="Sketch of the ELBO learning curve" src="../../_images/levelling_sketch_2.png" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 2 —</strong> The ELBO loss during learning of the parameters.</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+<div class="legend">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">18s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">val</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</figcaption>
+</figure>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>quantity</p></th>
+<th class="head"><p>true</p></th>
+<th class="head"><p>inferred (SVI)</p></th>
+<th class="head"><p>classical LS</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\alpha\)</span></p></td>
+<td><p>1.0 mrad</p></td>
+<td><p>0.97 mrad - 4 pi</p></td>
+<td><p>1.0 mrad</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\Delta H\)</span></p></td>
+<td><p>0.5 m</p></td>
+<td><p>0.4997 m</p></td>
+<td><p>0.4998 m</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(h_I^{(1)}\)</span></p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(h_I^{(2)}\)</span></p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+<td><p>…</p></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><p><strong>Take‑aways</strong></p>
+<ul class="simple">
+<li><p>The Bayesian estimates matches the closed‑form LS estimate for this
+simple geometry — exactly what theory predicts.</p></li>
+<li><p>UnknownParameter trick: leaving <span class="math notranslate nohighlight">\(h_I^{(k)}\)</span> and <span class="math notranslate nohighlight">\(\Delta H\)</span> undetermined
+saves you some manual math.</p></li>
+<li><p>The optimizer can behave unexpectedly. Since most gradient based optimizers
+explicitly try to escape local minima, the estimators can jump around quite a bit.</p></li>
+<li><p>If you add more configurations, heteroscedastic noise, or
+hierarchical priors, <code class="docutils literal notranslate"><span class="pre">CaliPy</span></code> scales effortlessly while the
+hand‑derived LS formula breaks down.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="key-insights">
+<h2>5  Key Insights<a class="headerlink" href="#key-insights" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Declarative modelling</strong> – once nodes are chained, <em>CaliPy</em> converts
+the graph into Pyro sample sites and plates.</p></li>
+<li><p><strong>Dimension‑aware tensors</strong> – <code class="docutils literal notranslate"><span class="pre">CalipyTensor</span></code> stores both data <strong>and</strong>
+semantic dimensions.  Broadcasting &amp; sub‑batching are handled for you.</p></li>
+<li><p><strong>Swap‑in inference</strong> – ELBO/SVI here, but you could plug in HMC or an
+AutoGuide without touching the model.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>6  Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Play with <code class="docutils literal notranslate"><span class="pre">n_conf</span> <span class="pre">&gt;</span> <span class="pre">2</span></code>, unequal <span class="math notranslate nohighlight">\(\sigma\)</span>, or informative priors.</p></li>
+<li><p>Replace the <code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code> nodes by <code class="docutils literal notranslate"><span class="pre">CalipyDistribution.Normal</span></code>
+to let <span class="math notranslate nohighlight">\(\alpha\)</span> have a <em>Gaussian</em> prior.</p></li>
+<li><p>Try sub‑batch training on large simulated levelling campaigns.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="full-code">
+<h2>7  Full code<a class="headerlink" href="#full-code" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The goal of this script is to employ calipy to model a simple two-peg level test</span>
+<span class="sd">as dealt with in section 4.2 of the paper: &quot;Building and Solving Probabilistic </span>
+<span class="sd">Instrument Models with CaliPy&quot; presented at JISDM 2025 in Karlsruhe. The overall</span>
+<span class="sd">measurement process consists in setting up a levelling instrument in some arbitrary</span>
+<span class="sd">distances l_A, l_B to two levelling rods, then reading out the height measurements,</span>
+<span class="sd">and then setting up the levelling instrument at some other location. The goal is </span>
+<span class="sd">to estimate the collimation angle alpha from these observations y.</span>
+<span class="sd">The corresponding probabilistic model is given by the following expression for y </span>
+<span class="sd">as      y_A ~ N(h_I + l_A tan(alpha))</span>
+<span class="sd">        y_B ~ N(h_I - DeltaH + l_B tan(alpha))</span>
+<span class="sd">where l_A, l_B are the distances between levelling instrument and rods A, B, and</span>
+<span class="sd">y_A_true = h_I, y_B_true = h_I-DeltaH are the true readings. N is the Gaussian</span>
+<span class="sd">distribution. DeltaH is the heigh difference between A and B and h_I is the </span>
+<span class="sd"># instruments height.</span>
+<span class="sd">Here l_A, l_B and sigma are assumed known, y is observed, and alpha is to be inferred</span>
+<span class="sd">while DeltaH, h_I are unknowns we do not care about. The true readings for rod A and </span>
+<span class="sd">rod B are connected via y_A_true = h_I, y_B_true = h_I - DeltaH where h_I is the height of</span>
+<span class="sd">the instrument in each configuration and DeltaH is the height difference between </span>
+<span class="sd">A and B. We want to infer alpha from observations y without performing any further</span>
+<span class="sd">manual computations.</span>
+<span class="sd">For this, do the following:</span>
+<span class="sd">    1. Imports and definitions</span>
+<span class="sd">    2. Simulate some data</span>
+<span class="sd">    3. Load and customize effects</span>
+<span class="sd">    4. Build the probmodel</span>
+<span class="sd">    5. Perform inference</span>
+<span class="sd">    6. Analyse results and illustrate</span>
+
+<span class="sd">The script is meant solely for educational and illustrative purposes. Written by</span>
+<span class="sd">Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1. Imports and definitions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Imports</span>
+
+<span class="c1"># base packages</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># calipy</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">CalipyIO</span>
+
+
+<span class="c1"># ii) Definitions</span>
+
+<span class="n">n_config</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># number of configurations</span>
+<span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">set_seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2. Simulate some data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Set up sample distributions</span>
+<span class="c1"># Note the model y_A ~ N(h_I + l_A tan(alpha))</span>
+<span class="c1">#                y_B ~ N(h_I - DeltaH + l_B tan(alpha))</span>
+<span class="c1"># where h_I is unknown different for each config and DeltaH and alpha are global</span>
+<span class="c1"># scalar unknowns.</span>
+
+<span class="c1"># Global instrument params</span>
+<span class="n">alpha_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="n">dh_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">sigma_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+
+<span class="c1"># Config specific params</span>
+<span class="n">hI_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="p">[</span><span class="n">n_config</span><span class="p">])</span>
+<span class="n">l_A</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">30</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+<span class="n">l_B</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">30</span><span class="p">],</span> <span class="p">[</span><span class="mi">60</span><span class="p">]])</span>
+<span class="n">l_mat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">l_A</span><span class="p">,</span> <span class="n">l_B</span><span class="p">])</span>
+
+<span class="c1"># Distribution params</span>
+<span class="n">y_A_true</span> <span class="o">=</span> <span class="n">hI_true</span>
+<span class="n">y_B_true</span> <span class="o">=</span> <span class="n">hI_true</span> <span class="o">-</span> <span class="n">dh_true</span>
+<span class="n">y_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">y_A_true</span><span class="p">,</span> <span class="n">y_B_true</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+
+<span class="n">l_impact</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">alpha_true</span><span class="p">)</span> <span class="o">*</span> <span class="n">l_mat</span>
+<span class="n">y_biased</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">+</span> <span class="n">l_impact</span>
+
+
+<span class="c1"># ii) Sample from distributions</span>
+
+<span class="n">data_distribution</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">y_biased</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data_distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+<span class="c1"># The data now is a tensor of shape [n_meas,2] and reflects biased measurements being</span>
+<span class="c1"># taken of a two-rod measurement configuration.</span>
+
+<span class="c1"># We now consider the data to be an outcome of measurement of some real world</span>
+<span class="c1"># object; consider the true underlying data generation process to be unknown</span>
+<span class="c1"># from now on.</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    3. Load and customize effects</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Set up dimensions</span>
+
+<span class="n">dim_1</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_1&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n_config</span><span class="p">])</span>
+<span class="n">dim_2</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_2&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">dim_3</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_3&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[])</span>
+
+<span class="c1"># ii) Set up dimensions parameters</span>
+
+<span class="c1"># alpha setup</span>
+<span class="n">alpha_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">alpha_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">alpha_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">alpha_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="n">init_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.01</span><span class="p">))</span>
+
+
+<span class="c1"># hI setup</span>
+<span class="n">hI_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">hI_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">dim_1</span><span class="p">)</span>
+<span class="n">hI_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">hI_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;hI&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># dh setup</span>
+<span class="n">dh_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">dh_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">dh_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">dh_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;dh&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># iii) Set up the dimensions for noise addition</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">event_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">noise_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    4. Build the probmodel</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Define the probmodel class </span>
+
+<span class="k">class</span> <span class="nc">DemoProbModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+        <span class="c1"># integrate nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_object</span> <span class="o">=</span> <span class="n">alpha_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hI_object</span> <span class="o">=</span> <span class="n">hI_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dh_object</span> <span class="o">=</span> <span class="n">dh_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_object</span> <span class="o">=</span> <span class="n">noise_object</span> 
+        
+    <span class="c1"># Define model by forward passing, input_vars = lengths [l_A, l_B]</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">l_mat</span> <span class="o">=</span> <span class="n">input_vars</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="n">hI</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hI_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">dh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dh_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        
+        <span class="n">scaler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">n_config</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="n">n_config</span><span class="p">,</span><span class="mi">1</span><span class="p">])])</span>
+        <span class="n">y_true</span> <span class="o">=</span> <span class="n">hI</span> <span class="o">-</span> <span class="n">scaler</span> <span class="o">*</span> <span class="n">dh</span>
+        <span class="n">y_biased</span> <span class="o">=</span> <span class="n">y_true</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">l_mat</span>
+
+        <span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">y_biased</span><span class="p">,</span> <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span> <span class="n">sigma_true</span><span class="p">}</span> 
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">,</span>
+                                           <span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">output</span>
+    
+    <span class="c1"># Define guide (trivial since no posteriors)</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+<span class="n">demo_probmodel</span> <span class="o">=</span> <span class="n">DemoProbModel</span><span class="p">()</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    5. Perform inference</span>
+<span class="sd">&quot;&quot;&quot;</span>
+    
+
+<span class="c1"># i) Set up optimization</span>
+
+<span class="n">adam</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span>
+<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">adam</span><span class="p">,</span> <span class="s1">&#39;loss&#39;</span> <span class="p">:</span> <span class="n">elbo</span><span class="p">,</span> <span class="s1">&#39;n_steps&#39;</span><span class="p">:</span> <span class="n">n_steps</span><span class="p">}</span>
+
+
+<span class="c1"># ii) Train the model</span>
+
+<span class="n">input_data</span> <span class="o">=</span> <span class="n">l_mat</span>
+<span class="n">data_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">)</span>
+<span class="n">optim_results</span> <span class="o">=</span> <span class="n">demo_probmodel</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">data_cp</span><span class="p">,</span> <span class="n">optim_opts</span> <span class="o">=</span> <span class="n">optim_opts</span><span class="p">)</span>
+
+
+<span class="c1"># iii) Solve via handcrafted equations</span>
+
+<span class="n">dh_ls</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">tan_a_ls</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">60</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">dh_ls</span> <span class="o">-</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">alpha_ls</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">tan_a_ls</span><span class="p">)</span>
+<span class="n">hI_ls</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tan_a_ls</span> <span class="o">*</span> <span class="n">l_A</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                      <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tan_a_ls</span> <span class="o">*</span> <span class="n">l_A</span><span class="p">[</span><span class="mi">1</span><span class="p">]]])</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    6. Analyse results and illustrate</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i)  Plot loss</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dpi</span> <span class="o">=</span> <span class="mi">300</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">optim_results</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ELBO loss&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+
+<span class="c1"># ii) Print  parameters</span>
+
+<span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;True values </span><span class="se">\n</span><span class="s1"> alpha : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> dh : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> hI : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alpha_true</span><span class="p">,</span> <span class="n">dh_true</span><span class="p">,</span> <span class="n">hI_true</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Values estimated by least squares </span><span class="se">\n</span><span class="s1"> alpha : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> dh : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> hI : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alpha_ls</span><span class="p">,</span>  <span class="n">dh_ls</span><span class="p">,</span> <span class="n">hI_ls</span><span class="p">))</span>
+
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tape_bias_estimation.html" class="btn btn-neutral float-left" title="Tape-Measure Bias Estimation — Finding a Hidden Offset" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="total_station_calibration.html" class="btn btn-neutral float-right" title="Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

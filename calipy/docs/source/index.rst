@@ -46,14 +46,16 @@ API Reference
 
    api/index
 
-Examples
---------
+
+Example compilation
+----------------------
 
 .. toctree::
+   :caption: Example compilation
    :maxdepth: 1
-   :caption: Examples
 
-   examples/bias_estimation
+   examples/quick_start/qs_examples_index
+   examples/engineering_geodesy/eg_examples_index
 
 
 

@@ -1,0 +1,604 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="../../_static/doctools.js?v=888ff710"></script>
+      <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Two‑Peg Level Test — Estimating a Collimation Angle" href="two_peg_test.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="eg_examples_index.html">Engineering Geodesy</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tape_bias_estimation.html">Tape-Measure Bias Estimation — Finding a Hidden Offset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two_peg_test.html">Two‑Peg Level Test — Estimating a Collimation Angle</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#instrument-model">2 Instrument model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#geometry-recap">2.1 Geometry recap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#why-classical-ls-is-cumbersome">2.2 Why classical LS is cumbersome</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy-nodes">2.3 Calipy nodes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#forward-model">2.4 Forward model</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#running-inference">3 Running Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results">4 Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#takeaway-cheatsheet">6 Take‑away cheat‑sheet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#next-steps">5 Next Steps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#full-reproducible-code">6 Full Reproducible Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="eg_examples_index.html">Engineering Geodesy</a></li>
+      <li class="breadcrumb-item active">Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/engineering_geodesy/total_station_calibration.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="total-station-axis-error-estimation-collimation-trunnion-in-one-shot">
+<h1>Total-Station Axis-Error Estimation — Collimation &amp; Trunnion in One Shot<a class="headerlink" href="#total-station-axis-error-estimation-collimation-trunnion-in-one-shot" title="Permalink to this heading"></a></h1>
+<blockquote>
+<div><p><em>“Why juggle two clever face-swaps when you can let a probabilistic model do the algebra?”</em></p>
+</div></blockquote>
+<p>Example adapted from <em>Building and Solving Probabilistic Instrument Models with CaliPy</em><br />
+(Jemil Avers Butt, JISDM 2025)</p>
+<div class="tip admonition">
+<p class="admonition-title">What you’ll learn</p>
+<ul class="simple">
+<li><p>How to express the <strong>collimation</strong> ((c)) and <strong>trunnion-axis</strong> ((i)) errors in CaliPy</p></li>
+<li><p>How to encode face-I / face-II switching &amp; elevation dependence without branching logic</p></li>
+<li><p>How SVI reproduces (and generalises) the classical two-step least-squares procedure</p></li>
+</ul>
+</div>
+<hr class="docutils" />
+<hr class="docutils" />
+<section id="instrument-model">
+<h2>2 Instrument model<a class="headerlink" href="#instrument-model" title="Permalink to this heading"></a></h2>
+<section id="geometry-recap">
+<h3>2.1 Geometry recap<a class="headerlink" href="#geometry-recap" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>symbol</p></th>
+<th class="head"><p>meaning</p></th>
+<th class="head"><p>zero‑order impact on (\phi_{obs})</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>(c)</p></td>
+<td><p>angle between line‑of‑sight &amp; collimation axis</p></td>
+<td><p>(\gamma_c = \dfrac{c}{\cos\beta})</p></td>
+</tr>
+<tr class="row-odd"><td><p>(i)</p></td>
+<td><p>non‑orthogonality of trunnion &amp; vertical axis</p></td>
+<td><p>(\gamma_i = i\tan\beta)</p></td>
+</tr>
+<tr class="row-even"><td><p><em>face</em></p></td>
+<td><p>0 (face I) / 1 (face II)</p></td>
+<td><p>adds (\pi) for face II</p></td>
+</tr>
+</tbody>
+</table>
+<p>Linearised observation equation [1]:</p>
+<p>[\phi_{obs};\sim; \mathcal N\bigl(\underbrace{\tilde\phi; + ; \text{face},\pi}_{\text{ideal reading}} - \gamma_c + 2,\text{face},\gamma_c  - \gamma_i + 2,\text{face},\gamma_i,; \sigma\bigr).]</p>
+<p><em>Literature derivation</em>: Deumlich (1980), pp. 132–134.</p>
+<figure class="align-default" id="id1">
+<a class="reference internal image-reference" href="../../_images/totalstation_sketch_1.png"><img alt="Axis misalignments of a total station" src="../../_images/totalstation_sketch_1.png" style="width: 80%;" /></a>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 1 —</strong> Collimation error (c) (line-of-sight vs. collimation axis) and
+trunnion error (i) (vertical vs. trunnion axis) distort horizontal angles. Figure taken from the paper by Butt(2025).</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="why-classical-ls-is-cumbersome">
+<h3>2.2 Why classical LS is cumbersome<a class="headerlink" href="#why-classical-ls-is-cumbersome" title="Permalink to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Two‑step trick required</strong>: shoot a horizontal target ((\beta!=!0)) to isolate (c); then a steep target to solve for (i).</p></li>
+<li><p><strong>Face pairing</strong> must be perfect.  Any additional observations are discarded or averaged.</p></li>
+<li><p>No uncertainty propagation for (c,i) beyond a posterior variance from the LS normal matrix.</p></li>
+</ol>
+<p><em>CaliPy</em> lets us encode Equation [1] directly; Stochastic Variational Inference (SVI) optimises the ELBO and returns a full posterior.</p>
+</section>
+<section id="calipy-nodes">
+<h3>2.3 Calipy nodes<a class="headerlink" href="#calipy-nodes" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Symbol</p></th>
+<th class="head"><p>CaliPy class</p></th>
+<th class="head"><p>Shape <em>(config × face)</em></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>(c)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code></p></td>
+<td><p>(2\times2)</p></td>
+</tr>
+<tr class="row-odd"><td><p>(i)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code></p></td>
+<td><p>(2\times2)</p></td>
+</tr>
+<tr class="row-even"><td><p>Noise</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code></p></td>
+<td><p>(2\times2)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span>   <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;cfg&#39;</span><span class="p">],</span>  <span class="p">[</span><span class="mi">2</span><span class="p">])</span>   <span class="c1"># two target configurations</span>
+<span class="n">face</span>  <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;face&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>   <span class="c1"># Face-I / Face-II</span>
+<span class="n">scal</span>  <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;_&#39;</span><span class="p">],</span>    <span class="p">[])</span>    <span class="c1"># parameter axis (empty)</span>
+
+<span class="n">c_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">c_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">+</span><span class="n">face</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">scal</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">c_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+
+<span class="n">i_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">i_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">+</span><span class="n">face</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">scal</span><span class="p">)</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">i_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;i&#39;</span><span class="p">)</span>
+
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">+</span><span class="n">face</span><span class="p">,</span> <span class="n">event_dims</span> <span class="o">=</span> <span class="n">scal</span><span class="p">)</span>
+<span class="n">noise</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="forward-model">
+<h3>2.4 Forward model<a class="headerlink" href="#forward-model" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">AxisErrorModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">face</span> <span class="o">=</span> <span class="n">input_vars</span><span class="p">[</span><span class="s1">&#39;faces&#39;</span><span class="p">]</span>            <span class="c1"># 0 or 1</span>
+        <span class="n">β</span>    <span class="o">=</span> <span class="n">input_vars</span><span class="p">[</span><span class="s1">&#39;beta&#39;</span><span class="p">]</span>             <span class="c1"># elevation angle</span>
+
+        <span class="n">c_val</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="n">i_val</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+
+        <span class="n">γc</span> <span class="o">=</span> <span class="n">c_val</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">β</span><span class="p">)</span>
+        <span class="n">γi</span> <span class="o">=</span> <span class="n">i_val</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">β</span><span class="p">)</span>
+
+        <span class="n">μφ</span> <span class="o">=</span> <span class="p">(</span><span class="n">φ_true</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">face</span>
+              <span class="o">-</span> <span class="n">γc</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">face</span><span class="o">*</span><span class="n">γc</span>
+              <span class="o">-</span> <span class="n">γi</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">face</span><span class="o">*</span><span class="n">γi</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">noise</span><span class="o">.</span><span class="n">forward</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">μφ</span><span class="p">,</span>
+                              <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span> <span class="n">σ_true</span><span class="p">},</span>
+                             <span class="n">observations</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">_</span><span class="p">):</span> <span class="k">pass</span>
+</pre></div>
+</div>
+<p>All non-linear trigonometry lives in <strong>three</strong> tensor lines.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="running-inference">
+<h2>3 Running Inference<a class="headerlink" href="#running-inference" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prob</span> <span class="o">=</span> <span class="n">AxisErrorModel</span><span class="p">()</span>
+
+<span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;faces&#39;</span><span class="p">:</span> <span class="n">face_tensor</span><span class="p">,</span>        <span class="c1"># 2×2</span>
+          <span class="s1">&#39;beta&#39;</span> <span class="p">:</span> <span class="n">β_tensor</span><span class="p">}</span>           <span class="c1"># 2×1  broadcast to 2×2</span>
+
+<span class="n">ϕ_obs</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">phi_data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">cfg</span><span class="o">+</span><span class="n">face</span><span class="p">)</span>
+<span class="n">loss</span>  <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">ϕ_obs</span><span class="p">,</span>
+                   <span class="n">optim_opts</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span><span class="mf">0.01</span><span class="p">}),</span>
+                                   <span class="n">loss</span>      <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
+                                   <span class="n">n_steps</span>   <span class="o">=</span> <span class="mi">1_000</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="results">
+<h2>4 Results<a class="headerlink" href="#results" title="Permalink to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Node_1__param_c</span> <span class="n">tensor</span><span class="p">(</span><span class="mf">0.0100</span><span class="p">,</span> <span class="n">grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Node_2__param_i</span> <span class="n">tensor</span><span class="p">(</span><span class="mf">0.0100</span><span class="p">,</span> <span class="n">grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="kc">True</span> <span class="n">values</span>            <span class="p">:</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.0100</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mf">0.0100</span>
+<span class="n">Hand</span><span class="o">-</span><span class="n">derived</span> <span class="n">LS</span> <span class="n">values</span> <span class="p">:</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.0099</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mf">0.0101</span>
+</pre></div>
+</div>
+<figure class="align-default" id="id2">
+<a class="reference internal image-reference" href="examples/_static/figures/examples/engineering_geodesy/axis_errors_elbo.png"><img alt="ELBO learning curve for axis-error example" src="examples/_static/figures/examples/engineering_geodesy/axis_errors_elbo.png" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-text"><strong>Figure 2 —</strong> ELBO reaches the optimum in &lt; 1 s (CPU).</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<blockquote>
+<div><p><strong>Take-aways</strong></p>
+<ul class="simple">
+<li><p>CaliPy matched <em>and</em> slightly refined the two-stage LS estimate
+while using every observation jointly.</p></li>
+<li><p>Face toggling &amp; angle-dependent weights were expressed as ordinary tensors.</p></li>
+<li><p>The same graph works for <strong>many configs</strong>, unknown (\sigma), or a prior on (c,i).</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="takeaway-cheatsheet">
+<h2>6 Take‑away cheat‑sheet<a class="headerlink" href="#takeaway-cheatsheet" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Concept</p></th>
+<th class="head"><p>Classical workflow</p></th>
+<th class="head"><p>CaliPy workflow</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Axis‑error compensation</p></td>
+<td><p>two carefully chosen shots + manual algebra</p></td>
+<td><p><em>any</em> number of shots, any (\beta), automatic SVI</p></td>
+</tr>
+<tr class="row-odd"><td><p>Extra points</p></td>
+<td><p>discarded or averaged</p></td>
+<td><p>increase posterior precision</p></td>
+</tr>
+<tr class="row-even"><td><p>Uncertainty</p></td>
+<td><p>from normal‑matrix var‑cov</p></td>
+<td><p>full approximate posterior</p></td>
+</tr>
+<tr class="row-odd"><td><p>Code length</p></td>
+<td><p>100 + LOC incl. symbol mgmt</p></td>
+<td><p><strong>&lt; 60 LOC including simulation</strong></p></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><p>“CaliPy lets you <strong>declare</strong> the physics – the math and optimisation fade into the background.”</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>5 Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Feed <strong>10 000</strong> mixed-face shots with random (\beta); observe SVI’s advantage.</p></li>
+<li><p>Treat (\sigma) as <code class="docutils literal notranslate"><span class="pre">UnknownVariance</span></code> for variance-component estimation.</p></li>
+<li><p>Extend to <strong>horizontal circle division errors</strong> by adding a cyclic <code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code>.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="full-reproducible-code">
+<h2>6 Full Reproducible Code<a class="headerlink" href="#full-reproducible-code" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The goal of this script is to employ calipy to model a simple total station </span>
+<span class="sd">measurement process as dealt with in section 4.3 of the paper: &quot;Building and </span>
+<span class="sd">Solving Probabilistic Instrument Models with CaliPy&quot; presented at JISDM 2025</span>
+<span class="sd">in Karlsruhe. The overall measurement process consists in certain points being</span>
+<span class="sd">targeted in two faces and the horizontal angles being measured. These angles phi</span>
+<span class="sd">are impacted by the collimation error and the trunnion axis error, two axis mis-</span>
+<span class="sd">alignments that signify the deviation between line of sight and collimation axis </span>
+<span class="sd">and non-orthogonality of trunnion axis and vertical axis. The relationship between</span>
+<span class="sd">observed horizontal angles phi_obs, true horizaontal angles phi_true and elevation</span>
+<span class="sd">angles beta are in principle nonlinear. They can be approximated well linearly</span>
+<span class="sd">for small error magnitudes though, leading to the probabilistic model</span>
+<span class="sd">    phi_obs ~ N(mu_phi, sigma)</span>
+<span class="sd">    mu_phi = phi_true + face*pi  - gamma_c +2*face*gamma_c</span>
+<span class="sd">                                - gamma_i + 2*face*gamma_i</span>
+<span class="sd">where face is a binary variable indicating, in which face a measurement happened,</span>
+<span class="sd">gamma_c = c /cos beta is the impact of collimation deviation c and the term </span>
+<span class="sd">gamma_i = i tan beta is the impact of trunnion axis deviation i on the horizontal</span>
+<span class="sd">angle measurement. beta is the vertical angle.</span>
+<span class="sd">Here beta, face, and sigma are assumed known, phi_obs is observed, and c, i are</span>
+<span class="sd">to be inferred. We want to infer the axis deviations from observations phi_obs</span>
+<span class="sd">without performing any further manual computations.</span>
+<span class="sd">For this, do the following:</span>
+<span class="sd">    1. Imports and definitions</span>
+<span class="sd">    2. Simulate some data</span>
+<span class="sd">    3. Load and customize effects</span>
+<span class="sd">    4. Build the probmodel</span>
+<span class="sd">    5. Perform inference</span>
+<span class="sd">    6. Analyse results and illustrate</span>
+
+<span class="sd">The script is meant solely for educational and illustrative purposes. Written by</span>
+<span class="sd">Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1. Imports and definitions</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Imports</span>
+
+<span class="c1"># base packages</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># calipy</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
+<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">CalipyIO</span>
+
+
+<span class="c1"># ii) Definitions</span>
+
+<span class="n">n_config</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># number of configurations</span>
+<span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+<span class="n">set_seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2. Simulate some data</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Set up sample distributions</span>
+
+<span class="c1"># Global instrument params</span>
+<span class="n">i_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">c_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">sigma_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+
+<span class="c1"># Config specific params</span>
+<span class="n">x_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+<span class="n">r3_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x_true</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">r2_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x_true</span><span class="p">[:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">dim</span> <span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">beta_true</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">torch</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">r3_true</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
+                                       <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">r3_true</span><span class="p">[</span><span class="mi">1</span><span class="p">])]])</span>
+<span class="n">phi_true</span> <span class="o">=</span>  <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r2_true</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
+                          <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">x_true</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">r2_true</span><span class="p">[</span><span class="mi">1</span><span class="p">])]])</span>
+
+<span class="c1"># Distribution params</span>
+<span class="n">face</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])])</span>
+<span class="n">gamma_c</span> <span class="o">=</span> <span class="n">c_true</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta_true</span><span class="p">)</span>
+<span class="n">gamma_i</span> <span class="o">=</span> <span class="n">i_true</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta_true</span><span class="p">)</span>
+
+<span class="n">mu_phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi_true</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">face</span> 
+    <span class="o">-</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span> <span class="n">gamma_c</span> <span class="o">*</span> <span class="n">face</span> 
+    <span class="o">-</span> <span class="n">gamma_i</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span> <span class="n">gamma_i</span> <span class="o">*</span> <span class="n">face</span><span class="p">)</span>
+
+
+<span class="c1"># ii) Sample from distributions</span>
+
+<span class="n">data_distribution</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu_phi</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data_distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+
+<span class="c1"># The data now is a tensor of shape [2,2] and reflects biased measurements being</span>
+<span class="c1"># taken by a total station impacted by axis errors.</span>
+
+<span class="c1"># We now consider the data to be an outcome of measurement of some real world</span>
+<span class="c1"># object; consider the true underlying data generation process to be unknown</span>
+<span class="c1"># from now on.</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    3. Load and customize effects</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Set up dimensions</span>
+
+<span class="n">dim_1</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_1&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n_config</span><span class="p">])</span>
+<span class="n">dim_2</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_2&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">dim_3</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;dim_3&#39;</span><span class="p">],</span> <span class="n">dim_sizes</span> <span class="o">=</span> <span class="p">[])</span>
+
+<span class="c1"># ii) Set up dimensions parameters</span>
+
+<span class="c1"># c setup</span>
+<span class="n">c_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">c_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">c_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">c_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">init_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span>
+
+<span class="c1"># i setup</span>
+<span class="n">i_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">i_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">i_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">i_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="n">init_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.1</span><span class="p">))</span>
+
+
+<span class="c1"># iii) Set up the dimensions for noise addition</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">,</span> <span class="n">event_dims</span> <span class="o">=</span> <span class="n">dim_3</span><span class="p">)</span>
+<span class="n">noise_object</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    4. Build the probmodel</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i) Define the probmodel class </span>
+
+<span class="k">class</span> <span class="nc">DemoProbModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+        <span class="c1"># integrate nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_object</span> <span class="o">=</span> <span class="n">c_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_object</span> <span class="o">=</span> <span class="n">i_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_object</span> <span class="o">=</span> <span class="n">noise_object</span> 
+        
+    <span class="c1"># Define model by forward passing, input_vars = {&#39;faces&#39;: face_tensor,</span>
+    <span class="c1">#                                                 &#39;beta&#39; : beta_tensor}</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Input vars untangling</span>
+        <span class="n">face</span> <span class="o">=</span> <span class="n">input_vars</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;faces&#39;</span><span class="p">]</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">input_vars</span><span class="o">.</span><span class="n">dict</span><span class="p">[</span><span class="s1">&#39;beta&#39;</span><span class="p">]</span>
+        
+        <span class="c1"># Set up axis impacts</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>        
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i_object</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="n">gamma_c</span> <span class="o">=</span> <span class="n">c</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>        
+        <span class="n">gamma_i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+
+        <span class="n">mu_phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi_true</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">face</span> 
+                  <span class="o">-</span> <span class="n">gamma_c</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span> <span class="n">gamma_c</span> <span class="o">*</span> <span class="n">face</span> 
+                  <span class="o">-</span> <span class="n">gamma_i</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span> <span class="n">gamma_i</span> <span class="o">*</span> <span class="n">face</span><span class="p">)</span>
+
+        <span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mu_phi</span><span class="p">,</span> <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span> <span class="n">sigma_true</span><span class="p">}</span> 
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_object</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">,</span>
+                                           <span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">output</span>
+    
+    <span class="c1"># Define guide (trivial since no posteriors)</span>
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+    
+<span class="n">demo_probmodel</span> <span class="o">=</span> <span class="n">DemoProbModel</span><span class="p">()</span>
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    5. Perform inference</span>
+<span class="sd">&quot;&quot;&quot;</span>
+    
+
+<span class="c1"># i) Set up optimization</span>
+
+<span class="n">adam</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">})</span>
+<span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span>
+<span class="n">n_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">adam</span><span class="p">,</span> <span class="s1">&#39;loss&#39;</span> <span class="p">:</span> <span class="n">elbo</span><span class="p">,</span> <span class="s1">&#39;n_steps&#39;</span><span class="p">:</span> <span class="n">n_steps</span><span class="p">}</span>
+
+
+<span class="c1"># ii) Train the model</span>
+
+<span class="n">input_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;faces&#39;</span> <span class="p">:</span> <span class="n">face</span><span class="p">,</span> <span class="s1">&#39;beta&#39;</span> <span class="p">:</span> <span class="n">beta_true</span><span class="p">}</span>
+<span class="n">data_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span> <span class="o">=</span> <span class="n">dim_1</span> <span class="o">+</span> <span class="n">dim_2</span><span class="p">)</span>
+<span class="n">optim_results</span> <span class="o">=</span> <span class="n">demo_probmodel</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">input_data</span><span class="p">,</span> <span class="n">data_cp</span><span class="p">,</span> <span class="n">optim_opts</span> <span class="o">=</span> <span class="n">optim_opts</span><span class="p">)</span>
+
+
+<span class="c1"># iii) Solve via handcrafted equations</span>
+
+<span class="c1"># first measurement</span>
+<span class="n">gamma_c_ls</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+<span class="n">c_ls</span> <span class="o">=</span> <span class="n">gamma_c_ls</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta_true</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="c1"># second measurement</span>
+<span class="n">gamma_c_hat</span> <span class="o">=</span> <span class="n">c_ls</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">beta_true</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">gamma_i_ls</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span> <span class="p">(</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">gamma_c_hat</span><span class="p">)</span>
+<span class="n">i_ls</span> <span class="o">=</span> <span class="n">gamma_i_ls</span><span class="o">/</span><span class="n">torch</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">beta_true</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    6. Analyse results and illustrate</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># i)  Plot loss</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dpi</span> <span class="o">=</span> <span class="mi">300</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">optim_results</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ELBO loss&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epoch&#39;</span><span class="p">)</span>
+
+<span class="c1"># ii) Print  parameters</span>
+
+<span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;True values </span><span class="se">\n</span><span class="s1"> c : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> i : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c_true</span><span class="p">,</span> <span class="n">i_true</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Values estimated by least squares </span><span class="se">\n</span><span class="s1"> c : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> i : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c_ls</span><span class="p">,</span> <span class="n">i_ls</span><span class="p">))</span>
+
+
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="two_peg_test.html" class="btn btn-neutral float-left" title="Two‑Peg Level Test — Estimating a Collimation Angle" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
