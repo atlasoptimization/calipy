@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: calipy
 Version: 0.5.0
 Summary: CaliPy, the Calibration library Python. A library for building and solving probabilistic instrument models.
@@ -8,9 +8,9 @@ Project-URL: Homepage, http://github.com/atlasoptimization/calipy
 Project-URL: Documentation, https://your-docs-site.readthedocs.io
 Project-URL: Source, http://github.com/atlasoptimization/calipy
 Project-URL: Issues, http://github.com/atlasoptimization/calipy/issues
-Classifier: Development Status :: 3 - Alpha
+Classifier: Development Status :: 2 - Pre-Alpha
 Classifier: Intended Audience :: Science/Research
-Classifier: Topic :: Scientific/Engineering :: Instrument Modelling
+Classifier: Topic :: Scientific/Engineering :: Mathematics
 Classifier: License :: Other/Proprietary License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.7
@@ -30,6 +30,7 @@ Requires-Dist: varname>=0.8.1
 Requires-Dist: networkx>=2.4
 Provides-Extra: dev
 Requires-Dist: pytest>=3.7; extra == "dev"
+Dynamic: license-file
 
 # CaliPy: Calibration Library in Python
 > **Pre-Alpha**: In active development — not yet production-ready
@@ -249,7 +250,7 @@ The following three example were presented at JISDM 2025 in Karlsruhe; documente
 
 ## License
 
-CaliPy is released under a **Prosperity Public License** for non-commercial use. For commercial usage, a separate license is available. See [LICENSE](./LICENSE.md) for details.
+CaliPy is released under a **Prosperity Public License** for non-commercial use. For commercial usage, a separate license is available. See [LICENSE](https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md) for details.
 
 ---
 

@@ -216,7 +216,7 @@ The following three example were presented at JISDM 2025 in Karlsruhe; documente
 
 ## License
 
-CaliPy is released under a **Prosperity Public License** for non-commercial use. For commercial usage, a separate license is available. See [LICENSE](./LICENSE.md) for details.
+CaliPy is released under a **Prosperity Public License** for non-commercial use. For commercial usage, a separate license is available. See [LICENSE](https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md) for details.
 
 ---
 

@@ -1,6 +1,0 @@
-Install the package in editable mode. This allows importing it from everywhere like you can do with torch once you installed it.
-For this, in the root directory include a setup.py file and a README.md file and execute
-(base) jemil@Laplace:~/Desktop/Programming/Python/Atlas_Optimization/publishable_projects/calipy$ pip install -e .
-
-here the folder structure is as follows: folder calipy/ contains folder calipy, folder docs, folder .git.
-folder calipy/calipy contains __init__.py, and folders core, examples, ...
