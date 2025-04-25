@@ -34,16 +34,17 @@ Quick install (PyPI)
     python3 -m venv calipy_env
     source calipy_env/bin/activate
 
-   # ... then install calipy
-   pip install calipy
+   # ... then install calipy-ppl
+   # (ppl = probabilistic programming language)
+   pip install calipy-ppl
 
 That’s it!  Verify the installation:
 
 .. code-block:: pycon
 
-   >>> import calipy, torch, pyro
+   >>> import calipy
    >>> print(calipy.__version__)
-   0.5.0
+   0.5.1
 
 Bleeding‑edge install (GitHub)
 ==============================
