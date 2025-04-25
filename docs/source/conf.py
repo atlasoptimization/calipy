@@ -40,6 +40,7 @@ extensions = [
    'myst_parser',
    'sphinx.ext.mathjax',    # ←  render LaTeX with MathJax
    'sphinxcontrib.mermaid', 
+   'sphinx.ext.githubpages',
 ]
 pygments_style = "friendly"
 
