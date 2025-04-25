@@ -34,10 +34,10 @@ import matplotlib.pyplot as plt
 
 # calipy
 import calipy
-from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, NoiseAddition, UnknownVariance
-from calipy.core.utils import dim_assignment
-from calipy.core.tensor import CalipyTensor
+from calipy.base import NodeStructure, CalipyProbModel
+from calipy.effects import UnknownParameter, NoiseAddition, UnknownVariance
+from calipy.utils import dim_assignment
+from calipy.tensor import CalipyTensor
 
 # ii) Definitions
 

@@ -31,13 +31,13 @@ Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import torch
 import math
-from calipy.core.primitives import param
-from calipy.core.base import CalipyNode, NodeStructure
-from calipy.core.tensor import CalipyTensor, CalipyIndex
-from calipy.core.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
-from calipy.core.base import NodeStructure
-from calipy.core.data import CalipyDict, CalipyIO, preprocess_args
-import calipy.core.dist as dist
+from calipy.primitives import param
+from calipy.base import CalipyNode, NodeStructure
+from calipy.tensor import CalipyTensor, CalipyIndex
+from calipy.utils import multi_unsqueeze, context_plate_stack, dim_assignment, InputSchema
+from calipy.base import NodeStructure
+from calipy.data import CalipyDict, CalipyIO, preprocess_args
+import calipy.dist as dist
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Type

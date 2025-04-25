@@ -1,5 +1,5 @@
 ========================
-calipy.core.data
+calipy.data
 ========================
 
 I/O containers (`CalipyDict`, `DataTuple`, …).
@@ -9,5 +9,5 @@ I/O containers (`CalipyDict`, `DataTuple`, …).
    :toctree: generated
    :recursive:
 
-   calipy.core.data
+   calipy.data
 

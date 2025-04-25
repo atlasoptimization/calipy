@@ -23,7 +23,7 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import torch
 import textwrap
-from calipy.core.tensor import preprocess_args, CalipyTensor
+from calipy.tensor import preprocess_args, CalipyTensor
 
 # Define calipy wrappers for torch functions
 # This should be converted to commands calipy.sum, calipy.mean etc

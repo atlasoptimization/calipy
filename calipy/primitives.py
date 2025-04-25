@@ -20,8 +20,8 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 
 import pyro
 from pyro.distributions import constraints
-from calipy.core.tensor import CalipyTensor
-from calipy.core.data import CalipyIO, preprocess_args
+from calipy.tensor import CalipyTensor
+from calipy.data import CalipyIO, preprocess_args
 
 
 def param(name, init_tensor, dims, constraint = constraints.real, subsample_index = None):

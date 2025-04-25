@@ -5,11 +5,11 @@ import textwrap
 from inspect import Parameter, signature
 from typing import Optional, Dict, Any, List
 
-from calipy.core.tensor import CalipyTensor
-from calipy.core.base import NodeStructure, CalipyNode
-from calipy.core.utils import dim_assignment, InputSchema
-from calipy.core.primitives import sample
-from calipy.core.data import CalipyDict, CalipyIO, preprocess_args
+from calipy.tensor import CalipyTensor
+from calipy.base import NodeStructure, CalipyNode
+from calipy.utils import dim_assignment, InputSchema
+from calipy.primitives import sample
+from calipy.data import CalipyDict, CalipyIO, preprocess_args
 
 
 def build_default_nodestructure(class_name):

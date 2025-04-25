@@ -1,10 +1,10 @@
 .. _api-primitives:
 
 ============================
-calipy.core.primitives  (API)
+calipy.primitives  (API)
 ============================
 
-.. automodule:: calipy.core.primitives
+.. automodule:: calipy.primitives
    :members:
    :undoc-members:
    :show-inheritance:

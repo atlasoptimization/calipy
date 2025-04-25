@@ -1,10 +1,10 @@
 .. _api-data:
 
 ============================
-calipy.core.data  (API)
+calipy.data  (API)
 ============================
 
-.. automodule:: calipy.core.data
+.. automodule:: calipy.data
    :members:
    :undoc-members:
    :show-inheritance:

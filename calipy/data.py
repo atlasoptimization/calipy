@@ -24,9 +24,9 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import torch
 from typing import Any
 from torch.utils.data import Dataset
-from calipy.core.tensor import CalipyTensor, CalipyIndex, IOIndexer
-from calipy.core.utils import dim_assignment, ensure_tuple
-from calipy.core.funs import calipy_cat
+from calipy.tensor import CalipyTensor, CalipyIndex, IOIndexer
+from calipy.utils import dim_assignment, ensure_tuple
+from calipy.funs import calipy_cat
 
 
 

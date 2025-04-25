@@ -1,10 +1,10 @@
 .. _api-effects:
 
 ============================
-calipy.core.effects  (API)
+calipy.effects  (API)
 ============================
 
-.. automodule:: calipy.core.effects
+.. automodule:: calipy.effects
    :members:
    :undoc-members:
    :show-inheritance:

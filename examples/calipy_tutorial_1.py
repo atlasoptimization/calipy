@@ -78,20 +78,20 @@ dataset = torch.distributions.Normal(loc = mu_true, scale = sigma_true).sample([
 # ii) Set up shapes for mean parameter mu and noise addition
 
 # mu setup
-mu_ns = calipy.core.base.NodeStructure()
+mu_ns = calipy.base.NodeStructure()
 mu_ns.set_shape('batch_shape', (), 'Independent values')
 mu_ns.set_shape('event_shape', (n_data,), 'Repeated values')
-mu_object = calipy.core.effects.UnknownParameter(mu_ns, name = 'mu')
+mu_object = calipy.effects.UnknownParameter(mu_ns, name = 'mu')
 
 # noise setup
-noise_ns = calipy.core.base.NodeStructure()
+noise_ns = calipy.base.NodeStructure()
 noise_ns.set_plate_stack('noise_stack', [('batch_plate', n_data, -1, 'independent noise 1')], 'Stack containing noise')
-noise_object = calipy.core.effects.NoiseAddition(noise_ns)
+noise_object = calipy.effects.NoiseAddition(noise_ns)
 
 
 # iii) Define the probmodel class 
 
-class DemoProbModel(calipy.core.base.CalipyProbModel):
+class DemoProbModel(calipy.base.CalipyProbModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -116,7 +116,7 @@ class DemoProbModel(calipy.core.base.CalipyProbModel):
 demo_probmodel = DemoProbModel()
 optim_results = demo_probmodel.train(input_data = None, output_data = dataset, optim_opts = {})
 
-mu_estimated = calipy.core.utils.get_params(name = 'mu')
+mu_estimated = calipy.utils.get_params(name = 'mu')
 print('True mu = {}'.format(mu_true))  
 print('Inferred mu = ', mu_estimated)
 
@@ -426,13 +426,13 @@ noise_ns.print_shapes_and_plates()
 noise_ns.description
 
 # We can check if these node_structures are actually valid for the classes
-calipy.core.effects.UnknownParameter.check_node_structure(mu_ns)
-calipy.core.effects.NoiseAddition.check_node_structure(noise_ns)
+calipy.effects.UnknownParameter.check_node_structure(mu_ns)
+calipy.effects.NoiseAddition.check_node_structure(noise_ns)
 
 # ... and in case they aren't, we can either look at some valid example node_structure
 # or print out the template for generating one
 
-example_ns_param = calipy.core.effects.UnknownParameter.example_node_structure
+example_ns_param = calipy.effects.UnknownParameter.example_node_structure
 example_ns_param
 example_ns_param.generate_template()
 
@@ -462,22 +462,22 @@ example_ns_param.generate_template()
 # distributions, sampling, diagnostics, and inference. The functionalities are
 # bundled into different submodules as outlines below.
 #
-# calipy.core.base: Submodule is foundational for providing the base classes used
+# calipy.base: Submodule is foundational for providing the base classes used
 #   in calipy. It provides (among others) the CalipyNode and NodeStructure classes.
 #   Most other classes are subclassing the base classes; they allow stochastic
 #   effects to be written in such a way that they are tracked by gradient tape.
 #
-# calipy.core.effects: Submodule contains the CalipyEffects and CalipyQuantity
+# calipy.effects: Submodule contains the CalipyEffects and CalipyQuantity
 #   classes. These are essential for defining models. CalipyQuantity objects
 #   are representative of atomic objects like parameters and probability distributions
 #   while CalipyEffect objects use pytorch functions and pyro sample statements
 #   to mimick some stochastic effect.
 #
-# calipy.core.instruments: Submodule contains the CalipyInstrument class and a
+# calipy.instruments: Submodule contains the CalipyInstrument class and a
 #   collection of basic concrete instrument classes like the generic  TotalStation
 #   class or the LevellingInstrument class.
 #
-# calipy.core.utils: Submodule contains utility functions that allow formatted
+# calipy.utils: Submodule contains utility functions that allow formatted
 #   printing of infos, manipulation of NodeStructure's, and a set of conversion
 #   functions translating between calipy code and pyro's optimization formulations.
 #

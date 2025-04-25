@@ -13,10 +13,10 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.
 import pyro
 import matplotlib.pyplot as plt
 
-from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, NoiseAddition
-from calipy.core.utils import dim_assignment
-from calipy.core.tensor import CalipyTensor
+from calipy.base import NodeStructure, CalipyProbModel
+from calipy.effects import UnknownParameter, NoiseAddition
+from calipy.utils import dim_assignment
+from calipy.tensor import CalipyTensor
 
 # Simulate data
 n_meas = 20

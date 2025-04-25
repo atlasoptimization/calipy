@@ -1,10 +1,10 @@
 .. _api-funs:
 
 ============================
-calipy.core.funs  (API)
+calipy.funs  (API)
 ============================
 
-.. automodule:: calipy.core.funs
+.. automodule:: calipy.funs
    :members:
    :undoc-members:
    :show-inheritance:

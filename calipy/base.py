@@ -52,8 +52,8 @@ import inspect
 import textwrap
 from functools import wraps
 import torchviz
-from calipy.core.utils import format_mro, InputSchema
-from calipy.core.data import DataTuple, CalipyDict, CalipyIO, preprocess_args
+from calipy.utils import format_mro, InputSchema
+from calipy.data import DataTuple, CalipyDict, CalipyIO, preprocess_args
 from abc import ABC, ABCMeta, abstractmethod
 
 from types import MethodType

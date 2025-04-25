@@ -10,7 +10,6 @@ lists the top‑level symbols and links to the full docstring of every object.
    :maxdepth: 1
    :caption: Modules
 
-   core
    tensor
    data
    effects

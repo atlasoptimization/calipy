@@ -39,7 +39,7 @@ import random
 import einops
 
 from collections.abc import Mapping, Iterable
-from calipy.core.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment, multi_unsqueeze, ensure_tuple, robust_meshgrid
+from calipy.utils import DimTuple, CalipyDim, TorchdimTuple, dim_assignment, multi_unsqueeze, ensure_tuple, robust_meshgrid
 
 
 class CalipyIndex:

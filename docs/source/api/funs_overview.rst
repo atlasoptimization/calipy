@@ -1,5 +1,5 @@
 ========================
-calipy.core.funs
+calipy.funs
 ========================
 
 Dimension aware torch functions (e.g. `calipy_cat`, etc.).
@@ -9,5 +9,5 @@ Dimension aware torch functions (e.g. `calipy_cat`, etc.).
    :toctree: generated
    :recursive:
 
-   calipy.core.funs
+   calipy.funs
 
