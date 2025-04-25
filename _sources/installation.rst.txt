@@ -44,7 +44,6 @@ That’s it!  Verify the installation:
 
    >>> import calipy
    >>> print(calipy.__version__)
-   0.5.1
 
 Bleeding‑edge install (GitHub)
 ==============================
