@@ -232,9 +232,9 @@ structure (shapes, plate_stacks, plates, aux_data) completely.</p>
 <span class="c1"># i) Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">calipy</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
-<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.effects</span> <span class="kn">import</span> <span class="n">NoiseAddition</span>
 
 <span class="c1"># ii) Invoke and investigate class</span>
 <span class="n">help</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
@@ -396,8 +396,8 @@ to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li
 <span class="c1">#</span>
 <span class="c1"># i) Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">calipy</span>
-<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
-<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
 <span class="n">node_structure</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
 <span class="n">bias_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
 <span class="c1">#</span>
@@ -526,8 +526,8 @@ to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li
 <span class="c1">#</span>
 <span class="c1"># i) Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">calipy</span>
-<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
-<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span>
 <span class="n">node_structure</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
 <span class="n">bias_object</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">node_structure</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;tutorial&#39;</span><span class="p">)</span>
 <span class="c1">#</span>

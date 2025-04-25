@@ -235,9 +235,9 @@ None or of nonmatching shapes.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># i) Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">pyro</span>        
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
-<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span>  <span class="n">CalipyDataset</span><span class="p">,</span> <span class="n">io_collate</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span>  <span class="n">CalipyDataset</span><span class="p">,</span> <span class="n">io_collate</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
 <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
 
 <span class="c1"># Definitions        </span>
@@ -351,7 +351,7 @@ Valid input types include:</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span>
 
 
 <span class="c1"># Create data for CalipyDict initialization</span>
@@ -532,9 +532,9 @@ Valid input types include:</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
 
 
 <span class="c1"># Create data for CalipyList</span>
@@ -1133,8 +1133,8 @@ them well and they are easily passable between nodes.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span> <span class="n">DataTuple</span><span class="p">,</span> <span class="n">CalipyDict</span><span class="p">,</span> <span class="n">CalipyList</span><span class="p">,</span> <span class="n">CalipyIO</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
 </pre></div>
 </div>
 </dd></dl>

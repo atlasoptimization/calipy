@@ -369,9 +369,9 @@ upkeep, indexing, and function call referral.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">TensorIndexer</span><span class="p">,</span> <span class="n">CalipyIndex</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
-<span class="kn">from</span> <span class="nn">calipy.core.data</span> <span class="kn">import</span> <span class="n">DataTuple</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">TensorIndexer</span><span class="p">,</span> <span class="n">CalipyIndex</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span> <span class="n">DataTuple</span>
 
 <span class="c1"># Create CalipyTensors -----------------------------------------------</span>
 <span class="c1">#</span>
@@ -613,8 +613,8 @@ that will replace the collapsed dims.</p></li>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
 
 <span class="c1"># Create DimTuples and tensors</span>
 <span class="n">data_torch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,[</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
@@ -653,8 +653,8 @@ via ordering</p></li>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
 
 <span class="c1"># Create DimTuples and tensors</span>
 <span class="n">data_torch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,[</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
@@ -1204,8 +1204,8 @@ dimension names from the supersequence.</p></li>
 </dl>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">broadcast_dims</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">Dim</span><span class="p">,</span> <span class="n">DimTuple</span><span class="p">,</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">broadcast_dims</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">Dim</span><span class="p">,</span> <span class="n">DimTuple</span><span class="p">,</span> <span class="n">dim_assignment</span>
 
 <span class="c1"># Suppose we have:</span>
 <span class="c1">#   c_cp of shape [2, 1], dims=(&#39;dim1&#39;,&#39;dim2&#39;)</span>
@@ -1294,7 +1294,7 @@ with all CalipyTensor instances replaced by torch.Tensor objects.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and definitions</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">preprocess_args</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span><span class="p">,</span> <span class="n">preprocess_args</span>
 
 <span class="c1"># Create sample CalipyTensors</span>
 <span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">(</span><span class="n">dim_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bd_1&#39;</span><span class="p">])</span>
