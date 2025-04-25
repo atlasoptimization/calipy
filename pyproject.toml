@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "calipy"
+name = "calipy-ppl"
 version = "0.5.1"
 description = "CaliPy (Calibration library Python) is a modular library for building and solving probabilistic models of measurement devices. Designed for scientific calibration tasks and uncertainty quantification."
 keywords = ["instrument calibration", "measurement devices", "probabilistic modeling", "bayesian inference", "uncertainty quantification", "pyro", "pytorch"]
