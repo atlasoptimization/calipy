@@ -1,4 +1,8 @@
 # CaliPy: Calibration Library in Python
+[![PyPI version](https://img.shields.io/pypi/v/calipy.svg)](https://pypi.org/project/calipy/)
+[![Python versions](https://img.shields.io/pypi/pyversions/calipy.svg)](https://pypi.org/project/calipy/)
+[![License](https://img.shields.io/badge/license-Prosperity-blue)](https://prosperitylicense.com/)
+
 > **Pre-Alpha**: In active development — not yet production-ready
 
 ---
@@ -19,7 +23,12 @@
 
 ## Introduction
 
-CaliPy (Calibration Library for Python) is designed to **simplify and standardize** how we **build and solve probabilistic instrument models** in geodesy (and related fields). While many real-world analyses rely on classical **least squares** (LS) estimation or maximum-likelihood solutions, these approaches can fail for:
+CaliPy (Calibration library Python) is designed to **build and solve probabilistic instrument models** of measurement instruments. CaliPy lets you declare probabilistic models for measurement instruments (e.g., temperature sensors, geodetic instruments, optical devices, ...) by chaining modular "effects" such as drifts, noise, and nonlinear transformations. Inference is then handled by the autodiff backbone.
+Built for scientists, engineers, and calibration specialists who need flexible Bayesian or maximum likelihood inference – without manual math.
+
+> Powered by PyTorch + Pyro · Dimension-aware · Modular Effects · Research-proven
+
+ While many real-world analyses rely on classical **least squares** (LS) estimation or maximum-likelihood solutions, these approaches can fail for:
 
 - Nonlinear systems
 - Non-Gaussian noise
@@ -103,18 +112,18 @@ Originally developed for **geodetic measurement instruments**, CaliPy can also a
 
 **Project Status**: Pre-alpha
 
-Once published on PyPI, CaliPy can be installed via:
+Calipy is published on PyPI, and can be installed via:
 
 ```bash
 pip install calipy
 ```
 
-Until then, clone this repository and install dependencies manually:
+If you want the editable bleeding edge version, clone the github repository and install manually:
 
 ```bash
 git clone https://github.com/atlasoptimization/calipy.git
 cd calipy
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ---
@@ -216,7 +225,7 @@ The following three example were presented at JISDM 2025 in Karlsruhe; documente
 
 ## License
 
-CaliPy is released under a **Prosperity Public License** for non-commercial use. For commercial usage, a separate license is available. See [LICENSE](https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md) for details.
+CaliPy is released under the **Prosperity Public License**. Free for non-commercial use. Commercial licensing available – contact info@atlasoptimization.com. See [LICENSE](https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md) for details.
 
 ---
 

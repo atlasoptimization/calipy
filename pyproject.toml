@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "calipy"
 version = "0.5.1"
-description = "CaliPy, the Calibration library Python. A library for building and solving probabilistic instrument models."
+description = "CaliPy (Calibration library Python) is a modular library for building and solving probabilistic models of measurement devices. Designed for scientific calibration tasks and uncertainty quantification."
+keywords = ["instrument calibration", "measurement devices", "probabilistic modeling", "bayesian inference", "uncertainty quantification", "pyro", "pytorch"]
 readme = "README.md"
 requires-python = ">=3.7"
 license = { text = "Prosperity Public License" }
@@ -17,7 +18,9 @@ authors = [
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Physics",
   "License :: Other/Proprietary License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.7",
@@ -47,4 +50,5 @@ Homepage = "http://github.com/atlasoptimization/calipy"
 Documentation = "https://atlasoptimization.github.io/calipy"
 Source = "http://github.com/atlasoptimization/calipy"
 Issues = "http://github.com/atlasoptimization/calipy/issues"
+Changelog = "https://github.com/atlasoptimization/calipy/releases"
 
