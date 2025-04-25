@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "calipy"
-version = "0.5.0"
+version = "0.5.1"
 description = "CaliPy, the Calibration library Python. A library for building and solving probabilistic instrument models."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -44,7 +44,7 @@ dev = [
 
 [project.urls]
 Homepage = "http://github.com/atlasoptimization/calipy"
-Documentation = "https://your-docs-site.readthedocs.io"
+Documentation = "https://atlasoptimization.github.io/calipy"
 Source = "http://github.com/atlasoptimization/calipy"
 Issues = "http://github.com/atlasoptimization/calipy/issues"
 

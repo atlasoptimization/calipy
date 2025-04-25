@@ -29,11 +29,13 @@ Quick install (PyPI)
 .. code-block:: console
 
    # create & activate a fresh environment (recommended)
+    mkdir ~/Desktop/calipy
+    cd ~/Desktop/calipy
     python3 -m venv calipy_env
     source calipy_env/bin/activate
 
-   # ... then install calipy (including docs, if preferred)
-   pip install calipy[docs]
+   # ... then install calipy
+   pip install calipy
 
 That’s it!  Verify the installation:
 

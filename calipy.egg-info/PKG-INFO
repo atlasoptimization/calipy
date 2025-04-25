@@ -1,11 +1,11 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: calipy
-Version: 0.5.0
+Version: 0.5.1
 Summary: CaliPy, the Calibration library Python. A library for building and solving probabilistic instrument models.
 Author-email: "Dr. Jemil Avers Butt" <jemil.butt@atlasoptimization.com>
 License: Prosperity Public License
 Project-URL: Homepage, http://github.com/atlasoptimization/calipy
-Project-URL: Documentation, https://your-docs-site.readthedocs.io
+Project-URL: Documentation, https://atlasoptimization.github.io/calipy
 Project-URL: Source, http://github.com/atlasoptimization/calipy
 Project-URL: Issues, http://github.com/atlasoptimization/calipy/issues
 Classifier: Development Status :: 2 - Pre-Alpha
@@ -30,7 +30,6 @@ Requires-Dist: varname>=0.8.1
 Requires-Dist: networkx>=2.4
 Provides-Extra: dev
 Requires-Dist: pytest>=3.7; extra == "dev"
-Dynamic: license-file
 
 # CaliPy: Calibration Library in Python
 > **Pre-Alpha**: In active development — not yet production-ready
@@ -163,10 +162,10 @@ Below is a toy snippet demonstrating how you might declare a simple **bias-plus-
 import pyro
 import matplotlib.pyplot as plt
 
-from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.effects import UnknownParameter, NoiseAddition
-from calipy.core.utils import dim_assignment
-from calipy.core.tensor import CalipyTensor
+from calipy.base import NodeStructure, CalipyProbModel
+from calipy.effects import UnknownParameter, NoiseAddition
+from calipy.utils import dim_assignment
+from calipy.tensor import CalipyTensor
 
 # Simulate data
 n_meas = 20
