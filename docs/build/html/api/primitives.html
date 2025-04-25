@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>calipy.core.primitives (API) &mdash; calipy 0.5 documentation</title>
+  <title>calipy.primitives (API) &mdash; calipy 0.5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
@@ -21,7 +21,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Quick-start" href="../examples/quick_start/qs_examples_index.html" />
-    <link rel="prev" title="calipy.core.funs (API)" href="funs.html" /> 
+    <link rel="prev" title="calipy.funs (API)" href="funs.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,16 +51,15 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">CaliPy API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="core.html">calipy.core  (overview)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tensor.html">calipy.core.tensor  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.core.data  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.core.effects  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dist.html">calipy.core.dist.distributions  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="funs.html">calipy.core.funs  (API)</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.core.primitives  (API)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#calipy.core.primitives.param"><code class="docutils literal notranslate"><span class="pre">param()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#calipy.core.primitives.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api_index.html">CaliPy API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tensor.html">calipy.tensor  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.data  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.effects  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dist.html">calipy.dist.distributions  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="funs.html">calipy.funs  (API)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.primitives  (API)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.primitives.param"><code class="docutils literal notranslate"><span class="pre">param()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.primitives.sample"><code class="docutils literal notranslate"><span class="pre">sample()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -86,8 +85,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="index.html">CaliPy API Reference</a></li>
-      <li class="breadcrumb-item active">calipy.core.primitives  (API)</li>
+          <li class="breadcrumb-item"><a href="api_index.html">CaliPy API Reference</a></li>
+      <li class="breadcrumb-item active">calipy.primitives  (API)</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/primitives.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -97,9 +96,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="calipy-core-primitives-api">
-<span id="api-primitives"></span><h1>calipy.core.primitives  (API)<a class="headerlink" href="#calipy-core-primitives-api" title="Permalink to this heading"></a></h1>
-<span class="target" id="module-calipy.core.primitives"></span><p>This module provides primitives needed for performing basic probabilistic actions
+  <section id="module-calipy.primitives">
+<span id="calipy-primitives-api"></span><span id="api-primitives"></span><h1>calipy.primitives  (API)<a class="headerlink" href="#module-calipy.primitives" title="Permalink to this heading"></a></h1>
+<p>This module provides primitives needed for performing basic probabilistic actions
 like declaring parameters and smapling distributions</p>
 <dl>
 <dt>The classes and functions are</dt><dd><dl class="simple">
@@ -114,8 +113,8 @@ it is often found as an ingredient when defining effects.</p>
 <p>The script is meant solely for educational and illustrative purposes. Written by
 Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="calipy.core.primitives.param">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.primitives.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Real()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.primitives.param" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="calipy.primitives.param">
+<span class="sig-prename descclassname"><span class="pre">calipy.primitives.</span></span><span class="sig-name descname"><span class="pre">param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constraint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Real()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.primitives.param" title="Permalink to this definition"></a></dt>
 <dd><p>Wrapper function for pyro.param producing a CalipyTensor valued parameter.
 The tensor is inialized once, then placed in the param store and can be used
 like a regular CalipyTensor.</p>
@@ -129,7 +128,7 @@ on by optimization</p></li>
 created by param()</p></li>
 <li><p><strong>constraint</strong> (<em>pyro.distributions.constraints.Constraint</em>) – Pyro constraint that constrains the parameter of a distribution
 to lie in a pre-defined subspace of R^n like e.g. simplex, positive, …</p></li>
-<li><p><strong>subsample_index</strong> (<a class="reference internal" href="tensor.html#calipy.core.tensor.CalipyIndex" title="calipy.core.tensor.CalipyIndex"><em>CalipyIndex</em></a>) – The subsampling index indicating how subsampling
+<li><p><strong>subsample_index</strong> (<a class="reference internal" href="tensor.html#calipy.tensor.CalipyIndex" title="calipy.tensor.CalipyIndex"><em>CalipyIndex</em></a>) – The subsampling index indicating how subsampling
 of the parameter is to be performed</p></li>
 </ul>
 </dd>
@@ -139,7 +138,7 @@ optimization. Starts as init_tensor, has dims and constraints as specified
 and is automatically subsampled by subsampling_index.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="tensor.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="tensor.html#calipy.tensor.CalipyTensor" title="calipy.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage: Run line by line to investigate Class</p>
@@ -222,8 +221,8 @@ is accessible via <code class="docutils literal notranslate"><span class="pre">p
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="calipy.core.primitives.sample">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.primitives.</span></span><span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorizable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.primitives.sample" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="calipy.primitives.sample">
+<span class="sig-prename descclassname"><span class="pre">calipy.primitives.</span></span><span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsample_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorizable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.primitives.sample" title="Permalink to this definition"></a></dt>
 <dd><p>Flexible sampling function handling multiple plates and four cases based on <cite>obs</cite> and <cite>subsample_index</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -232,7 +231,7 @@ is accessible via <code class="docutils literal notranslate"><span class="pre">p
 <li><p><strong>dist</strong> (<em>pyro.distributions.Distribution</em>) – The distribution to sample from.</p></li>
 <li><p><strong>dist_dims</strong> (<em>list</em><em> of </em><em>CalipyDim objects</em>) – The dimensions of the sample from the distribution; need to contain batch_dims as subset.</p></li>
 <li><p><strong>vectorizable</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses vectorized sampling. If False, uses sequential sampling. Default is True.</p></li>
-<li><p><strong>obs</strong> (<a class="reference internal" href="data.html#calipy.core.data.CalipyIO" title="calipy.core.data.CalipyIO"><em>CalipyIO</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Observations wrapped in CalipyIO. If provided, sampling is conditioned on these observations.</p></li>
+<li><p><strong>obs</strong> (<a class="reference internal" href="data.html#calipy.data.CalipyIO" title="calipy.data.CalipyIO"><em>CalipyIO</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Observations wrapped in CalipyIO. If provided, sampling is conditioned on these observations.</p></li>
 <li><p><strong>subsample_index</strong> (<em>list</em><em> of </em><em>torch.Tensor</em><em> or </em><em>None</em><em>, </em><em>optional</em>) – Subsample indices for each plate dimension. If provided, sampling is performed over these indices.</p></li>
 </ul>
 </dd>
@@ -240,7 +239,7 @@ is accessible via <code class="docutils literal notranslate"><span class="pre">p
 <dd class="field-even"><p>A CalipyTensor sample being tracked by gradient tape.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="tensor.html#calipy.core.tensor.CalipyTensor" title="calipy.core.tensor.CalipyTensor">CalipyTensor</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="tensor.html#calipy.tensor.CalipyTensor" title="calipy.tensor.CalipyTensor">CalipyTensor</a></p>
 </dd>
 </dl>
 <p>Example usage:</p>
@@ -262,7 +261,7 @@ is accessible via <code class="docutils literal notranslate"><span class="pre">p
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="funs.html" class="btn btn-neutral float-left" title="calipy.core.funs (API)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="funs.html" class="btn btn-neutral float-left" title="calipy.funs (API)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../examples/quick_start/qs_examples_index.html" class="btn btn-neutral float-right" title="Quick-start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

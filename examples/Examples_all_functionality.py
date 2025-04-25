@@ -17,12 +17,14 @@ from torch.utils.data import DataLoader
 from functorch.dim import dims
 
 import calipy
-from calipy.core.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
-from calipy.core.effects import CalipyQuantity, CalipyEffect, UnknownParameter, NoiseAddition
-from calipy.core.data import DataTuple
-from calipy.core.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
-from calipy.core.base import NodeStructure, CalipyProbModel
-from calipy.core.primitives import param, sample
+from calipy.utils import dim_assignment, DimTuple, TorchdimTuple, CalipyDim, ensure_tuple, multi_unsqueeze
+from calipy.effects import CalipyQuantity, CalipyEffect, UnknownParameter, NoiseAddition
+from calipy.data import DataTuple
+from calipy.tensor import CalipyIndex, CalipyIndexer, TensorIndexer, CalipyTensor
+from calipy.base import NodeStructure, CalipyProbModel
+from calipy.primitives import param, sample
+
+from calipy.funs import calipy_cat
 
 import numpy as np
 import einops
@@ -389,7 +391,6 @@ assert ((data_AB_sub_2[0] - data_AB_sub_3[0]).tensor == 0).all()
 
 
 # Check the calipy_cat function
-from calipy.core.funs import calipy_cat
 
 # Create data for CalipyDict initialization
 tensor_dims = dim_assignment(['bd', 'ed'])
@@ -493,8 +494,8 @@ tensor_B_cp[0,0]
 
 # BEHAVIOR OF ADDITION, MULTIPLICATION, DIVISION
 
-from calipy.core.tensor import broadcast_dims, CalipyTensor
-from calipy.core.utils import dim_assignment
+from calipy.tensor import broadcast_dims, CalipyTensor
+from calipy.utils import dim_assignment
 
 
 # Build torch tensors
@@ -1051,8 +1052,8 @@ ns_prebuilt.set_dims(batch_dims = (generic_dims[['bd_1']], 'batch dimensions'))
 
 # i) Imports and definitions
 # import calipy
-# from calipy.core.base import NodeStructure
-# from calipy.core.effects import UnknownParameter
+# from calipy.base import NodeStructure
+# from calipy.effects import UnknownParameter
 #
 
 # Specify some dimensions: param_dims, batch_dims feature in the template nodestructure
@@ -1187,7 +1188,7 @@ render_2
 
 # Introduce distributions as nodes with forward method and dims
 
-CalipyNormal = calipy.core.dist.Normal
+CalipyNormal = calipy.dist.Normal
 CalipyNormal.dists
 CalipyNormal.input_vars
 normal_ns = NodeStructure(CalipyNormal)
@@ -1252,7 +1253,7 @@ samples_normal_2 = calipy_normal.forward(input_vars_normal_2)
 # TEST EFFECT CLASS NoiseAddition
 
 # i) Invoke and investigate class
-NoiseAddition = calipy.core.effects.NoiseAddition
+NoiseAddition = calipy.effects.NoiseAddition
 help(NoiseAddition)
 NoiseAddition.mro()
 print(NoiseAddition.input_vars_schema)
@@ -1282,7 +1283,7 @@ help(noisy_output)
 # TEST CALIPYDICT, CALIPYLIST, CALIPYIO
 
 import torch
-from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+from calipy.data import DataTuple, CalipyDict, CalipyList, CalipyIO
    
 
 # Create data for CalipyList
@@ -1318,9 +1319,9 @@ dict_from_dict.as_datatuple()
 
 # Imports and definitions
 import torch
-from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
-from calipy.core.tensor import CalipyTensor
-from calipy.core.utils import dim_assignment
+from calipy.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+from calipy.tensor import CalipyTensor
+from calipy.utils import dim_assignment
    
 
 # Create data for CalipyList
@@ -1457,9 +1458,9 @@ renamed_io = list_io.rename_keys(rename_dict)
 # i) Imports and definitions
 import torch
 import pyro        
-from calipy.core.utils import dim_assignment
-from calipy.core.data import  CalipyDataset, io_collate
-from calipy.core.tensor import CalipyTensor
+from calipy.utils import dim_assignment
+from calipy.data import  CalipyDataset, io_collate
+from calipy.tensor import CalipyTensor
 from torch.utils.data import DataLoader
         
 # Definitions        
@@ -1534,7 +1535,7 @@ for batch_input, batch_output, batch_index in dataloader:
 # TEST SAMPLE FUNCTION
 
 # General distribution setup
-CalipyNormal = calipy.core.dist.Normal
+CalipyNormal = calipy.dist.Normal
 normal_ns = NodeStructure(CalipyNormal)
 calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
 
@@ -1576,11 +1577,11 @@ sample_result_101 = sample('Sample_101', pyro_normal, normal_ns.dims, observatio
 import torch
 import pyro
 import calipy
-from calipy.core.utils import dim_assignment
-from calipy.core.data import DataTuple
-from calipy.core.tensor import CalipyTensor
-from calipy.core.effects import UnknownParameter, NoiseAddition
-from calipy.core.base import NodeStructure, CalipyProbModel
+from calipy.utils import dim_assignment
+from calipy.data import DataTuple
+from calipy.tensor import CalipyTensor
+from calipy.effects import UnknownParameter, NoiseAddition
+from calipy.base import NodeStructure, CalipyProbModel
 
 # ii) Set up unknown mean parameter
 batch_dims_param = dim_assignment(['bd_p1'], dim_sizes = [10])

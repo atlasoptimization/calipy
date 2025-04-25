@@ -1,5 +1,5 @@
 ==========================
-calipy.core.tensor
+calipy.tensor
 ==========================
 
 Dimension‑aware tensor wrapper, indexers and related helpers.
@@ -9,5 +9,5 @@ Dimension‑aware tensor wrapper, indexers and related helpers.
    :toctree: generated
    :recursive:
 
-   calipy.core.tensor
+   calipy.tensor
 

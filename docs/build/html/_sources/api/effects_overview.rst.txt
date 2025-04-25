@@ -1,5 +1,5 @@
 =========================
-calipy.core.effects
+calipy.effects
 =========================
 
 Stochastic effects (`NoiseAddition`, `UnknownParameter`, …).
@@ -9,5 +9,5 @@ Stochastic effects (`NoiseAddition`, `UnknownParameter`, …).
    :toctree: generated
    :recursive:
 
-   calipy.core.effects
+   calipy.effects
 

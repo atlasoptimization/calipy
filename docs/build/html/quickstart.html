@@ -60,7 +60,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api/index.html">CaliPy API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api_index.html">CaliPy API Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
 <ul>
@@ -127,10 +127,10 @@ bias <strong>mu</strong>.</p>
 <span class="kn">import</span> <span class="nn">pyro</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">from</span> <span class="nn">calipy.core.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
-<span class="kn">from</span> <span class="nn">calipy.core.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
-<span class="kn">from</span> <span class="nn">calipy.core.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
-<span class="kn">from</span> <span class="nn">calipy.core.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
+<span class="kn">from</span> <span class="nn">calipy.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
 
 <span class="c1"># Simulate data</span>
 <span class="n">n_meas</span> <span class="o">=</span> <span class="mi">20</span>

@@ -1,10 +1,10 @@
 .. _api-dist:
 
 ============================
-calipy.core.dist.distributions  (API)
+calipy.dist.distributions  (API)
 ============================
 
-.. automodule:: calipy.core.dist.distributions
+.. automodule:: calipy.dist.distributions
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,0 +1,162 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>calipy.data &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="../../_static/doctools.js?v=888ff710"></script>
+      <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api_index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/engineering_geodesy/eg_examples_index.html">Engineering Geodesy</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">calipy.data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/generated/calipy.data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-calipy.data">
+<span id="calipy-data"></span><h1>calipy.data<a class="headerlink" href="#module-calipy.data" title="Permalink to this heading"></a></h1>
+<p>This module provides basic functionality to represent and access data in a way
+that interacts well with calipy’s basic classes and methods.</p>
+<dl>
+<dt>The classes and functions are</dt><dd><dl class="simple">
+<dt>DataTuple: A class for holding tuples of various objects with explicit names.</dt><dd><p>is the basic object to be used for input variables, observations etc. as
+it makes explicit the meaning of the tensors passed or produced.</p>
+</dd>
+</dl>
+<p>sample:</p>
+</dd>
+</dl>
+<p>The DataTuple class is often used to manage and package data, including for the
+various forward() methods when activating CalipyNodes.</p>
+<p>The script is meant solely for educational and illustrative purposes. Written by
+Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../data.html#calipy.data.io_collate" title="calipy.data.io_collate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">io_collate</span></code></a>(batch[, reduce])</p></td>
+<td><p>Custom collate function that collates ios together by concatenating contained list elements into a longer list aroung which a new new CalipyIO object is built.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../data.html#calipy.data.preprocess_args" title="calipy.data.preprocess_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess_args</span></code></a>(input_vars, observations, ...)</p></td>
+<td><p>Function for preprocessing arguments to forward passes.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="../data.html#calipy.data.CalipyDataset" title="calipy.data.CalipyDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyDataset</span></code></a>(input_data, output_data[, ...])</p></td>
+<td><p>CalipyDataset is a class mimicking the functionality of the Dataset class in torch.utils.data but providing some streamlined prebuilt functions needed in the context of calipy.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../data.html#calipy.data.CalipyDict" title="calipy.data.CalipyDict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyDict</span></code></a>([data])</p></td>
+<td><p>A dictionary-like container that can store single or multiple items.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../data.html#calipy.data.CalipyIO" title="calipy.data.CalipyIO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyIO</span></code></a>([data, name])</p></td>
+<td><p>A data container that can store single or multiple dict like containers.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../data.html#calipy.data.CalipyList" title="calipy.data.CalipyList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CalipyList</span></code></a>([data])</p></td>
+<td><p>A list-like container that can store single or multiple dict like containers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../data.html#calipy.data.DataTuple" title="calipy.data.DataTuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataTuple</span></code></a>(names, values)</p></td>
+<td><p>Custom class for holding tuples of various objects with explicit names.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

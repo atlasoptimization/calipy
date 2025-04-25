@@ -3,7 +3,7 @@
 Welcome to Calipy's Documentation
 =================================
 
-.. include:: ../../../README.md
+.. include:: ../../README.md
    :parser: myst
    :start-line: 1
 
@@ -44,7 +44,7 @@ API Reference
    :maxdepth: 2
    :caption: API Reference
 
-   api/index
+   api/api_index
 
 
 Example compilation

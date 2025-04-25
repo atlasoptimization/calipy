@@ -131,8 +131,8 @@ class NodeStructure():
         #
         # i) Imports and definitions
         import calipy
-        from calipy.core.base import NodeStructure
-        from calipy.core.effects import UnknownParameter
+        from calipy.base import NodeStructure
+        from calipy.effects import UnknownParameter
         #        
         # Specify some dimensions: param_dims, batch_dims feature in the template nodestructure
         # UnknownParameter.default_nodestructure while event_dims does not.
@@ -700,11 +700,11 @@ class CalipyProbModel(CalipyNode):
         import torch
         import pyro
         import calipy
-        from calipy.core.utils import dim_assignment
-        from calipy.core.data import DataTuple
-        from calipy.core.tensor import CalipyTensor
-        from calipy.core.effects import UnknownParameter, NoiseAddition
-        from calipy.core.base import NodeStructure, CalipyProbModel
+        from calipy.utils import dim_assignment
+        from calipy.data import DataTuple
+        from calipy.tensor import CalipyTensor
+        from calipy.effects import UnknownParameter, NoiseAddition
+        from calipy.base import NodeStructure, CalipyProbModel
         
         # ii) Set up unknown mean parameter
         batch_dims_param = dim_assignment(['bd_p1'], dim_sizes = [10])

@@ -1,10 +1,10 @@
 .. _api-tensor:
 
 ============================
-calipy.core.tensor  (API)
+calipy.tensor  (API)
 ============================
 
-.. automodule:: calipy.core.tensor
+.. automodule:: calipy.tensor
    :members:
    :undoc-members:
    :show-inheritance:

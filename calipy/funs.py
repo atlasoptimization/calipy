@@ -89,9 +89,9 @@ def calipy_cat(calipy_tensors, dim = 0):
         
         # Imports and definitions
         import torch
-        from calipy.core.tensor import CalipyTensor
-        from calipy.core.utils import dim_assignment
-        from calipy.core.funs import calipy_cat
+        from calipy.tensor import CalipyTensor
+        from calipy.utils import dim_assignment
+        from calipy.funs import calipy_cat
         
         # Create data for CalipyDict initialization
         tensor_dims = dim_assignment(['bd', 'ed'])

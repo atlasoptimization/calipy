@@ -446,7 +446,7 @@ class CalipyDict(dict):
         
         # Imports and definitions
         import torch
-        from calipy.core.data import DataTuple, CalipyDict
+        from calipy.data import DataTuple, CalipyDict
            
 
         # Create data for CalipyDict initialization
@@ -636,7 +636,7 @@ class CalipyDict(dict):
             
             # Imports and definitions
             import torch
-            from calipy.core.data import CalipyDict
+            from calipy.data import CalipyDict
                
     
             # Create data for CalipyDict initialization
@@ -828,9 +828,9 @@ class CalipyIO:
         
         # Imports and definitions
         import torch
-        from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
-        from calipy.core.tensor import CalipyTensor
-        from calipy.core.utils import dim_assignment
+        from calipy.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+        from calipy.tensor import CalipyTensor
+        from calipy.utils import dim_assignment
            
         
         # Create data for CalipyList
@@ -1305,9 +1305,9 @@ class CalipyDataset(Dataset):
         # i) Imports and definitions
         import torch
         import pyro        
-        from calipy.core.utils import dim_assignment
-        from calipy.core.data import  CalipyDataset, io_collate
-        from calipy.core.tensor import CalipyTensor
+        from calipy.utils import dim_assignment
+        from calipy.data import  CalipyDataset, io_collate
+        from calipy.tensor import CalipyTensor
         from torch.utils.data import DataLoader
                 
         # Definitions        
@@ -1581,8 +1581,8 @@ def preprocess_args(input_vars, observations, subsample_index):
         
         # Imports and definitions
         import torch
-        from calipy.core.data import DataTuple, CalipyDict, CalipyList, CalipyIO
-        from calipy.core.tensor import CalipyTensor
+        from calipy.data import DataTuple, CalipyDict, CalipyList, CalipyIO
+        from calipy.tensor import CalipyTensor
     """
     
     input_vars_io = CalipyIO(data = input_vars, name = 'input_vars_preprocessed')
@@ -1639,7 +1639,7 @@ def preprocess_args(input_vars, observations, subsample_index):
         
 #         # Imports and definitions
 #         import torch
-#         from calipy.core.data import CalipyDataset
+#         from calipy.data import CalipyDataset
            
 
 #         # Create data for CalipyDict initialization

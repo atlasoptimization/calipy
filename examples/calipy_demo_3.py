@@ -221,24 +221,3 @@ print('True values of mu, sigma = ', mu_prod_true, sigma_prod_true)
 print('Results of taking empirical means for mu = ', torch.mean(data))
 print('Results of taking empirical std for sigma = ', torch.std(torch.mean(data, dim=1)))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

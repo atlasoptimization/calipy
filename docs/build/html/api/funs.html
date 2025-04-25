@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>calipy.core.funs (API) &mdash; calipy 0.5 documentation</title>
+  <title>calipy.funs (API) &mdash; calipy 0.5 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
@@ -20,8 +20,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="calipy.core.primitives (API)" href="primitives.html" />
-    <link rel="prev" title="calipy.core.dist.distributions (API)" href="dist.html" /> 
+    <link rel="next" title="calipy.primitives (API)" href="primitives.html" />
+    <link rel="prev" title="calipy.dist.distributions (API)" href="dist.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,18 +51,17 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">CaliPy API Reference</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="core.html">calipy.core  (overview)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tensor.html">calipy.core.tensor  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.core.data  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.core.effects  (API)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dist.html">calipy.core.dist.distributions  (API)</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.core.funs  (API)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#calipy.core.funs.calipy_cat"><code class="docutils literal notranslate"><span class="pre">calipy_cat()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#calipy.core.funs.calipy_sum"><code class="docutils literal notranslate"><span class="pre">calipy_sum()</span></code></a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api_index.html">CaliPy API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tensor.html">calipy.tensor  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.data  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.effects  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dist.html">calipy.dist.distributions  (API)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.funs  (API)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.funs.calipy_cat"><code class="docutils literal notranslate"><span class="pre">calipy_cat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.funs.calipy_sum"><code class="docutils literal notranslate"><span class="pre">calipy_sum()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="primitives.html">calipy.core.primitives  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="primitives.html">calipy.primitives  (API)</a></li>
 </ul>
 </li>
 </ul>
@@ -86,8 +85,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="index.html">CaliPy API Reference</a></li>
-      <li class="breadcrumb-item active">calipy.core.funs  (API)</li>
+          <li class="breadcrumb-item"><a href="api_index.html">CaliPy API Reference</a></li>
+      <li class="breadcrumb-item active">calipy.funs  (API)</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/api/funs.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -97,8 +96,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-calipy.core.funs">
-<span id="calipy-core-funs-api"></span><span id="api-funs"></span><h1>calipy.core.funs  (API)<a class="headerlink" href="#module-calipy.core.funs" title="Permalink to this heading"></a></h1>
+  <section id="module-calipy.funs">
+<span id="calipy-funs-api"></span><span id="api-funs"></span><h1>calipy.funs  (API)<a class="headerlink" href="#module-calipy.funs" title="Permalink to this heading"></a></h1>
 <p>This module provides basic functionality to produce and adapt functions that
 interact well with calipy’s CalipyTensor and CalipyDistribution classes and
 maintain dimension-awareness.</p>
@@ -115,13 +114,13 @@ it is often found as an ingredient when defining effects.</p>
 <p>The script is meant solely for educational and illustrative purposes. Written by
 Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="calipy.core.funs.calipy_cat">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.funs.calipy_cat" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="calipy.funs.calipy_cat">
+<span class="sig-prename descclassname"><span class="pre">calipy.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.funs.calipy_cat" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="calipy.core.funs.calipy_sum">
-<span class="sig-prename descclassname"><span class="pre">calipy.core.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.core.funs.calipy_sum" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="calipy.funs.calipy_sum">
+<span class="sig-prename descclassname"><span class="pre">calipy.funs.</span></span><span class="sig-name descname"><span class="pre">calipy_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calipy_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.funs.calipy_sum" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <table class="autosummary longtable docutils align-default">
@@ -134,8 +133,8 @@ Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="dist.html" class="btn btn-neutral float-left" title="calipy.core.dist.distributions (API)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="primitives.html" class="btn btn-neutral float-right" title="calipy.core.primitives (API)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="dist.html" class="btn btn-neutral float-left" title="calipy.dist.distributions (API)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="primitives.html" class="btn btn-neutral float-right" title="calipy.primitives (API)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

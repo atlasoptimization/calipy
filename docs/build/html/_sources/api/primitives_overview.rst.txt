@@ -1,5 +1,5 @@
 ============================
-calipy.core.primitives
+calipy.primitives
 ============================
 
 Low‑level building blocks (`param`, `sample` wrappers).
@@ -9,5 +9,5 @@ Low‑level building blocks (`param`, `sample` wrappers).
    :toctree: generated
    :recursive:
 
-   calipy.core.primitives
+   calipy.primitives
 

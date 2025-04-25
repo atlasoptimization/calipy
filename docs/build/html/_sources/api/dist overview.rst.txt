@@ -1,5 +1,5 @@
 =========================
-calipy.core.dist
+calipy.dist
 =========================
 
 Auto‑wrapped Pyro distributions (`CalipyDistribution.*`).
@@ -9,5 +9,5 @@ Auto‑wrapped Pyro distributions (`CalipyDistribution.*`).
    :toctree: generated
    :recursive:
 
-   calipy.core.dist.distributions
+   calipy.dist.distributions
 

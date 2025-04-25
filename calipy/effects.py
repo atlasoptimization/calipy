@@ -156,8 +156,8 @@ class UnknownParameter(CalipyQuantity):
         #
         # i) Imports and definitions
         import calipy
-        from calipy.core.base import NodeStructure
-        from calipy.core.effects import UnknownParameter
+        from calipy.base import NodeStructure
+        from calipy.effects import UnknownParameter
         node_structure = NodeStructure(UnknownParameter)
         bias_object = UnknownParameter(node_structure, name = 'tutorial')
         #
@@ -366,9 +366,9 @@ class NoiseAddition(CalipyEffect):
         # i) Imports and definitions
         import calipy
         import torch
-        from calipy.core.base import NodeStructure
-        from calipy.core.tensor import CalipyTensor
-        from calipy.core.effects import NoiseAddition
+        from calipy.base import NodeStructure
+        from calipy.tensor import CalipyTensor
+        from calipy.effects import NoiseAddition
         
         # ii) Invoke and investigate class
         help(NoiseAddition)
@@ -515,7 +515,7 @@ class NoiseAddition(CalipyEffect):
 #         #
 #         # i) Imports and definitions
 #         import calipy
-#         from calipy.core.effects import PolynomialTrend
+#         from calipy.effects import PolynomialTrend
 #         node_structure = PolynomialTrend.example_node_structure
 #         trend_object = PolynomialTrend(node_structure, name = 'tutorial')
 #         #
@@ -612,7 +612,7 @@ class NoiseAddition(CalipyEffect):
 #         #
 #         # i) Imports and definitions
 #         import calipy
-#         from calipy.core.effects import PolynomialTrend
+#         from calipy.effects import PolynomialTrend
 #         node_structure = PolynomialTrend.example_node_structure
 #         trend_object = PolynomialTrend(node_structure, name = 'tutorial')
 #         #

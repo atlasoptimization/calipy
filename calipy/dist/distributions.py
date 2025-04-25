@@ -45,10 +45,10 @@ class CalipyDistribution(CalipyNode):
     either size 10 or 2.
     
     CalipyDistribution is not usually called by the user, it is called by an
-    script __init__.py in calipy.core.dist automatically executed during package
+    script __init__.py in calipy.dist automatically executed during package
     import. The subclasses of CalipyDistribution are e.g. CalipyDistribution.Normal
-    or CalipyDistribution.Gamma which can be accessed via calipy.core.dist.Normal
-    or calipy.core.dist.Gamma
+    or CalipyDistribution.Gamma which can be accessed via calipy.dist.Normal
+    or calipy.dist.Gamma
     
     Example usage: Run line by line to investigate Class
         
@@ -59,12 +59,12 @@ class CalipyDistribution(CalipyNode):
         # i) Imports and definitions
         import torch
         import calipy
-        from calipy.core.base import NodeStructure
-        from calipy.core.tensor import CalipyTensor
-        from calipy.core.data import DataTuple
+        from calipy.base import NodeStructure
+        from calipy.tensor import CalipyTensor
+        from calipy.data import DataTuple
         #
         # ii) Invoke and investigate CalipyDistribution
-        CalipyNormal = calipy.core.dist.Normal
+        CalipyNormal = calipy.dist.Normal
         CalipyNormal.dists
         CalipyNormal.input_vars
         CalipyNormal.input_vars_schema

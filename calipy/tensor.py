@@ -1026,7 +1026,7 @@ def preprocess_args(args, kwargs):
 
         # Imports and definitions
         import torch
-        from calipy.core.tensor import CalipyTensor, preprocess_args
+        from calipy.tensor import CalipyTensor, preprocess_args
 
         # Create sample CalipyTensors
         batch_dims = dim_assignment(dim_names = ['bd_1'])
@@ -1290,8 +1290,8 @@ def broadcast_dims(dims_1, dims_2):
     .. code-block:: python
 
         import torch
-        from calipy.core.tensor import CalipyTensor, broadcast_dims
-        from calipy.core.utils import Dim, DimTuple, dim_assignment
+        from calipy.tensor import CalipyTensor, broadcast_dims
+        from calipy.utils import Dim, DimTuple, dim_assignment
 
         # Suppose we have:
         #   c_cp of shape [2, 1], dims=('dim1','dim2')
@@ -1542,9 +1542,9 @@ class CalipyTensor:
         
         # Imports and definitions
         import torch
-        from calipy.core.tensor import CalipyTensor, TensorIndexer, CalipyIndex
-        from calipy.core.utils import dim_assignment
-        from calipy.core.data import DataTuple
+        from calipy.tensor import CalipyTensor, TensorIndexer, CalipyIndex
+        from calipy.utils import dim_assignment
+        from calipy.data import DataTuple
     
         # Create CalipyTensors -----------------------------------------------
         #
@@ -1786,11 +1786,11 @@ class CalipyTensor:
         self.name = name
         self.tensor = tensor if not isinstance(tensor, CalipyTensor) else tensor.tensor
         self.dims = dims
-        self.bound_dims = dims.bind(self.tensor.shape)
-        self.bound_dims.is_generic = self.dims.is_generic
         
         if self.tensor is not None:
             self._indexer_construct(dims, name)
+            self.bound_dims = dims.bind(self.tensor.shape)
+            self.bound_dims.is_generic = self.dims.is_generic
         
     @property
     def is_null(self):
@@ -1985,8 +1985,8 @@ class CalipyTensor:
         
             # Imports and definitions
             import torch
-            from calipy.core.utils import dim_assignment
-            from calipy.core.tensor import CalipyTensor
+            from calipy.utils import dim_assignment
+            from calipy.tensor import CalipyTensor
             
             # Create DimTuples and tensors
             data_torch = torch.normal(0,1,[10,5,3])
@@ -2153,8 +2153,8 @@ class CalipyTensor:
         
             # Imports and definitions
             import torch
-            from calipy.core.tensor import CalipyTensor
-            from calipy.core.utils import dim_assignment
+            from calipy.tensor import CalipyTensor
+            from calipy.utils import dim_assignment
         
             # Create DimTuples and tensors
             data_torch = torch.normal(0,1,[10,5,3])

@@ -187,24 +187,3 @@ for param, value in pyro.get_param_store().items():
 print('True values of mu = ', mu_true)
 print('Results of taking empirical means for mu_1 = ', torch.mean(data))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

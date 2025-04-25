@@ -53,7 +53,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">CaliPy API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/api_index.html">CaliPy API Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
 <ul class="current">
@@ -425,6 +425,8 @@ to let <span class="math notranslate nohighlight">\(\alpha\)</span> have a <em>G
 <hr class="docutils" />
 <section id="full-code">
 <h2>7  Full code<a class="headerlink" href="#full-code" title="Permalink to this heading"></a></h2>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">level_calibration.py</span><a class="headerlink" href="#id3" title="Permalink to this code"></a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -630,7 +632,7 @@ to let <span class="math notranslate nohighlight">\(\alpha\)</span> have a <em>G
 <span class="n">elbo</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">()</span>
 <span class="n">n_steps</span> <span class="o">=</span> <span class="mi">1000</span>
 
-<span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">adam</span><span class="p">,</span> <span class="s1">&#39;loss&#39;</span> <span class="p">:</span> <span class="n">elbo</span><span class="p">,</span> <span class="s1">&#39;n_steps&#39;</span><span class="p">:</span> <span class="n">n_steps</span><span class="p">}</span>
+<span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;optimizer&#39;</span><span class="p">:</span> <span class="n">adam</span><span class="p">,</span> <span class="s1">&#39;loss&#39;</span> <span class="p">:</span> <span class="n">elbo</span><span class="p">,</span> <span class="s1">&#39;n_steps&#39;</span><span class="p">:</span> <span class="n">n_steps</span><span class="p">,</span> <span class="s1">&#39;n_steps_report&#39;</span> <span class="p">:</span> <span class="mi">100</span><span class="p">}</span>
 
 
 <span class="c1"># ii) Train the model</span>
@@ -669,7 +671,29 @@ to let <span class="math notranslate nohighlight">\(\alpha\)</span> have a <em>G
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;True values </span><span class="se">\n</span><span class="s1"> alpha : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> dh : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> hI : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alpha_true</span><span class="p">,</span> <span class="n">dh_true</span><span class="p">,</span> <span class="n">hI_true</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Values estimated by least squares </span><span class="se">\n</span><span class="s1"> alpha : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> dh : </span><span class="si">{}</span><span class="s1"> </span><span class="se">\n</span><span class="s1"> hI : </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alpha_ls</span><span class="p">,</span>  <span class="n">dh_ls</span><span class="p">,</span> <span class="n">hI_ls</span><span class="p">))</span>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </pre></div>
+</div>
 </div>
 </section>
 </section>

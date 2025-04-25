@@ -56,7 +56,7 @@ def param(name, init_tensor, dims, constraint = constraints.real, subsample_inde
         #
         # i) Imports and definitions
         import calipy
-        from calipy.core.base import param
+        from calipy.base import param
         
         batch_dims = dim_assignment(dim_names = ['bd_1_A'], dim_sizes = [4])
         event_dims = dim_assignment(dim_names = ['ed_1_A'], dim_sizes = [2])
