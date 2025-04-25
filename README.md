@@ -1,6 +1,6 @@
 # CaliPy: Calibration Library in Python
-[![PyPI version](https://img.shields.io/pypi/v/calipy.svg)](https://pypi.org/project/calipy/)
-[![Python versions](https://img.shields.io/pypi/pyversions/calipy.svg)](https://pypi.org/project/calipy/)
+[![PyPI version](https://img.shields.io/pypi/v/calipy-ppl.svg)](https://pypi.org/project/calipy-ppl/)
+[![Python versions](https://img.shields.io/pypi/pyversions/calipy-ppl.svg)](https://pypi.org/project/calipy-ppl/)
 [![License](https://img.shields.io/badge/license-Prosperity-blue)](https://prosperitylicense.com/)
 
 > **Pre-Alpha**: In active development — not yet production-ready

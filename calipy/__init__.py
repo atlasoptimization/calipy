@@ -11,4 +11,4 @@
 # from . import utils
 from . import dist
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"
