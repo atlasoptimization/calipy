@@ -1,0 +1,233 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick‑Start Tutorial &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="_static/doctools.js?v=888ff710"></script>
+      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Core Concepts &amp; Architecture" href="concepts.html" />
+    <link rel="prev" title="Installing CaliPy" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick‑Start Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-tiny-probabilistic-model">A tiny probabilistic model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#expected-output">Expected output</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#where-to-go-next">Where to go next</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/api_index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/engineering_geodesy/eg_examples_index.html">Engineering Geodesy</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Quick‑Start Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/quickstart.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quickstart-tutorial">
+<h1>Quick‑Start Tutorial<a class="headerlink" href="#quickstart-tutorial" title="Permalink to this heading"></a></h1>
+<div class="tip admonition">
+<p class="admonition-title">TL;DR</p>
+<p><em>You have CaliPy installed and want to fit a first simple model to showcase grammar and signs of life.</em>
+Copy‑paste the short script below; it builds a tiny probabilistic
+model, runs stochastic variational inference, and prints the inferred
+bias <strong>mu</strong>.</p>
+</div>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>CaliPy, Pyro and PyTorch ≥ 2.2 installed (see <a class="reference internal" href="installation.html"><span class="doc">Installing CaliPy</span></a>).</p></li>
+<li><p>Python ≥ 3.8; GPU optional.</p></li>
+</ul>
+</section>
+<section id="a-tiny-probabilistic-model">
+<h2>A tiny probabilistic model<a class="headerlink" href="#a-tiny-probabilistic-model" title="Permalink to this heading"></a></h2>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text"><em>bias_plus_noise.py</em> – minimal runnable demo</span><a class="headerlink" href="#id1" title="Permalink to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is a minimal demo of calipy functionality. An unknown parameter mu is </span>
+<span class="sd">observed noisily and has to be estimated from these observations. </span>
+
+<span class="sd">The script is meant solely for educational and illustrative purposes. Written by</span>
+<span class="sd">Dr. Jemil Avers Butt, Atlas optimization GmbH, www.atlasoptimization.com.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span><span class="p">,</span> <span class="n">CalipyProbModel</span>
+<span class="kn">from</span> <span class="nn">calipy.effects</span> <span class="kn">import</span> <span class="n">UnknownParameter</span><span class="p">,</span> <span class="n">NoiseAddition</span>
+<span class="kn">from</span> <span class="nn">calipy.utils</span> <span class="kn">import</span> <span class="n">dim_assignment</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+
+<span class="c1"># Simulate data</span>
+<span class="n">n_meas</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">n_meas</span><span class="p">])</span>
+
+<span class="c1"># Define dimensions</span>
+<span class="n">batch_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;batch&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">n_meas</span><span class="p">])</span>
+<span class="n">single_dims</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;single&#39;</span><span class="p">],</span> <span class="p">[])</span>
+
+<span class="c1"># Set up model nodes</span>
+<span class="n">mu_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">UnknownParameter</span><span class="p">)</span>
+<span class="n">mu_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">,</span> <span class="n">param_dims</span> <span class="o">=</span> <span class="n">single_dims</span><span class="p">)</span>
+<span class="n">mu_node</span> <span class="o">=</span> <span class="n">UnknownParameter</span><span class="p">(</span><span class="n">mu_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+<span class="n">noise_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">NoiseAddition</span><span class="p">)</span>
+<span class="n">noise_ns</span><span class="o">.</span><span class="n">set_dims</span><span class="p">(</span><span class="n">batch_dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">,</span> <span class="n">event_dims</span> <span class="o">=</span> <span class="n">single_dims</span><span class="p">)</span>
+<span class="n">noise_node</span> <span class="o">=</span> <span class="n">NoiseAddition</span><span class="p">(</span><span class="n">noise_ns</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">)</span>
+
+<span class="c1"># Define probabilistic model</span>
+<span class="k">class</span> <span class="nc">DemoProbModel</span><span class="p">(</span><span class="n">CalipyProbModel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">mu_node</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">noise_node</span><span class="o">.</span><span class="n">forward</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span> <span class="s1">&#39;standard_deviation&#39;</span><span class="p">:</span> <span class="n">sigma_true</span><span class="p">},</span> <span class="n">observations</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_vars</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">observations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="c1"># Train model</span>
+<span class="n">demo_probmodel</span> <span class="o">=</span> <span class="n">DemoProbModel</span><span class="p">()</span>
+<span class="n">data_cp</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">batch_dims</span><span class="p">)</span>
+<span class="n">optim_results</span> <span class="o">=</span> <span class="n">demo_probmodel</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_cp</span><span class="p">,</span> <span class="n">optim_opts</span> <span class="o">=</span> <span class="p">{})</span>
+
+<span class="c1"># Plot results</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">optim_results</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Epoch&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;ELBO loss&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Training Progress&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>#   :emphasize-lines: 33, 36, 38-45, 50</p>
+<section id="expected-output">
+<h3>Expected output<a class="headerlink" href="#expected-output" title="Permalink to this heading"></a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Posterior mu: around true mu = 0.0</span>
+</pre></div>
+</div>
+<p>(The exact numbers vary but should be identical to <strong>mean(data)</strong>.)</p>
+</section>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="concepts.html"><span class="doc">Core Concepts &amp; Architecture</span></a> – glossary &amp; architecture overview</p></li>
+<li><p><a class="reference internal" href="usage.html"><span class="doc">Usage</span></a> – in‑depth guides (models, effects, data, inference)</p></li>
+<li><p>Example notebooks in <code class="docutils literal notranslate"><span class="pre">examples/engineering_geodesy/</span></code> for <strong>mean_estimation</strong>, <strong>level_calibration</strong>, <strong>totalstation_calibration</strong>, …</p></li>
+</ul>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h2>
+<p class="rubric">Common hiccups</p>
+<ul class="simple">
+<li><p><strong>ImportErrors</strong> – verify your environment matches the <em>Installation</em> page
+(“Bleeding‑edge install” section).</p></li>
+<li><p><strong>Diverging ELBO</strong> – set <code class="docutils literal notranslate"><span class="pre">torch.manual_seed(0)</span></code> and/or lower the learning
+rate (<code class="docutils literal notranslate"><span class="pre">optim.Adam({&quot;lr&quot;:</span> <span class="pre">0.005})</span></code>).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installing CaliPy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="concepts.html" class="btn btn-neutral float-right" title="Core Concepts &amp; Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core Concepts &amp; Architecture &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="_static/doctools.js?v=888ff710"></script>
+      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.esm.min.mjs"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
+      <script type="module">mermaid.initialize({startOnLoad:true});</script>
+      <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+      <script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.esm.min.mjs";
+window.addEventListener("load", () => mermaid.run());
+</script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="CaliPy API Reference" href="api/api_index.html" />
+    <link rel="prev" title="Quick‑Start Tutorial" href="quickstart.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Core Concepts &amp; Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-a-torch-based-calibration-library">Why a torch-based calibration library?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#goal-and-concept">Goal and concept</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#highlevel-architecture">High‑level architecture</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#key-abstractions">Key abstractions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calipytensor">CalipyTensor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipydim-dimtuple">CalipyDim &amp; DimTuple</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipyindex">CalipyIndex</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#nodes-nodestructure">Nodes &amp; NodeStructure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#effects-quantities">Effects &amp; Quantities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipyprobmodel">CalipyProbModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#directed-acyclic-graph-dag">Directed Acyclic Graph (DAG)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#overview-cheatsheet">Overview cheat‑sheet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#roles-and-classes">Roles and classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#actions-and-commands">Actions and commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#expected-output">Expected output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#further-reading">Further reading</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/api_index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/engineering_geodesy/eg_examples_index.html">Engineering Geodesy</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Core Concepts &amp; Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/concepts.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-concepts-architecture">
+<h1>Core Concepts &amp; Architecture<a class="headerlink" href="#core-concepts-architecture" title="Permalink to this heading"></a></h1>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#why-a-torch-based-calibration-library" id="id1">Why a torch-based calibration library?</a></p></li>
+<li><p><a class="reference internal" href="#key-abstractions" id="id2">Key abstractions</a></p></li>
+<li><p><a class="reference internal" href="#overview-cheatsheet" id="id3">Overview cheat‑sheet</a></p></li>
+<li><p><a class="reference internal" href="#expected-output" id="id4">Expected output</a></p></li>
+<li><p><a class="reference internal" href="#further-reading" id="id5">Further reading</a></p></li>
+</ul>
+</nav>
+<section id="why-a-torch-based-calibration-library">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Why a torch-based calibration library?</a><a class="headerlink" href="#why-a-torch-based-calibration-library" title="Permalink to this heading"></a></h2>
+<section id="goal-and-concept">
+<h3>Goal and concept<a class="headerlink" href="#goal-and-concept" title="Permalink to this heading"></a></h3>
+<p>CaliPy’s goal is to make <strong>building and solving</strong> complicated
+<strong>probabilistic instrument models</strong> easy and intuitive. By
+focusing entirely on Bayesian Inference and outsourcing the
+math to <strong>PyTorch</strong> and <strong>Pyro</strong> for automatic gradient computation
+and stochastic variational inference, <em>declaring</em> a model is
+basically the same as <em>solving</em> it.</p>
+<p>Due to its simple effect-based architecture, model declaration
+is done by invoking <strong>effects</strong>, endowing them with structure and
+then chaining them together. Think of it as building modular
+models by sticking together lego blocks. CaliPy automatically
+turns the resulting directed‑acyclic graph (DAG) into a runnable
+model, that can be used forward (for simulation) and backward (for inference)</p>
+<p>This avoids the classical pitfalls of limiting yourself to oversimplified
+models that can be solved by hand‑coded least‑squares algorithms.</p>
+</section>
+<section id="highlevel-architecture">
+<h3>High‑level architecture<a class="headerlink" href="#highlevel-architecture" title="Permalink to this heading"></a></h3>
+<pre  class="mermaid">
+        flowchart TD
+    subgraph user_code
+        A[Define NodeStructure] --&gt;|instantiates| B[CalipyNode subclasses]
+        B --&gt; C[CalipyProbModel(model, guide)]
+        C --&gt;|.train()| D[Inference Engine / Pyro SVI / MCMC]
+    end
+    D --&gt;|posteriors| E[(Results)]
+
+    %% cosmetic styling
+    classDef node fill:#90caf9,stroke:#333,stroke-width:1px;
+    class A,B,C,D,E node;
+    </pre></section>
+</section>
+<section id="key-abstractions">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Key abstractions</a><a class="headerlink" href="#key-abstractions" title="Permalink to this heading"></a></h2>
+<section id="calipytensor">
+<h3>CalipyTensor<a class="headerlink" href="#calipytensor" title="Permalink to this heading"></a></h3>
+<p>A thin wrapper around a <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> that <strong>remembers its
+DimTuple</strong> and carries an attached <strong>TensorIndexer</strong>, supporting
+subsampling and traceable indices.</p>
+<p>Represent a torch tensor <strong>plus</strong>:</p>
+<ul class="simple">
+<li><p><em>dims</em> (<code class="docutils literal notranslate"><span class="pre">DimTuple</span></code>) – names, sizes &amp; semantics</p></li>
+<li><p>automatic <em>indexer</em> (local / global)</p></li>
+<li><p>rich helpers: <code class="docutils literal notranslate"><span class="pre">expand_to_dims</span></code>, <code class="docutils literal notranslate"><span class="pre">flatten</span></code>, broadcasting aware arithmetic</p></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">batch</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;bd&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">100</span><span class="p">])</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">dim_assignment</span><span class="p">([</span><span class="s1">&#39;ed&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">([</span><span class="mi">100</span><span class="p">,</span><span class="mi">2</span><span class="p">]),</span> <span class="n">batch</span><span class="o">+</span><span class="n">event</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="calipydim-dimtuple">
+<h4>CalipyDim &amp; DimTuple<a class="headerlink" href="#calipydim-dimtuple" title="Permalink to this heading"></a></h4>
+<p><em>One</em> dimension object per logical axis (<code class="docutils literal notranslate"><span class="pre">bd_1</span></code>, <code class="docutils literal notranslate"><span class="pre">ed_1</span></code> …)
+keeps names, sizes, descriptions.  A <strong>DimTuple</strong> behaves like a
+tuple but is <em>dimension‑aware</em>: filtering, broadcasting checks,
+<cite>torchdim</cite> binding, etc.</p>
+</section>
+<section id="calipyindex">
+<h4>CalipyIndex<a class="headerlink" href="#calipyindex" title="Permalink to this heading"></a></h4>
+<p>An index tensor + dimension metadata, created automatically (or by
+<code class="docutils literal notranslate"><span class="pre">TensorIndexer*</span></code>) and consumable by any CalipyTensor for indexing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x_sub</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">10</span><span class="p">,:]</span>
+<span class="n">x_sub_local</span> <span class="o">=</span> <span class="n">x_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">local_index</span>
+<span class="n">x_sub_global</span> <span class="o">=</span> <span class="n">x_sub</span><span class="o">.</span><span class="n">indexer</span><span class="o">.</span><span class="n">global_index</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="nodes-nodestructure">
+<h3>Nodes &amp; NodeStructure<a class="headerlink" href="#nodes-nodestructure" title="Permalink to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">CalipyNode</span></code> is the abstract base for everything executable:
+effects, parameters, distributions, even whole probability
+models.
+Each node is parameterised by a <strong>NodeStructure</strong> that declares
+its <em>batch/event/parameter</em> dims (with plate semantics).</p>
+<p>For building a NodeStructure:
+* keys are <em>dim roles</em> – typically <code class="docutils literal notranslate"><span class="pre">batch_dims</span></code>, <code class="docutils literal notranslate"><span class="pre">event_dims</span></code>, …
+* values are <code class="docutils literal notranslate"><span class="pre">DimTuple</span></code> objects
+* every concrete <em>CalipyNode</em> receives one NodeStructure object on construction</p>
+</section>
+<section id="effects-quantities">
+<h3>Effects &amp; Quantities<a class="headerlink" href="#effects-quantities" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Effects</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">NoiseAddition</span></code>, <code class="docutils literal notranslate"><span class="pre">PolynomialTrend</span></code>)
+compute new tensors—think “stochastic layers”.</p></li>
+<li><p><strong>Quantities</strong> (e.g. <code class="docutils literal notranslate"><span class="pre">UnknownParameter</span></code>, <code class="docutils literal notranslate"><span class="pre">UnknownVariance</span></code>)
+hold deterministic or random parameters used by effects.</p></li>
+</ul>
+<p>Both are subclasses of <code class="docutils literal notranslate"><span class="pre">CalipyNode</span></code>; calling <code class="docutils literal notranslate"><span class="pre">forward</span></code> on
+them <em>samples</em> or <em>computes</em> their output.</p>
+</section>
+<section id="calipyprobmodel">
+<h3>CalipyProbModel<a class="headerlink" href="#calipyprobmodel" title="Permalink to this heading"></a></h3>
+<p>A container that wires nodes together and exposes</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model</span></code> – generative process</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">guide</span></code> – variational family (often empty if no latent RVs)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train</span></code> – one‑line SVI loop with sensible defaults</p></li>
+</ul>
+</section>
+<section id="directed-acyclic-graph-dag">
+<h3>Directed Acyclic Graph (DAG)<a class="headerlink" href="#directed-acyclic-graph-dag" title="Permalink to this heading"></a></h3>
+<p>Internally CaliPy constructs a DAG of nodes/edges.
+Edges carry <strong>CalipyIO</strong> objects, ensuring every tensor has a
+name and dimension context.</p>
+<div class="admonition hint">
+<p class="admonition-title">Hint</p>
+<p>You rarely touch the DAG directly—forward methods plus
+<code class="docutils literal notranslate"><span class="pre">CalipyIO</span></code> objects are enough for 99 % of use‑cases.</p>
+</div>
+</section>
+</section>
+<section id="overview-cheatsheet">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Overview cheat‑sheet</a><a class="headerlink" href="#overview-cheatsheet" title="Permalink to this heading"></a></h2>
+<section id="roles-and-classes">
+<h3>Roles and classes<a class="headerlink" href="#roles-and-classes" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Role</strong></p></th>
+<th class="head"><p><strong>Object type</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RAW data (torch)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Dimension‑aware</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CalipyTensor</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Named collection</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CalipyIO</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Processing step</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CalipyNode</span></code> subclasses</p></td>
+</tr>
+<tr class="row-even"><td><p>Whole instrument model</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CalipyProbModel</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="actions-and-commands">
+<h3>Actions and commands<a class="headerlink" href="#actions-and-commands" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Action</strong></p></th>
+<th class="head"><p><strong>One‑liner</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Build batch/event dims</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dim_assignment(['bd','ed'],</span> <span class="pre">[N,</span> <span class="pre">None])</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Turn torch‑tensor into
+dimension‑aware tensor</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CalipyTensor(t,</span> <span class="pre">dims,</span> <span class="pre">'name')</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Create learnable scalar</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">theta</span> <span class="pre">=</span> <span class="pre">UnknownParameter(ns).forward()</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Add Gaussian noise</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">NoiseAddition(ns).forward({'mean':mu,</span></code>
+<code class="docutils literal notranslate"><span class="pre">'standard_deviation':sigma},</span> <span class="pre">obs)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Train whole model</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">loss_trace</span> <span class="pre">=</span> <span class="pre">probmodel.train(x,</span> <span class="pre">y)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="expected-output">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Expected output</a><a class="headerlink" href="#expected-output" title="Permalink to this heading"></a></h2>
+<p>After <code class="docutils literal notranslate"><span class="pre">probmodel.train(...)</span></code> you get</p>
+<ul>
+<li><p>list / ndarray of ELBO values (for plotting)</p></li>
+<li><p>parameters stored in <code class="docutils literal notranslate"><span class="pre">pyro.get_param_store()</span></code></p></li>
+<li><p>convenience access through each node instance, e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">theta</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>      <span class="c1"># MAP/ML estimate</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="further-reading">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Further reading</a><a class="headerlink" href="#further-reading" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quick‑Start Tutorial</span></a> – hands‑on 20‑line bias‑and‑noise example</p></li>
+<li><p><a class="reference internal" href="usage.html"><span class="doc">Usage</span></a> – practical guides (models, effects, data, inference)</p></li>
+<li><p>API reference generated via autodoc (see side‑bar)</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart.html" class="btn btn-neutral float-left" title="Quick‑Start Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api/api_index.html" class="btn btn-neutral float-right" title="CaliPy API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

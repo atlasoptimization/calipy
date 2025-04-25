@@ -1,0 +1,270 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>calipy.dist.distributions (API) &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="calipy.funs (API)" href="funs.html" />
+    <link rel="prev" title="calipy.effects (API)" href="effects.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installing <strong>CaliPy</strong></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api_index.html">CaliPy API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tensor.html">calipy.tensor  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data.html">calipy.data  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="effects.html">calipy.effects  (API)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">calipy.dist.distributions  (API)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.create_distribution_class"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.create_distribution_class()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.create_pyro_dist"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.create_pyro_dist()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.dists"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.dists</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.input_vars_schema"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.input_vars_schema</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.name"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#calipy.dist.distributions.CalipyDistribution.observation_schema"><code class="docutils literal notranslate"><span class="pre">CalipyDistribution.observation_schema</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.dist.distributions.build_default_nodestructure"><code class="docutils literal notranslate"><span class="pre">build_default_nodestructure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.dist.distributions.generate_init_for_distribution"><code class="docutils literal notranslate"><span class="pre">generate_init_for_distribution()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calipy.dist.distributions.generate_schemas_from_pyro"><code class="docutils literal notranslate"><span class="pre">generate_schemas_from_pyro()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="funs.html">calipy.funs  (API)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="primitives.html">calipy.primitives  (API)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/engineering_geodesy/eg_examples_index.html">Engineering Geodesy</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="api_index.html">CaliPy API Reference</a></li>
+      <li class="breadcrumb-item active">calipy.dist.distributions  (API)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/dist.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="calipy-dist-distributions-api">
+<span id="api-dist"></span><h1>calipy.dist.distributions  (API)<a class="headerlink" href="#calipy-dist-distributions-api" title="Permalink to this heading"></a></h1>
+<span class="target" id="module-calipy.dist.distributions"></span><dl class="py class">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">calipy.dist.distributions.</span></span><span class="sig-name descname"><span class="pre">CalipyDistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_structure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">CalipyNode</span></code></p>
+<p>Base class for all auto-generated Calipy distributions. It wraps a Pyro 
+distribution class and associates a NodeStructure (or any additional 
+dimension-aware info). CalipyDistributions are Subclasses of CalipyNode and
+therefore come together with a method forward(input_vars, observations, 
+subsample_index, **kwargs) method. The forward() method of distributions can
+be seen as a way of passing parameters and sampling; the format of inputs 
+and observations is documented within the methods create_input_vars or 
+create_observations that help turn data into the DataTuples needed as input
+for .forward(). Al CalipyDistributions come with a default_nodestructure
+consisting of just batch_dims and event_dims being a single dimension with
+either size 10 or 2.</p>
+<p>CalipyDistribution is not usually called by the user, it is called by an
+script __init__.py in calipy.dist automatically executed during package
+import. The subclasses of CalipyDistribution are e.g. CalipyDistribution.Normal
+or CalipyDistribution.Gamma which can be accessed via calipy.dist.Normal
+or calipy.dist.Gamma</p>
+<p>Example usage: Run line by line to investigate Class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># CalipyDistribution objects are CalipyNodes --------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># i) Imports and definitions</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">calipy</span>
+<span class="kn">from</span> <span class="nn">calipy.base</span> <span class="kn">import</span> <span class="n">NodeStructure</span>
+<span class="kn">from</span> <span class="nn">calipy.tensor</span> <span class="kn">import</span> <span class="n">CalipyTensor</span>
+<span class="kn">from</span> <span class="nn">calipy.data</span> <span class="kn">import</span> <span class="n">DataTuple</span>
+<span class="c1">#</span>
+<span class="c1"># ii) Invoke and investigate CalipyDistribution</span>
+<span class="n">CalipyNormal</span> <span class="o">=</span> <span class="n">calipy</span><span class="o">.</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span>
+<span class="n">CalipyNormal</span><span class="o">.</span><span class="n">dists</span>
+<span class="n">CalipyNormal</span><span class="o">.</span><span class="n">input_vars</span>
+<span class="n">CalipyNormal</span><span class="o">.</span><span class="n">input_vars_schema</span>
+
+<span class="c1"># iii) Build a concrete Node</span>
+<span class="n">normal_ns</span> <span class="o">=</span> <span class="n">NodeStructure</span><span class="p">(</span><span class="n">CalipyNormal</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">normal_ns</span><span class="p">)</span>
+<span class="n">calipy_normal</span> <span class="o">=</span> <span class="n">CalipyNormal</span><span class="p">(</span><span class="n">node_structure</span> <span class="o">=</span> <span class="n">normal_ns</span><span class="p">,</span> <span class="n">node_name</span> <span class="o">=</span> <span class="s1">&#39;Normal&#39;</span><span class="p">)</span>
+
+<span class="n">calipy_normal</span><span class="o">.</span><span class="n">id</span>
+<span class="n">calipy_normal</span><span class="o">.</span><span class="n">node_structure</span>
+<span class="n">CalipyNormal</span><span class="o">.</span><span class="n">default_nodestructure</span>
+
+<span class="c1"># Calling the forward method</span>
+<span class="n">normal_dims</span> <span class="o">=</span> <span class="n">normal_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;batch_dims&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">normal_ns</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="s1">&#39;event_dims&#39;</span><span class="p">]</span>
+<span class="n">normal_ns_sizes</span> <span class="o">=</span> <span class="n">normal_dims</span><span class="o">.</span><span class="n">sizes</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">normal_ns_sizes</span><span class="p">),</span> <span class="n">normal_dims</span><span class="p">)</span>
+<span class="n">standard_deviation</span> <span class="o">=</span> <span class="n">CalipyTensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">normal_ns_sizes</span><span class="p">),</span> <span class="n">normal_dims</span><span class="p">)</span>
+<span class="n">input_vars_normal</span> <span class="o">=</span> <span class="n">DataTuple</span><span class="p">([</span><span class="s1">&#39;loc&#39;</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">mean</span><span class="p">,</span> <span class="n">standard_deviation</span><span class="p">])</span>
+<span class="n">samples_normal</span> <span class="o">=</span> <span class="n">calipy_normal</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars_normal</span><span class="p">)</span>
+<span class="n">samples_normal</span>
+<span class="n">samples_normal</span><span class="o">.</span><span class="n">dims</span>
+
+<span class="c1"># A more convenient way of creating the input_vars and observations data or</span>
+<span class="c1"># at least getting the info on the input signatures</span>
+<span class="n">create_input_vars</span> <span class="o">=</span> <span class="n">CalipyNormal</span><span class="o">.</span><span class="n">create_input_vars</span>
+<span class="n">help</span><span class="p">(</span><span class="n">create_input_vars</span><span class="p">)</span>
+<span class="n">input_vars_normal_alt</span> <span class="o">=</span> <span class="n">create_input_vars</span><span class="p">(</span><span class="n">loc</span> <span class="o">=</span> <span class="n">mean</span><span class="p">,</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">standard_deviation</span><span class="p">)</span>
+<span class="n">samples_normal_alt</span> <span class="o">=</span> <span class="n">calipy_normal</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">input_vars_normal_alt</span><span class="p">)</span>
+
+<span class="c1"># Since distributions are nodes, we can illustrate them</span>
+<span class="n">calipy_normal</span><span class="o">.</span><span class="n">dtype_chain</span>
+<span class="n">calipy_normal</span><span class="o">.</span><span class="n">id</span>
+<span class="n">render_1</span> <span class="o">=</span> <span class="n">calipy_normal</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">input_vars_normal</span><span class="p">)</span>
+<span class="n">render_1</span>
+<span class="n">render_2</span> <span class="o">=</span> <span class="n">calipy_normal</span><span class="o">.</span><span class="n">render_comp_graph</span><span class="p">(</span><span class="n">input_vars_normal</span><span class="p">)</span>
+<span class="n">render_2</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.create_distribution_class">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_distribution_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyro_dist_cls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.create_distribution_class" title="Permalink to this definition"></a></dt>
+<dd><p>Dynamically creates a subclass for a Pyro distribution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.create_pyro_dist">
+<span class="sig-name descname"><span class="pre">create_pyro_dist</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.create_pyro_dist" title="Permalink to this definition"></a></dt>
+<dd><p>Instantiate the underlying Pyro distribution with stored parameters.
+(Sampling or dimension logic can be added later.)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.dists">
+<span class="sig-name descname"><span class="pre">dists</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'AVFMultivariateNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.AVFMultivariateNormal'&gt;,</span> <span class="pre">'AffineBeta':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.AffineBeta'&gt;,</span> <span class="pre">'AsymmetricLaplace':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.AsymmetricLaplace'&gt;,</span> <span class="pre">'Bernoulli':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Bernoulli'&gt;,</span> <span class="pre">'Beta':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Beta'&gt;,</span> <span class="pre">'BetaBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.BetaBinomial'&gt;,</span> <span class="pre">'Binomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Binomial'&gt;,</span> <span class="pre">'Categorical':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Categorical'&gt;,</span> <span class="pre">'Cauchy':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Cauchy'&gt;,</span> <span class="pre">'Chi2':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Chi2'&gt;,</span> <span class="pre">'CoalescentTimes':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.CoalescentTimes'&gt;,</span> <span class="pre">'CoalescentTimesWithRate':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.CoalescentTimesWithRate'&gt;,</span> <span class="pre">'ContinuousBernoulli':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ContinuousBernoulli'&gt;,</span> <span class="pre">'Delta':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Delta'&gt;,</span> <span class="pre">'Dirichlet':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Dirichlet'&gt;,</span> <span class="pre">'DirichletMultinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.DirichletMultinomial'&gt;,</span> <span class="pre">'DiscreteHMM':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.DiscreteHMM'&gt;,</span> <span class="pre">'Distribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Distribution'&gt;,</span> <span class="pre">'Empirical':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Empirical'&gt;,</span> <span class="pre">'ExpandedDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ExpandedDistribution'&gt;,</span> <span class="pre">'Exponential':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Exponential'&gt;,</span> <span class="pre">'ExponentialFamily':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ExponentialFamily'&gt;,</span> <span class="pre">'ExtendedBetaBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ExtendedBetaBinomial'&gt;,</span> <span class="pre">'ExtendedBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ExtendedBinomial'&gt;,</span> <span class="pre">'FisherSnedecor':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.FisherSnedecor'&gt;,</span> <span class="pre">'FoldedDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.FoldedDistribution'&gt;,</span> <span class="pre">'Gamma':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Gamma'&gt;,</span> <span class="pre">'GammaGaussianHMM':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GammaGaussianHMM'&gt;,</span> <span class="pre">'GammaPoisson':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GammaPoisson'&gt;,</span> <span class="pre">'GaussianHMM':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GaussianHMM'&gt;,</span> <span class="pre">'GaussianMRF':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GaussianMRF'&gt;,</span> <span class="pre">'GaussianScaleMixture':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GaussianScaleMixture'&gt;,</span> <span class="pre">'Geometric':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Geometric'&gt;,</span> <span class="pre">'GroupedNormalNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.GroupedNormalNormal'&gt;,</span> <span class="pre">'Gumbel':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Gumbel'&gt;,</span> <span class="pre">'HalfCauchy':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.HalfCauchy'&gt;,</span> <span class="pre">'HalfNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.HalfNormal'&gt;,</span> <span class="pre">'ImproperUniform':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ImproperUniform'&gt;,</span> <span class="pre">'Independent':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Independent'&gt;,</span> <span class="pre">'IndependentHMM':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.IndependentHMM'&gt;,</span> <span class="pre">'InverseGamma':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.InverseGamma'&gt;,</span> <span class="pre">'Kumaraswamy':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Kumaraswamy'&gt;,</span> <span class="pre">'LKJ':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LKJ'&gt;,</span> <span class="pre">'LKJCholesky':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LKJCholesky'&gt;,</span> <span class="pre">'LKJCorrCholesky':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LKJCorrCholesky'&gt;,</span> <span class="pre">'Laplace':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Laplace'&gt;,</span> <span class="pre">'LinearHMM':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LinearHMM'&gt;,</span> <span class="pre">'LogNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LogNormal'&gt;,</span> <span class="pre">'LogNormalNegativeBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LogNormalNegativeBinomial'&gt;,</span> <span class="pre">'Logistic':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Logistic'&gt;,</span> <span class="pre">'LogisticNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LogisticNormal'&gt;,</span> <span class="pre">'LowRankMultivariateNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.LowRankMultivariateNormal'&gt;,</span> <span class="pre">'MaskedDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MaskedDistribution'&gt;,</span> <span class="pre">'MaskedMixture':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MaskedMixture'&gt;,</span> <span class="pre">'MixtureOfDiagNormals':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MixtureOfDiagNormals'&gt;,</span> <span class="pre">'MixtureOfDiagNormalsSharedCovariance':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MixtureOfDiagNormalsSharedCovariance'&gt;,</span> <span class="pre">'MixtureSameFamily':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MixtureSameFamily'&gt;,</span> <span class="pre">'Multinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Multinomial'&gt;,</span> <span class="pre">'MultivariateNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MultivariateNormal'&gt;,</span> <span class="pre">'MultivariateStudentT':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.MultivariateStudentT'&gt;,</span> <span class="pre">'NanMaskedMultivariateNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.NanMaskedMultivariateNormal'&gt;,</span> <span class="pre">'NanMaskedNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.NanMaskedNormal'&gt;,</span> <span class="pre">'NegativeBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.NegativeBinomial'&gt;,</span> <span class="pre">'Normal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Normal'&gt;,</span> <span class="pre">'OMTMultivariateNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OMTMultivariateNormal'&gt;,</span> <span class="pre">'OneHotCategorical':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OneHotCategorical'&gt;,</span> <span class="pre">'OneHotCategoricalStraightThrough':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OneHotCategoricalStraightThrough'&gt;,</span> <span class="pre">'OneOneMatching':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OneOneMatching'&gt;,</span> <span class="pre">'OneTwoMatching':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OneTwoMatching'&gt;,</span> <span class="pre">'OrderedLogistic':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.OrderedLogistic'&gt;,</span> <span class="pre">'Pareto':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Pareto'&gt;,</span> <span class="pre">'Poisson':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Poisson'&gt;,</span> <span class="pre">'ProjectedNormal':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ProjectedNormal'&gt;,</span> <span class="pre">'Rejector':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Rejector'&gt;,</span> <span class="pre">'RelaxedBernoulli':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.RelaxedBernoulli'&gt;,</span> <span class="pre">'RelaxedBernoulliStraightThrough':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.RelaxedBernoulliStraightThrough'&gt;,</span> <span class="pre">'RelaxedOneHotCategorical':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.RelaxedOneHotCategorical'&gt;,</span> <span class="pre">'RelaxedOneHotCategoricalStraightThrough':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.RelaxedOneHotCategoricalStraightThrough'&gt;,</span> <span class="pre">'SineBivariateVonMises':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SineBivariateVonMises'&gt;,</span> <span class="pre">'SineSkewed':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SineSkewed'&gt;,</span> <span class="pre">'SkewLogistic':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SkewLogistic'&gt;,</span> <span class="pre">'SoftAsymmetricLaplace':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SoftAsymmetricLaplace'&gt;,</span> <span class="pre">'SoftLaplace':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SoftLaplace'&gt;,</span> <span class="pre">'SpanningTree':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.SpanningTree'&gt;,</span> <span class="pre">'Stable':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Stable'&gt;,</span> <span class="pre">'StudentT':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.StudentT'&gt;,</span> <span class="pre">'TorchDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.TorchDistribution'&gt;,</span> <span class="pre">'TransformedDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.TransformedDistribution'&gt;,</span> <span class="pre">'TruncatedPolyaGamma':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.TruncatedPolyaGamma'&gt;,</span> <span class="pre">'Uniform':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Uniform'&gt;,</span> <span class="pre">'Unit':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Unit'&gt;,</span> <span class="pre">'VonMises':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.VonMises'&gt;,</span> <span class="pre">'VonMises3D':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.VonMises3D'&gt;,</span> <span class="pre">'Weibull':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Weibull'&gt;,</span> <span class="pre">'Wishart':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.Wishart'&gt;,</span> <span class="pre">'ZeroInflatedDistribution':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ZeroInflatedDistribution'&gt;,</span> <span class="pre">'ZeroInflatedNegativeBinomial':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ZeroInflatedNegativeBinomial'&gt;,</span> <span class="pre">'ZeroInflatedPoisson':</span> <span class="pre">&lt;class</span> <span class="pre">'calipy.dist.distributions.CalipyDistribution.ZeroInflatedPoisson'&gt;}</span></em><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.dists" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.input_vars_schema">
+<span class="sig-name descname"><span class="pre">input_vars_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.input_vars_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CalipyDistribution'</span></em><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.name" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="calipy.dist.distributions.CalipyDistribution.observation_schema">
+<span class="sig-name descname"><span class="pre">observation_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InputSchema</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#calipy.dist.distributions.CalipyDistribution.observation_schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.dist.distributions.build_default_nodestructure">
+<span class="sig-prename descclassname"><span class="pre">calipy.dist.distributions.</span></span><span class="sig-name descname"><span class="pre">build_default_nodestructure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">class_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.dist.distributions.build_default_nodestructure" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.dist.distributions.generate_init_for_distribution">
+<span class="sig-prename descclassname"><span class="pre">calipy.dist.distributions.</span></span><span class="sig-name descname"><span class="pre">generate_init_for_distribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dist_cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_cls</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#calipy.dist.distributions.generate_init_for_distribution" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="calipy.dist.distributions.generate_schemas_from_pyro">
+<span class="sig-prename descclassname"><span class="pre">calipy.dist.distributions.</span></span><span class="sig-name descname"><span class="pre">generate_schemas_from_pyro</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyro_dist_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="headerlink" href="#calipy.dist.distributions.generate_schemas_from_pyro" title="Permalink to this definition"></a></dt>
+<dd><p>Generates input_vars and observation schemas from a Pyro distribution class.</p>
+</dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="effects.html" class="btn btn-neutral float-left" title="calipy.effects (API)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="funs.html" class="btn btn-neutral float-right" title="calipy.funs (API)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

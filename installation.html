@@ -1,0 +1,231 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing CaliPy &mdash; calipy 0.5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b849a4e9" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=1c40f30e"></script>
+      <script src="_static/doctools.js?v=888ff710"></script>
+      <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quick‑Start Tutorial" href="quickstart.html" />
+    <link rel="prev" title="Welcome to Calipy’s Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            calipy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing <strong>CaliPy</strong></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-install-pypi">Quick install (PyPI)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bleedingedge-install-github">Bleeding‑edge install (GitHub)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#optional-cuda-wheels">Optional CUDA wheels</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#building-the-documentation-locally">Building the documentation locally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick‑Start Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="concepts.html">Core Concepts &amp; Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/api_index.html">CaliPy API Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Example compilation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/quick_start/qs_examples_index.html">Quick-start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/engineering_geodesy/eg_examples_index.html">Engineering Geodesy</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">calipy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installing <strong>CaliPy</strong></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-calipy">
+<h1>Installing <strong>CaliPy</strong><a class="headerlink" href="#installing-calipy" title="Permalink to this heading"></a></h1>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview" id="id1">Overview</a></p></li>
+<li><p><a class="reference internal" href="#requirements" id="id2">Requirements</a></p></li>
+<li><p><a class="reference internal" href="#quick-install-pypi" id="id3">Quick install (PyPI)</a></p></li>
+<li><p><a class="reference internal" href="#bleedingedge-install-github" id="id4">Bleeding‑edge install (GitHub)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#optional-cuda-wheels" id="id5">Optional CUDA wheels</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#building-the-documentation-locally" id="id6">Building the documentation locally</a></p></li>
+<li><p><a class="reference internal" href="#troubleshooting" id="id7">Troubleshooting</a></p></li>
+<li><p><a class="reference internal" href="#next-steps" id="id8">Next steps</a></p></li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>CaliPy is <em>pre‑alpha</em> software.  You can either</p>
+<ol class="arabic simple">
+<li><p>install the latest <strong>stable wheel</strong> from PyPI (recommended for users), or</p></li>
+<li><p>clone the <strong>development branch</strong> from GitHub (recommended for
+contributors and bleeding‑edge features).</p></li>
+</ol>
+</section>
+<section id="requirements">
+<span id="install-prereqs"></span><h2><a class="toc-backref" href="#id2" role="doc-backlink">Requirements</a><a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Python ≥ 3.8 (3.11 tested)  ⎯ <strong>64‑bit only</strong></p></li>
+<li><p>PyTorch ≥ 2.2 with CPU or CUDA ⩾ 11.8</p></li>
+<li><p>Pyro ≥ 1.9.0</p></li>
+<li><p>Optional: JupyterLab or VS Code for the example notebooks.</p></li>
+</ul>
+</section>
+<section id="quick-install-pypi">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Quick install (PyPI)</a><a class="headerlink" href="#quick-install-pypi" title="Permalink to this heading"></a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>create <span class="p">&amp;</span> activate a fresh environment <span class="o">(</span>recommended<span class="o">)</span>
+<span class="go"> python3 -m venv calipy_env</span>
+<span class="go"> source calipy_env/bin/activate</span>
+
+<span class="gp"># </span>... <span class="k">then</span> install calipy <span class="o">(</span>including docs, <span class="k">if</span> preferred<span class="o">)</span>
+<span class="go">pip install calipy[docs]</span>
+</pre></div>
+</div>
+<p>That’s it!  Verify the installation:</p>
+<div class="highlight-pycon notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">calipy</span><span class="o">,</span> <span class="nn">torch</span><span class="o">,</span> <span class="nn">pyro</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">calipy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="go">0.5.0</span>
+</pre></div>
+</div>
+</section>
+<section id="bleedingedge-install-github">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Bleeding‑edge install (GitHub)</a><a class="headerlink" href="#bleedingedge-install-github" title="Permalink to this heading"></a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span>git clone https://github.com/atlasoptimization/calipy.git
+<span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span><span class="nb">cd</span> calipy
+<span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span>pip install -e <span class="s1">&#39;.[dev,docs]&#39;</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">-e</span></code> flag installs CaliPy in <em>editable</em> mode so local changes are
+picked up immediately—handy when you extend the library.</p>
+<section id="optional-cuda-wheels">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Optional CUDA wheels</a><a class="headerlink" href="#optional-cuda-wheels" title="Permalink to this heading"></a></h3>
+<p>If you have an NVIDIA GPU:</p>
+<ol class="arabic">
+<li><p>Check your CUDA version with <code class="docutils literal notranslate"><span class="pre">nvidia-smi</span></code>.</p></li>
+<li><p>Install the matching PyTorch wheel, e.g.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span>pip install <span class="s1">&#39;torch&gt;=2.2+cu121&#39;</span> --index-url https://download.pytorch.org/whl/cu121
+</pre></div>
+</div>
+</li>
+<li><p>Re‑install CaliPy (same <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">calipy[docs]</span></code>).</p></li>
+</ol>
+</section>
+</section>
+<section id="building-the-documentation-locally">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Building the documentation locally</a><a class="headerlink" href="#building-the-documentation-locally" title="Permalink to this heading"></a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span><span class="nb">cd</span> calipy/docs
+<span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span>make clean html      <span class="c1"># outputs to build/html/index.html</span>
+<span class="gp gp-VirtualEnv">(calipy)</span> <span class="gp">$ </span>open build/html/index.html  <span class="c1"># macOS; use xdg-open on Linux</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Troubleshooting</a><a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Mismatched PyTorch/Pyro versions</strong>
+Make sure the Pyro release you pick supports your installed PyTorch.</p></li>
+<li><p><strong>CUDA libraries not found</strong>
+Install the <em>matching</em> CUDA toolkit for your PyTorch wheel, or fall back to the CPU wheel.</p></li>
+</ul>
+</section>
+<section id="next-steps">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Next steps</a><a class="headerlink" href="#next-steps" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="quickstart.html"><span class="doc">Quick‑Start Tutorial</span></a> – run your first bias‑plus‑noise example</p></li>
+<li><p><a class="reference internal" href="concepts.html"><span class="doc">Core Concepts &amp; Architecture</span></a> – core abstractions &amp; design philosophy</p></li>
+<li><p><a class="reference internal" href="usage.html"><span class="doc">Usage</span></a> – how to build models, effects, data wrappers, inference</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Calipy’s Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quickstart.html" class="btn btn-neutral float-right" title="Quick‑Start Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024 - 20255, Dr. Jemil Avers Butt.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
