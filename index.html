@@ -84,6 +84,9 @@
              
   <section id="welcome-to-calipy-s-documentation">
 <span id="calipy-home"></span><h1>Welcome to Calipy’s Documentation<a class="headerlink" href="#welcome-to-calipy-s-documentation" title="Permalink to this heading"></a></h1>
+<p><a class="reference external" href="https://pypi.org/project/calipy/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/calipy.svg" /></a>
+<a class="reference external" href="https://pypi.org/project/calipy/"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/calipy.svg" /></a>
+<a class="reference external" href="https://prosperitylicense.com/"><img alt="License" src="https://img.shields.io/badge/license-Prosperity-blue" /></a></p>
 <blockquote>
 <div><p><strong>Pre-Alpha</strong>: In active development — not yet production-ready</p>
 </div></blockquote>
@@ -106,7 +109,12 @@
 </section>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
-<p>CaliPy (Calibration Library for Python) is designed to <strong>simplify and standardize</strong> how we <strong>build and solve probabilistic instrument models</strong> in geodesy (and related fields). While many real-world analyses rely on classical <strong>least squares</strong> (LS) estimation or maximum-likelihood solutions, these approaches can fail for:</p>
+<p>CaliPy (Calibration library Python) is designed to <strong>build and solve probabilistic instrument models</strong> of measurement instruments. CaliPy lets you declare probabilistic models for measurement instruments (e.g., temperature sensors, geodetic instruments, optical devices, …) by chaining modular “effects” such as drifts, noise, and nonlinear transformations. Inference is then handled by the autodiff backbone.
+Built for scientists, engineers, and calibration specialists who need flexible Bayesian or maximum likelihood inference – without manual math.</p>
+<blockquote>
+<div><p>Powered by PyTorch + Pyro · Dimension-aware · Modular Effects · Research-proven</p>
+</div></blockquote>
+<p>While many real-world analyses rely on classical <strong>least squares</strong> (LS) estimation or maximum-likelihood solutions, these approaches can fail for:</p>
 <ul class="simple">
 <li><p>Nonlinear systems</p></li>
 <li><p>Non-Gaussian noise</p></li>
@@ -204,14 +212,14 @@ p(\theta\mid \mathrm{data}) = \frac{p(\mathrm{data}\mid\theta),p(\theta)}{p(\mat
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
 <p><strong>Project Status</strong>: Pre-alpha</p>
-<p>Once published on PyPI, CaliPy can be installed via:</p>
+<p>Calipy is published on PyPI, and can be installed via:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install calipy
 </pre></div>
 </div>
-<p>Until then, clone this repository and install dependencies manually:</p>
+<p>If you want the editable bleeding edge version, clone the github repository and install manually:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/atlasoptimization/calipy.git
 <span class="nb">cd</span> calipy
-pip install -r requirements.txt
+pip install -e .
 </pre></div>
 </div>
 <hr class="docutils" />
@@ -323,7 +331,7 @@ pip install -r requirements.txt
 </section>
 <section id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
-<p>CaliPy is released under a <strong>Prosperity Public License</strong> for non-commercial use. For commercial usage, a separate license is available. See <a class="reference external" href="https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md">LICENSE</a> for details.</p>
+<p>CaliPy is released under the <strong>Prosperity Public License</strong>. Free for non-commercial use. Commercial licensing available – contact info&#64;atlasoptimization.com. See <a class="reference external" href="https://github.com/atlasoptimization/calipy/blob/master/LICENSE.md">LICENSE</a> for details.</p>
 <hr class="docutils" />
 </section>
 <section id="contributing">
