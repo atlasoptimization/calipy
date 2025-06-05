@@ -115,7 +115,7 @@ Originally developed for **geodetic measurement instruments**, CaliPy can also a
 Calipy is published on PyPI, and can be installed via:
 
 ```bash
-pip install calipy
+pip install calipy-ppl
 ```
 
 If you want the editable bleeding edge version, clone the github repository and install manually:

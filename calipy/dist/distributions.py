@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, List
 
 from calipy.tensor import CalipyTensor
 from calipy.base import NodeStructure, CalipyNode
-from calipy.utils import dim_assignment, InputSchema
+from calipy.utils import dim_assignment, InputSchema, site_name
 from calipy.primitives import sample
 from calipy.data import CalipyDict, CalipyIO, preprocess_args
 
@@ -72,7 +72,7 @@ class CalipyDistribution(CalipyNode):
         # iii) Build a concrete Node
         normal_ns = NodeStructure(CalipyNormal)
         print(normal_ns)
-        calipy_normal = CalipyNormal(node_structure = normal_ns, node_name = 'Normal')
+        calipy_normal = CalipyNormal(node_structure = normal_ns, name = 'noise')
         
         calipy_normal.id
         calipy_normal.node_structure
@@ -86,7 +86,7 @@ class CalipyDistribution(CalipyNode):
         input_vars_normal = DataTuple(['loc', 'scale'], [mean, standard_deviation])
         samples_normal = calipy_normal.forward(input_vars_normal)
         samples_normal
-        samples_normal.dims
+        samples_normal.value.dims
         
         # A more convenient way of creating the input_vars and observations data or
         # at least getting the info on the input signatures
@@ -102,6 +102,14 @@ class CalipyDistribution(CalipyNode):
         render_1
         render_2 = calipy_normal.render_comp_graph(input_vars_normal)
         render_2
+        
+        # An easy model can be built just with a distribution. Sample gets name 'noise'
+        def model(obs = None):
+            calipy_normal.forward(input_vars_normal)
+        model_trace = pyro.poutine.trace(model).get_trace()
+        print('These are the shapes of the involved objects : \n{} \nFormat: batch_shape,'\
+              ' event_shape'.format(model_trace.format_shapes()))
+        model_trace.nodes
     """
     
     # Default empty schemas (will be overridden)
@@ -111,8 +119,8 @@ class CalipyDistribution(CalipyNode):
     
     
 
-    def __init__(self, node_structure=None, node_name = None):
-        super().__init__(node_name = node_name)
+    def __init__(self, node_structure, name, add_uid = False):
+        super().__init__(node_name = name, add_uid = add_uid)
         self.node_structure = node_structure
         
     @classmethod
@@ -128,8 +136,8 @@ class CalipyDistribution(CalipyNode):
             _pyro_dist_cls = pyro_dist_cls
             input_vars = inspect.signature(pyro_dist_cls.__init__).parameters
 
-            def __init__(self, node_structure=None, node_name = dist_name):
-                super().__init__(node_structure=node_structure, node_name = node_name)
+            def __init__(self, node_structure, name = dist_name, add_uid = False):
+                super().__init__(node_structure=node_structure, name = name, add_uid = add_uid)
                 
             def create_pyro_dist(self, input_vars):
                 """
@@ -152,7 +160,8 @@ class CalipyDistribution(CalipyNode):
                 vec = kwargs.get('vectorizable', True)
                 ssi = subsample_index_io
                 obs = observations_io
-                name = '{}__sample__{}'.format(self.id_short, self.name)
+                # name = '{}__sample__{}'.format(self.id_short, self.name)
+                name =  site_name(self, 'sample')
                 dims = self.node_structure.dims
                 
                 # Building pyro distribution

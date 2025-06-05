@@ -67,6 +67,12 @@ from collections.abc import Iterable
     Support functions
 """
 
+def site_name(node, kind):
+    """ Creates names by either taking user suggested name or prepending some uid + context. """
+    core = f"{node.id_short}__{node.name}__{kind}" if node.add_uid else node.name
+    return f"{core}"
+
+
 def multi_unsqueeze(input_tensor, dims):
     output_tensor = input_tensor
     for dim in sorted(dims):

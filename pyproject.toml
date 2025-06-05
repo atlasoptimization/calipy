@@ -37,13 +37,20 @@ dependencies = [
   "einops>=0.8.1",
   "torchviz>=0.0.2",
   "varname>=0.8.1",
-  "networkx>=2.4"
+  "networkx>=2.4",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=3.7"
 ]
+gui = [
+    "PySide6>=6.7",          # LGPL-3
+    "NodeGraphQt>=0.6.38",      # MIT
+]
+
+[project.scripts]
+calipy-design = "calipy.gui.app:main"
 
 [project.urls]
 Homepage = "http://github.com/atlasoptimization/calipy"

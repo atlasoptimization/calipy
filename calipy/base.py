@@ -481,7 +481,7 @@ class CalipyNode(ABC):
     input_vars_schema: Optional[InputSchema] = None
     observation_schema: Optional[InputSchema] = None
     
-    def __init__(self, node_type = None, node_name = None, info_dict = {}, **kwargs):
+    def __init__(self, node_type = None, node_name = None, info_dict = {}, add_uid = False, **kwargs):
                 
         # Basic infos
         self.dtype_chain = format_mro(self.__class__)
@@ -489,6 +489,7 @@ class CalipyNode(ABC):
         self.type = node_type
         self.name = node_name
         self.info = info_dict
+        self.add_uid = add_uid
         
         # Build id
         # Using self.__class__ to get the class of the current instance
