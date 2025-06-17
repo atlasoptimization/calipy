@@ -38,6 +38,7 @@ from calipy.utils import multi_unsqueeze, context_plate_stack, dim_assignment, I
 from calipy.base import NodeStructure
 from calipy.data import CalipyDict, CalipyIO, preprocess_args
 import calipy.dist as dist
+from calipy.dist.distributions import autogenerate_dist_params
 from pyro.distributions import constraints
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List, Type
@@ -377,6 +378,7 @@ class NoiseAddition(CalipyEffect):
         # i) Imports and definitions
         import calipy
         import torch
+        import pyro
         from calipy.base import NodeStructure
         from calipy.tensor import CalipyTensor
         from calipy.effects import NoiseAddition
@@ -390,7 +392,7 @@ class NoiseAddition(CalipyEffect):
         noise_ns = NodeStructure(NoiseAddition)
         print(noise_ns)
         print(noise_ns.dims)
-        noise_object = NoiseAddition(noise_ns)
+        noise_object = NoiseAddition(noise_ns, name = 'noisy_obs')
         
         # iv) Create arguments
         noise_dims = noise_ns.dims['batch_dims'] + noise_ns.dims['event_dims']
@@ -414,6 +416,14 @@ class NoiseAddition(CalipyEffect):
         render_1
         render_2 = noise_object.render_comp_graph(noise_input_vars)
         render_2
+        
+        vii) Trace and name analysis
+        def model(obs = None):
+            noise_object.forward(input_vars = noise_input_vars)
+        model_trace = pyro.poutine.trace(model).get_trace()
+        print('These are the shapes of the involved objects : \n{} \nFormat: batch_shape,'\
+              ' event_shape'.format(model_trace.format_shapes()))
+        model_trace.nodes
     """
     
     
@@ -456,7 +466,7 @@ class NoiseAddition(CalipyEffect):
         normal_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
         
         # Instantiate the distribution and initiate forward() pass
-        self.calipy_normal = CalipyNormal(normal_ns) 
+        self.calipy_normal = CalipyNormal(normal_ns, name = self.name) 
         
     # Forward pass is passing input_vars and sampling from noise_dist
     def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
@@ -491,6 +501,148 @@ class NoiseAddition(CalipyEffect):
         return output
     
     
+# iii) Distributions
+
+class Distribution(CalipyQuantity):
+    """ RandomVariable is a subclass of CalipyQuantity that produces an object whose
+    forward() method emulates generating a realization of a random variable. 
+
+    :param node_structure: Instance of NodeStructure that determines the internal
+        structure (shapes, plate_stacks, plates, aux_data) completely.
+    :type node_structure: NodeStructure
+    :param name: A string that determines the name of the object and subsequently
+        the names of subservient params and samples. Chosen by user to be unique
+        or made unique by system via add_uid = True flag.
+    :type name: String
+    :return: Instance of the RandomVariable class built on the basis of node_structure
+    :rtype: RandomVariable (subclass of CalipyQuantity subclass of CalipyNode)
+    
+    Example usage: Run line by line to investigate Class
+        
+    .. code-block:: python
+    
+        # Investigate 2D noise ------------------------------------------------
+        #
+        # i) Imports and definitions
+        import calipy
+        import torch
+        from calipy.base import NodeStructure
+        from calipy.tensor import CalipyTensor
+        from calipy.effects import NoiseAddition
+        
+        # ii) Invoke and investigate class
+        help(NoiseAddition)
+        NoiseAddition.mro()
+        print(NoiseAddition.input_vars_schema)
+        
+        # iii) Instantiate object
+        noise_ns = NodeStructure(NoiseAddition)
+        print(noise_ns)
+        print(noise_ns.dims)
+        noise_object = NoiseAddition(noise_ns)
+        
+        # iv) Create arguments
+        noise_dims = noise_ns.dims['batch_dims'] + noise_ns.dims['event_dims']
+        mu = CalipyTensor(torch.zeros(noise_dims.sizes), noise_dims, 'mu')
+        sigma = CalipyTensor(torch.ones(noise_dims.sizes), noise_dims, 'sigma')
+        noise_input_vars = NoiseAddition.create_input_vars(mean = mu, standard_deviation = sigma)
+        print(noise_input_vars)
+        
+        # v) Pass forward
+        noisy_output = noise_object.forward(input_vars = noise_input_vars, 
+                                            observations = None, 
+                                            subsample_index = None)
+        noisy_output
+        noisy_output.dims
+        help(noisy_output)
+        
+        # vi) Investigate object further
+        noise_object.dtype_chain
+        noise_object.id
+        render_1 = noise_object.render(noise_input_vars)
+        render_1
+        render_2 = noise_object.render_comp_graph(noise_input_vars)
+        render_2
+    """
+    
+    # Initialize the class-level NodeStructure
+    batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
+    event_dims = dim_assignment(dim_names = ['event_dim'], dim_sizes = [2])
+    batch_dims_description = 'The dims in which realizations are independent'
+    event_dims_description = 'The dims in which realizations are dependent'
+    
+    default_nodestructure = NodeStructure()
+    default_nodestructure.set_dims(batch_dims = batch_dims,
+                                   event_dims = event_dims)
+    default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
+                                               event_dims = event_dims_description)
+    default_nodestructure.set_name("Distribution")
+    
+    
+    # Define the input schema for the forward method
+    @classmethod
+    def build_input_vars_schema(cls, dist_cls):
+        """ Returns the input_vars_schema for a specific distribution class."""
+        return dist_cls.input_vars_schema
+    
+
+    observation_schema = InputSchema(required_keys=["sample"],
+                                      key_types={"sample": CalipyTensor})
+    # input_vars_schema = None
+    # observation_schema = None
+
+    # Class initialization consists in passing args and building shapes
+    def __init__(self, node_structure, name, dist_cls, **kwargs):
+        super().__init__(name = name, **kwargs)
+        
+        # Reduce and integrade node structure        
+        self.node_structure = node_structure
+        self.batch_dims = self.node_structure.dims['batch_dims']
+        self.event_dims = self.node_structure.dims['event_dims']
+        self.dims = self.batch_dims + self.event_dims      
+                
+        # Instantiate the distribution
+        self.dist_cls = dist_cls
+        self.dist_ns = NodeStructure(dist_cls)
+        self.dist_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
+        self.dist = dist_cls(self.dist_ns, name = self.name) 
+        self.input_vars_schema = Distribution.build_input_vars_schema(self.dist_cls)
+        
+
+    def generate_dist_params(self):
+        self.dist_params = autogenerate_dist_params(self)
+        
+            
+    # Forward pass is passing input_vars and sampling from noise_dist
+    def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
+        """
+        Create samples of the distribution dist_cls using input_vars with
+        shapes as indicated in the node_structures' 'batch_dims' and 'event_dims'.
+        
+        :param input vars: Dict with keys as specified in self.input_vars_schema
+            containing CalipyTensor objects defining the distributional parameters
+            which impact the sampling result
+        :type input_vars: Dict, CalipyDict, or CalipyIO
+        param observations: Dict containing a single CalipyTensor object that is
+            considered to be observed and used for inference.
+        type observations: Dict, CalipyDict, or CalipyIO
+        param subsample_index:
+        type subsample_index:
+        :return: CalipyTensor representing realization drawn from the distribution
+        :rtype: CalipyTensor
+        """
+        
+        # Wrap input_vars and observations
+        input_vars_io, observations_io, subsample_index_io = preprocess_args(input_vars,
+                                                            observations, subsample_index)
+        
+    
+        # input_vars_normal = input_vars_io.rename_keys({'mean' : 'loc', 'standard_deviation': 'scale'})
+        output = self.dist.forward(input_vars_io, observations_io, subsample_index_io)
+        
+        return output
+    
+    
 # iii) Random variables
 
 # Define a class of quantities that consist in random variables that can be sampled 
@@ -511,14 +663,18 @@ class NoiseAddition(CalipyEffect):
 
 
 class RandomVariable(CalipyQuantity):
-    """ NoiseAddition is a subclass of CalipyEffect that produces an object whose
-    forward() method emulates uncorrelated noise being added to an input. 
+    """ RandomVariable is a subclass of CalipyQuantity that produces an object whose
+    forward() method emulates generating a realization of a random variable. 
 
     :param node_structure: Instance of NodeStructure that determines the internal
         structure (shapes, plate_stacks, plates, aux_data) completely.
     :type node_structure: NodeStructure
-    :return: Instance of the NoiseAddition class built on the basis of node_structure
-    :rtype: NoiseAddition (subclass of CalipyEffect subclass of CalipyNode)
+    :param name: A string that determines the name of the object and subsequently
+        the names of subservient params and samples. Chosen by user to be unique
+        or made unique by system via add_uid = True flag.
+    :type name: String
+    :return: Instance of the RandomVariable class built on the basis of node_structure
+    :rtype: RandomVariable (subclass of CalipyQuantity subclass of CalipyNode)
     
     Example usage: Run line by line to investigate Class
         
@@ -572,15 +728,15 @@ class RandomVariable(CalipyQuantity):
     # Initialize the class-level NodeStructure
     batch_dims = dim_assignment(dim_names = ['batch_dim'], dim_sizes = [10])
     event_dims = dim_assignment(dim_names = ['event_dim'], dim_sizes = [2])
-    batch_dims_description = 'The dims in which the noise is independent'
-    event_dims_description = 'The dims in which the noise is copied and repeated'
+    batch_dims_description = 'The dims in which realizations are independent'
+    event_dims_description = 'The dims in which realizations are dependent'
     
     default_nodestructure = NodeStructure()
     default_nodestructure.set_dims(batch_dims = batch_dims,
                                    event_dims = event_dims)
     default_nodestructure.set_dim_descriptions(batch_dims = batch_dims_description,
                                                event_dims = event_dims_description)
-    default_nodestructure.set_name("NoiseAddition")
+    default_nodestructure.set_name("RandomVariable")
     
     
     # Define the input schema for the forward method
@@ -595,23 +751,31 @@ class RandomVariable(CalipyQuantity):
                                      key_types={"sample": CalipyTensor})
 
     # Class initialization consists in passing args and building shapes
-    def __init__(self, node_structure, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, node_structure, name, prior_dist_cls, guide_dist_cls = None, **kwargs):
+        super().__init__(name = name, **kwargs)
         self.node_structure = node_structure
         self.batch_dims = self.node_structure.dims['batch_dims']
         self.event_dims = self.node_structure.dims['event_dims']
         self.dims = self.batch_dims + self.event_dims
+        self.prior_dist_cls = prior_dist_cls
+        self.guide_dist_cls = guide_dist_cls
+        
         
         # Set up NodeStructure object normal_ns for the Normal distribution
-        CalipyNormal = dist.Normal
-        normal_ns = NodeStructure(CalipyNormal)
-        normal_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
+        prior_ns = NodeStructure(prior_dist_cls)
+        prior_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
         
         # Instantiate the distribution and initiate forward() pass
-        self.calipy_normal = CalipyNormal(normal_ns) 
+        self.prior_dist = prior_dist_cls(prior_ns) 
         
+        # Instantiate the guide distribution
+        if guide_dist_cls is not None:
+            guide_ns = NodeStructure(guide_dist_cls)
+            guide_ns.set_dims(batch_dims = self.batch_dims, event_dims = self.event_dims)
+            self.guide_dist = guide_dist_cls(guide_ns) 
+            
     # Forward pass is passing input_vars and sampling from noise_dist
-    def forward(self, input_vars, observations = None, subsample_index = None, **kwargs):
+    def forward(self, input_vars, observations = None, subsample_index = None, in_guide = False, **kwargs):
         """
         Create noisy samples using input_vars = (mean, standard_deviation) with
         shapes as indicated in the node_structures' 'batch_dims' and 'event_dims'.
@@ -631,8 +795,6 @@ class RandomVariable(CalipyQuantity):
         """
         
         # Wrap input_vars and observations
-        # input_vars_cp = CalipyIO(input_vars)
-        # observations_cp = CalipyIO(observations)
         input_vars_io, observations_io, subsample_index_io = preprocess_args(input_vars,
                                                             observations, subsample_index)
         

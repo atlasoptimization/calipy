@@ -287,3 +287,30 @@ def generate_schemas_from_pyro(pyro_dist_cls: type) -> tuple:
     )
 
     return input_vars_schema, observation_schema
+
+
+def autogenerate_dist_params(distribution_object):
+    """ Generates parameters for a distribution and marks them for optimization"""
+    
+    batch_dims = distribution_object.batch_dims
+    event_dims = distribution_object.event_dims
+
+    dist_cls = distribution_object.dist_cls
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -568,13 +568,13 @@ class CalipyNode(ABC):
         if 'name' not in cls.__dict__:
             cls.name = cls.__name__
         
-        # Generate create_input_vars if input_schema exists
-        if hasattr(cls, 'input_vars_schema') and cls.input_vars_schema is not None:
+        # Generate create_input_vars if input_schema exists and is constant
+        if hasattr(cls, 'input_vars_schema') and cls.input_vars_schema is not None and callable(cls.input_vars_schema) is False:
             cls.create_input_vars = cls._create_factory_method('input_vars_schema', 
                         'create_input_vars', 'Create a DataTuple for input_vars.')
             
-        # Generate create_observations if observation_schema exists
-        if hasattr(cls, 'observation_schema') and cls.observation_schema is not None:
+        # Generate create_observations if observation_schema exists and is constant
+        if hasattr(cls, 'observation_schema') and cls.observation_schema is not None and callable(cls.observation_schema) is False:
             cls.create_observations = cls._create_factory_method('observation_schema', 
                             'create_observations', 'Create a DataTuple for observations.')
     
